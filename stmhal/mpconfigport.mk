@@ -5,3 +5,6 @@ MICROPY_PY_WIZNET5K ?= 0
 
 # cc3k module for wifi support
 MICROPY_PY_CC3K ?= 0
+
+# Support module for LCD Controller
+MICROPY_PY_LCDCTRL ?= 0

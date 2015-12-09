@@ -61,6 +61,7 @@
 #include "dac.h"
 #include "can.h"
 #include "modnetwork.h"
+#include "u8glib_adapter.h"
 
 void SystemClock_Config(void);
 
@@ -402,6 +403,10 @@ int main(void) {
 #if defined(USE_DEVICE_MODE)
     // default to internal flash being the usb medium
     pyb_usb_storage_medium = PYB_USB_STORAGE_MEDIUM_FLASH;
+#endif
+
+#if defined(MICROPY_PY_U8GLIB)
+    u8glib_init();
 #endif
 
     int first_soft_reset = true;
