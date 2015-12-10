@@ -21,6 +21,8 @@ include ../py/py.mk
 CMSIS_DIR=cmsis
 HAL_DIR=hal/$(MCU_SERIES)
 USBDEV_DIR=usbdev
+LCDCTRL_DIR=lcdtftctrl
+SDRAM_DIR=sdram
 #USBHOST_DIR=usbhost
 FATFS_DIR=lib/fatfs
 DFU=../tools/dfu.py
@@ -177,10 +179,12 @@ SRC_HAL = $(addprefix $(HAL_DIR)/src/stm32$(MCU_SERIES)xx_,\
 	hal_dac.c \
 	hal_dac_ex.c \
 	hal_dma.c \
+	hal_dma2d.c \
 	hal_flash.c \
 	hal_flash_ex.c \
 	hal_gpio.c \
 	hal_i2c.c \
+	hal_ltdc.c \
 	hal_pcd.c \
 	hal_pcd_ex.c \
 	hal_pwr.c \
@@ -191,10 +195,12 @@ SRC_HAL = $(addprefix $(HAL_DIR)/src/stm32$(MCU_SERIES)xx_,\
 	hal_rtc.c \
 	hal_rtc_ex.c \
 	hal_sd.c \
+	hal_sdram.c \
 	hal_spi.c \
 	hal_tim.c \
 	hal_tim_ex.c \
 	hal_uart.c \
+	ll_fmc.c \
 	ll_sdmmc.c \
 	ll_usb.c \
 	)
@@ -244,6 +250,24 @@ SRC_MOD += $(addprefix $(CC3000_DIR)/src/,\
 	patch_prog.c \
 	)
 endif
+
+# for LCD controler module
+ifeq ($(MICROPY_PY_LCDCTRL),1)
+INC += -I$(LCDCTRL_DIR)
+INC += -I$(SDRAM_DIR)
+CFLAGS_MOD += -DMICROPY_PY_LCDCTRL=1
+SRC_MOD += lcdctrl.c
+SRC_MOD += $(addprefix lcdtftctrl/,\
+	ili9341.c \
+	stm32f429i_discovery_lcd.c \
+	stm32f429i_discovery.c \
+	)
+SRC_MOD += $(addprefix sdram/,\
+	stm32f429i_discovery_sdram.c \
+	)
+endif
+
+
 
 OBJ =
 OBJ += $(PY_O)
