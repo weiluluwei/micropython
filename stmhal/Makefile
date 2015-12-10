@@ -248,7 +248,7 @@ endif
 
 # for u8glib module
 ifeq ($(MICROPY_PY_LCDCTRL),1)
-U8GLIB_DIR=u8glib/lib
+U8GLIB_DIR=lib/u8glib
 INC += -I$(TOP)/$(U8GLIB_DIR)/csrc
 CFLAGS_MOD += -DMICROPY_PY_LCDCTRL=1
 SRC_MOD += u8glib_adapter.c
