@@ -8,3 +8,6 @@
 [submodule "lib/lwip"]
 	path = lib/lwip
 	url = http://git.savannah.gnu.org/r/lwip.git
+[submodule "lib/u8glib"]
+	path = lib/u8glib
+	url = https://github.com/olikraus/u8glib.git
