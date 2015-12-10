@@ -14,6 +14,9 @@
 #define MICROPY_HW_ENABLE_SPI1      (0)
 #define MICROPY_HW_ENABLE_SPI2      (0)
 #define MICROPY_HW_ENABLE_SPI3      (0)
+#define MICROPY_HW_ENABLE_SPI4      (0)
+#define MICROPY_HW_ENABLE_SPI5      (1)
+#define MICROPY_HW_ENABLE_SPI6      (0)
 #define MICROPY_HW_ENABLE_CAN       (1)
 
 // HSE is 8MHz

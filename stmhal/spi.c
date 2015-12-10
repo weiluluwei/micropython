@@ -61,6 +61,27 @@
 #define MICROPY_HW_SPI3_MOSI    (pin_B5)
 #endif
 
+#if !defined(MICROPY_HW_SPI4_NSS)
+#define MICROPY_HW_SPI4_NSS     (pin_E11)
+#define MICROPY_HW_SPI4_SCK     (pin_E12)
+#define MICROPY_HW_SPI4_MISO    (pin_E13)
+#define MICROPY_HW_SPI4_MOSI    (pin_E14)
+#endif
+
+#if !defined(MICROPY_HW_SPI5_NSS)
+#define MICROPY_HW_SPI5_NSS     (pin_F6)
+#define MICROPY_HW_SPI5_SCK     (pin_F7)
+#define MICROPY_HW_SPI5_MISO    (pin_F8)
+#define MICROPY_HW_SPI5_MOSI    (pin_F9)
+#endif
+
+#if !defined(MICROPY_HW_SPI6_NSS)
+#define MICROPY_HW_SPI6_NSS     (pin_G8)
+#define MICROPY_HW_SPI6_SCK     (pin_G13)
+#define MICROPY_HW_SPI6_MISO    (pin_G12)
+#define MICROPY_HW_SPI6_MOSI    (pin_G14)
+#endif
+
 /// \moduleref pyb
 /// \class SPI - a master-driven serial protocol
 ///
@@ -92,6 +113,12 @@
 // SPI2_RX: DMA1_Stream3.CHANNEL_0
 // SPI3_TX: DMA1_Stream5.CHANNEL_0 or DMA1_Stream7.CHANNEL_0
 // SPI3_RX: DMA1_Stream0.CHANNEL_0 or DMA1_Stream2.CHANNEL_0
+// SPI4_TX: DMA2_Stream4.CHANNEL_5 or DMA2_Stream1.CHANNEL_4
+// SPI4_RX: DMA2_Stream3.CHANNEL_5 or DMA2_Stream0.CHANNEL_4
+// SPI5_TX: DMA2_Stream4.CHANNEL_2 or DMA2_Stream6.CHANNEL_7
+// SPI5_RX: DMA2_Stream3.CHANNEL_2 or DMA2_Stream5.CHANNEL_7
+// SPI6_TX: DMA2_Stream5.CHANNEL_1
+// SPI6_RX: DMA2_Stream6.CHANNEL_1
 
 typedef struct _pyb_spi_obj_t {
     mp_obj_base_t base;
@@ -111,6 +138,15 @@ SPI_HandleTypeDef SPIHandle2 = {.Instance = NULL};
 #if MICROPY_HW_ENABLE_SPI3
 SPI_HandleTypeDef SPIHandle3 = {.Instance = NULL};
 #endif
+#if MICROPY_HW_ENABLE_SPI4
+SPI_HandleTypeDef SPIHandle4 = {.Instance = NULL};
+#endif
+#if MICROPY_HW_ENABLE_SPI5
+SPI_HandleTypeDef SPIHandle5 = {.Instance = NULL};
+#endif
+#if MICROPY_HW_ENABLE_SPI6
+SPI_HandleTypeDef SPIHandle6 = {.Instance = NULL};
+#endif
 
 STATIC const pyb_spi_obj_t pyb_spi_obj[] = {
 #if MICROPY_HW_ENABLE_SPI1
@@ -125,6 +161,21 @@ STATIC const pyb_spi_obj_t pyb_spi_obj[] = {
 #endif
 #if MICROPY_HW_ENABLE_SPI3
     {{&pyb_spi_type}, &SPIHandle3, DMA_STREAM_SPI3_TX, DMA_CHANNEL_SPI3_TX, DMA_STREAM_SPI3_RX, DMA_CHANNEL_SPI3_RX},
+#else
+    {{&pyb_spi_type}, NULL, NULL, 0, NULL, 0},
+#endif
+#if MICROPY_HW_ENABLE_SPI4
+    {{&pyb_spi_type}, &SPIHandle4, DMA_STREAM_SPI4_TX, DMA_CHANNEL_SPI4_TX, DMA_STREAM_SPI4_RX, DMA_CHANNEL_SPI4_RX},
+#else
+    {{&pyb_spi_type}, NULL, NULL, 0, NULL, 0},
+#endif
+#if MICROPY_HW_ENABLE_SPI5
+    {{&pyb_spi_type}, &SPIHandle5, DMA_STREAM_SPI5_TX, DMA_CHANNEL_SPI5_TX, DMA_STREAM_SPI5_RX, DMA_CHANNEL_SPI5_RX},
+#else
+    {{&pyb_spi_type}, NULL, NULL, 0, NULL, 0},
+#endif
+#if MICROPY_HW_ENABLE_SPI6
+    {{&pyb_spi_type}, &SPIHandle6, DMA_STREAM_SPI6_TX, DMA_CHANNEL_SPI6_TX, DMA_STREAM_SPI6_RX, DMA_CHANNEL_SPI6_RX},
 #else
     {{&pyb_spi_type}, NULL, NULL, 0, NULL, 0},
 #endif
@@ -143,6 +194,18 @@ void spi_init0(void) {
 #if MICROPY_HW_ENABLE_SPI3
     memset(&SPIHandle3, 0, sizeof(SPI_HandleTypeDef));
     SPIHandle3.Instance = SPI3;
+#endif
+#if MICROPY_HW_ENABLE_SPI4
+    memset(&SPIHandle4, 0, sizeof(SPI_HandleTypeDef));
+    SPIHandle4.Instance = SPI4;
+#endif
+#if MICROPY_HW_ENABLE_SPI5
+    memset(&SPIHandle5, 0, sizeof(SPI_HandleTypeDef));
+    SPIHandle5.Instance = SPI5;
+#endif
+#if MICROPY_HW_ENABLE_SPI6
+    memset(&SPIHandle6, 0, sizeof(SPI_HandleTypeDef));
+    SPIHandle6.Instance = SPI6;
 #endif
 }
 
@@ -190,6 +253,39 @@ void spi_init(SPI_HandleTypeDef *spi, bool enable_nss_pin) {
         GPIO_InitStructure.Alternate = GPIO_AF6_SPI3;
         // enable the SPI clock
         __SPI3_CLK_ENABLE();
+#endif
+#if MICROPY_HW_ENABLE_SPI4
+    } else if (spi->Instance == SPI4) {
+        self = &pyb_spi_obj[3];
+        pins[0] = &MICROPY_HW_SPI4_NSS;
+        pins[1] = &MICROPY_HW_SPI4_SCK;
+        pins[2] = &MICROPY_HW_SPI4_MISO;
+        pins[3] = &MICROPY_HW_SPI4_MOSI;
+        GPIO_InitStructure.Alternate = GPIO_AF5_SPI4;
+        // enable the SPI clock
+        __SPI4_CLK_ENABLE();
+#endif
+#if MICROPY_HW_ENABLE_SPI5
+    } else if (spi->Instance == SPI5) {
+        self = &pyb_spi_obj[4];
+        pins[0] = &MICROPY_HW_SPI5_NSS;
+        pins[1] = &MICROPY_HW_SPI5_SCK;
+        pins[2] = &MICROPY_HW_SPI5_MISO;
+        pins[3] = &MICROPY_HW_SPI5_MOSI;
+        GPIO_InitStructure.Alternate = GPIO_AF5_SPI5;
+        // enable the SPI clock
+        __SPI5_CLK_ENABLE();
+#endif
+#if MICROPY_HW_ENABLE_SPI6
+    } else if (spi->Instance == SPI6) {
+        self = &pyb_spi_obj[5];
+        pins[0] = &MICROPY_HW_SPI6_NSS;
+        pins[1] = &MICROPY_HW_SPI6_SCK;
+        pins[2] = &MICROPY_HW_SPI6_MISO;
+        pins[3] = &MICROPY_HW_SPI6_MOSI;
+        GPIO_InitStructure.Alternate = GPIO_AF5_SPI6;
+        // enable the SPI clock
+        __SPI6_CLK_ENABLE();
 #endif
     } else {
         // SPI does not exist for this board (shouldn't get here, should be checked by caller)
@@ -239,6 +335,24 @@ void spi_deinit(SPI_HandleTypeDef *spi) {
         __SPI3_RELEASE_RESET();
         __SPI3_CLK_DISABLE();
 #endif
+#if MICROPY_HW_ENABLE_SPI4
+    } else if (spi->Instance == SPI4) {
+        __SPI4_FORCE_RESET();
+        __SPI4_RELEASE_RESET();
+        __SPI4_CLK_DISABLE();
+#endif
+#if MICROPY_HW_ENABLE_SPI5
+    } else if (spi->Instance == SPI5) {
+        __SPI5_FORCE_RESET();
+        __SPI5_RELEASE_RESET();
+        __SPI5_CLK_DISABLE();
+#endif
+#if MICROPY_HW_ENABLE_SPI6
+    } else if (spi->Instance == SPI6) {
+        __SPI6_FORCE_RESET();
+        __SPI6_RELEASE_RESET();
+        __SPI6_CLK_DISABLE();
+#endif
     }
 }
 
@@ -269,10 +383,19 @@ SPI_HandleTypeDef *spi_get_handle(mp_obj_t o) {
 STATIC void pyb_spi_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     pyb_spi_obj_t *self = self_in;
 
-    uint spi_num;
+    uint spi_num=UINT_MAX;
     if (self->spi->Instance == SPI1) { spi_num = 1; }
     else if (self->spi->Instance == SPI2) { spi_num = 2; }
-    else { spi_num = 3; }
+    else if (self->spi->Instance == SPI3) { spi_num = 3; }
+#if defined(SPI4)
+    else if (self->spi->Instance == SPI4) { spi_num = 4; }
+#endif
+#if defined(SPI5)
+    else if (self->spi->Instance == SPI5) { spi_num = 5; }
+#endif
+#if defined(SPI6)
+    else if (self->spi->Instance == SPI6) { spi_num = 6; }
+#endif
 
     if (self->spi->State == HAL_SPI_STATE_RESET) {
         mp_printf(print, "SPI(%u)", spi_num);
@@ -280,12 +403,13 @@ STATIC void pyb_spi_print(const mp_print_t *print, mp_obj_t self_in, mp_print_ki
         if (self->spi->Init.Mode == SPI_MODE_MASTER) {
             // compute baudrate
             uint spi_clock;
-            if (self->spi->Instance == SPI1) {
-                // SPI1 is on APB2
-                spi_clock = HAL_RCC_GetPCLK2Freq();
-            } else {
+            if ( (self->spi->Instance == SPI2) ||
+                 (self->spi->Instance == SPI3) ) {
                 // SPI2 and SPI3 are on APB1
                 spi_clock = HAL_RCC_GetPCLK1Freq();
+            } else {
+                // SPI1, SPI4, SPI5 and SPI6 are on APB2
+                spi_clock = HAL_RCC_GetPCLK2Freq();
             }
             uint log_prescaler = (self->spi->Init.BaudRatePrescaler >> 3) + 1;
             uint baudrate = spi_clock >> log_prescaler;
@@ -335,12 +459,13 @@ STATIC mp_obj_t pyb_spi_init_helper(const pyb_spi_obj_t *self, mp_uint_t n_args,
     if (br_prescale == 0xffffffff) {
         // prescaler not given, so select one that yields at most the requested baudrate
         mp_uint_t spi_clock;
-        if (self->spi->Instance == SPI1) {
-            // SPI1 is on APB2
-            spi_clock = HAL_RCC_GetPCLK2Freq();
-        } else {
+        if ( (self->spi->Instance == SPI2) ||
+             (self->spi->Instance == SPI3) ) {
             // SPI2 and SPI3 are on APB1
             spi_clock = HAL_RCC_GetPCLK1Freq();
+        } else {
+            // SPI1, SPI4, SPI5 and SPI6 are on APB2
+            spi_clock = HAL_RCC_GetPCLK2Freq();
         }
         br_prescale = spi_clock / args[1].u_int;
     }
