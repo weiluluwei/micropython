@@ -250,8 +250,8 @@ endif
 ifeq ($(MICROPY_PY_LCDCTRL),1)
 U8GLIB_DIR=lib/u8glib
 INC += -I$(TOP)/$(U8GLIB_DIR)/csrc
+INC += -Iu8glib_adapter
 CFLAGS_MOD += -DMICROPY_PY_LCDCTRL=1
-SRC_MOD += u8glib_adapter.c
 SRC_MOD += $(addprefix $(U8GLIB_DIR)/csrc/,\
     chessengine.c \
     u8g_bitmap.c \
@@ -765,6 +765,10 @@ SRC_MOD += $(addprefix $(U8GLIB_DIR)/fntsrc/,\
     u8g_font_unifont.c \
     u8g_font_unifontr.c \
 	)
+SRC_MOD += $(addprefix u8glib_adapter/,\
+    ili9341.c \
+    u8glib_adapter.c \
+    )
 endif
 
  
