@@ -411,8 +411,8 @@ int main(void) {
     pyb_usb_storage_medium = PYB_USB_STORAGE_MEDIUM_FLASH;
 #endif
 
-#if defined(MICROPY_PY_U8GLIB)
-    u8glib_init();
+#if defined(MICROPY_PY_LCDCTRL)
+    u8glib_adapter_init();
 #endif
 
     int first_soft_reset = true;
