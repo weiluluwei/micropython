@@ -767,6 +767,7 @@ SRC_MOD += $(addprefix $(U8GLIB_DIR)/fntsrc/,\
 	)
 SRC_MOD += $(addprefix u8glib_adapter/,\
     ili9341.c \
+    stm32f429i_discovery_lcd.c \
     u8glib_adapter.c \
     )
 endif

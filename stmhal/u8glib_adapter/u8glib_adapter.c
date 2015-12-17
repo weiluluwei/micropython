@@ -12,6 +12,7 @@
 #include "systick.h"
 #include "u8g.h"
 #include "ili9341.h"
+#include "stm32f429i_discovery_lcd.h"
 #include "u8glib_adapter.h"
 /*
  * Definition of constants
@@ -170,7 +171,7 @@ void u8glib_adapter_init(void)
 
         SPIx_Init();
     }
-
+    BSP_LCD_Init();
     u8g_InitComFn(&u8g, &u8g_dev, &u8g_com_fn);
 }
 /******************************* SPI Routines *********************************/
