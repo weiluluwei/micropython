@@ -295,7 +295,7 @@ OBJ += $(BUILD)/pins_$(BOARD).o
 $(BUILD)/$(FATFS_DIR)/ff.o: COPT += -Os
 $(BUILD)/$(HAL_DIR)/src/stm32$(MCU_SERIES)xx_hal_sd.o: COPT += -Os
 
-all: $(BUILD)/firmware.dfu $(BUILD)/firmware.hex
+all: $(BUILD)/firmware.dfu $(BUILD)/firmware.hex $(BUILD)/firmware.bin
 
 .PHONY: deploy
 
@@ -316,6 +316,10 @@ $(BUILD)/firmware.dfu: $(BUILD)/firmware.elf
 $(BUILD)/firmware.hex: $(BUILD)/firmware.elf
 	$(ECHO) "Create $@"
 	$(Q)$(OBJCOPY) -O ihex $< $@
+
+$(BUILD)/firmware.bin: $(BUILD)/firmware.elf
+	$(ECHO) "Create $@"
+	$(Q)$(OBJCOPY) -O binary $^ $(BUILD)/firmware.bin
 
 $(BUILD)/firmware.elf: $(OBJ)
 	$(ECHO) "LINK $@"
