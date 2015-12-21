@@ -1,11 +1,17 @@
 /**
+ * sdram.h
+ *
+ * This file is a copy of stm32f429i_discovery_sdram.h from
+ * STM32Cube_FW_F4_V1.7.0/Drivers/BSP/STM32F429I-Discovery/stm32f429i_discovery_sdram.c
+ *
+ *
     ******************************************************************************
-    * @file        stm32f429i_discovery_sdram.c
-    * @author    MCD Application Team
+    * @file    stm32f429i_discovery_sdram.c
+    * @author  MCD Application Team
     * @version V2.1.2
-    * @date        02-March-2015
-    * @brief     This file provides a set of functions needed to drive the
-    *                    IS42S16400J SDRAM memory mounted on STM32F429I-Discovery Kit.        
+    * @date    02-March-2015
+    * @brief   This file provides a set of functions needed to drive the
+    *          IS42S16400J SDRAM memory mounted on STM32F429I-Discovery Kit.
     ******************************************************************************
     * @attention
     *
@@ -37,6 +43,8 @@
     */
 
 /* Includes ------------------------------------------------------------------*/
+#include <stdint.h>
+#include STM32_HAL_H
 #include "sdram.h"
 
 /** @addtogroup BSP
@@ -108,33 +116,33 @@ void BSP_SDRAM_Init(void)
     /* FMC SDRAM Bank configuration */
     /* Timing configuration for 90 Mhz of SD clock frequency (180Mhz/2) */
     /* TMRD: 2 Clock cycles */
-    Timing.LoadToActiveDelay        = 2;
+    Timing.LoadToActiveDelay              = 2;
     /* TXSR: min=70ns (7x11.11ns) */
-    Timing.ExitSelfRefreshDelay = 7;
+    Timing.ExitSelfRefreshDelay           = 7;
     /* TRAS: min=42ns (4x11.11ns) max=120k (ns) */
-    Timing.SelfRefreshTime            = 4;
+    Timing.SelfRefreshTime                = 4;
     /* TRC:    min=70 (7x11.11ns) */
-    Timing.RowCycleDelay                = 7;
+    Timing.RowCycleDelay                  = 7;
     /* TWR:    min=1+ 7ns (1+1x11.11ns) */
-    Timing.WriteRecoveryTime        = 2;
+    Timing.WriteRecoveryTime              = 2;
     /* TRP:    20ns => 2x11.11ns*/
-    Timing.RPDelay                            = 2;
+    Timing.RPDelay                        = 2;
     /* TRCD: 20ns => 2x11.11ns */
-    Timing.RCDDelay                         = 2;
+    Timing.RCDDelay                       = 2;
     
     /* FMC SDRAM control configuration */
-    SdramHandle.Init.SDBank                         = FMC_SDRAM_BANK2;
+    SdramHandle.Init.SDBank               = FMC_SDRAM_BANK2;
     /* Row addressing: [7:0] */
     SdramHandle.Init.ColumnBitsNumber     = FMC_SDRAM_COLUMN_BITS_NUM_8;
     /* Column addressing: [11:0] */
-    SdramHandle.Init.RowBitsNumber            = FMC_SDRAM_ROW_BITS_NUM_12;
-    SdramHandle.Init.MemoryDataWidth        = SDRAM_MEMORY_WIDTH;
-    SdramHandle.Init.InternalBankNumber = FMC_SDRAM_INTERN_BANKS_NUM_4;
-    SdramHandle.Init.CASLatency                 = SDRAM_CAS_LATENCY;
-    SdramHandle.Init.WriteProtection        = FMC_SDRAM_WRITE_PROTECTION_DISABLE;
-    SdramHandle.Init.SDClockPeriod            = SDCLOCK_PERIOD;
-    SdramHandle.Init.ReadBurst                    = SDRAM_READBURST;
-    SdramHandle.Init.ReadPipeDelay            = FMC_SDRAM_RPIPE_DELAY_1;
+    SdramHandle.Init.RowBitsNumber        = FMC_SDRAM_ROW_BITS_NUM_12;
+    SdramHandle.Init.MemoryDataWidth      = SDRAM_MEMORY_WIDTH;
+    SdramHandle.Init.InternalBankNumber   = FMC_SDRAM_INTERN_BANKS_NUM_4;
+    SdramHandle.Init.CASLatency           = SDRAM_CAS_LATENCY;
+    SdramHandle.Init.WriteProtection      = FMC_SDRAM_WRITE_PROTECTION_DISABLE;
+    SdramHandle.Init.SDClockPeriod        = SDCLOCK_PERIOD;
+    SdramHandle.Init.ReadBurst            = SDRAM_READBURST;
+    SdramHandle.Init.ReadPipeDelay        = FMC_SDRAM_RPIPE_DELAY_1;
                                         
     /* SDRAM controller initialization */
     MspInit();
@@ -305,30 +313,30 @@ static void MspInit(void)
 /*
  +-------------------+--------------------+--------------------+--------------------+
  +                                             SDRAM pins assignment                                                                            +
- +-------------------+--------------------+--------------------+--------------------+
- | PD0    <-> FMC_D2     | PE0    <-> FMC_NBL0    | PF0    <-> FMC_A0        | PG0    <-> FMC_A10     |
- | PD1    <-> FMC_D3     | PE1    <-> FMC_NBL1    | PF1    <-> FMC_A1        | PG1    <-> FMC_A11     |
- | PD8    <-> FMC_D13    | PE7    <-> FMC_D4        | PF2    <-> FMC_A2        | PG8    <-> FMC_SDCLK |
- | PD9    <-> FMC_D14    | PE8    <-> FMC_D5        | PF3    <-> FMC_A3        | PG15 <-> FMC_NCAS    |
- | PD10 <-> FMC_D15    | PE9    <-> FMC_D6        | PF4    <-> FMC_A4        |--------------------+ 
- | PD14 <-> FMC_D0     | PE10 <-> FMC_D7        | PF5    <-> FMC_A5        |     
- | PD15 <-> FMC_D1     | PE11 <-> FMC_D8        | PF11 <-> FMC_NRAS    | 
- +-------------------| PE12 <-> FMC_D9        | PF12 <-> FMC_A6        | 
-                                         | PE13 <-> FMC_D10     | PF13 <-> FMC_A7        |        
-                                         | PE14 <-> FMC_D11     | PF14 <-> FMC_A8        |
-                                         | PE15 <-> FMC_D12     | PF15 <-> FMC_A9        |
- +-------------------+--------------------+--------------------+
- | PB5 <-> FMC_SDCKE1| 
- | PB6 <-> FMC_SDNE1 | 
- | PC0 <-> FMC_SDNWE |
- +-------------------+    
+ +--------------------+----------------------+------------------+--------------------+
+ | PD0  <-> FMC_D2    | PE0  <-> FMC_NBL0  | PF0  <-> FMC_A0    | PG0  <-> FMC_A10   |
+ | PD1  <-> FMC_D3    | PE1  <-> FMC_NBL1  | PF1  <-> FMC_A1    | PG1  <-> FMC_A11   |
+ | PD8  <-> FMC_D13   | PE7  <-> FMC_D4    | PF2  <-> FMC_A2    | PG8  <-> FMC_SDCLK |
+ | PD9  <-> FMC_D14   | PE8  <-> FMC_D5    | PF3  <-> FMC_A3    | PG15 <-> FMC_NCAS  |
+ | PD10 <-> FMC_D15   | PE9  <-> FMC_D6    | PF4  <-> FMC_A4    |--------------------+
+ | PD14 <-> FMC_D0    | PE10 <-> FMC_D7    | PF5  <-> FMC_A5    |
+ | PD15 <-> FMC_D1    | PE11 <-> FMC_D8    | PF11 <-> FMC_NRAS  |
+ +--------------------| PE12 <-> FMC_D9    | PF12 <-> FMC_A6    |
+                      | PE13 <-> FMC_D10   | PF13 <-> FMC_A7    |
+                      | PE14 <-> FMC_D11   | PF14 <-> FMC_A8    |
+                      | PE15 <-> FMC_D12   | PF15 <-> FMC_A9    |
+ +--------------------+--------------------+--------------------+
+ | PB5 <-> FMC_SDCKE1 |
+ | PB6 <-> FMC_SDNE1  |
+ | PC0 <-> FMC_SDNWE  |
+ +--------------------+
     
 */
     
     /* Common GPIO configuration */
-    GPIO_InitStructure.Mode    = GPIO_MODE_AF_PP;
+    GPIO_InitStructure.Mode  = GPIO_MODE_AF_PP;
     GPIO_InitStructure.Speed = GPIO_SPEED_FAST;
-    GPIO_InitStructure.Pull    = GPIO_NOPULL;
+    GPIO_InitStructure.Pull  = GPIO_NOPULL;
     GPIO_InitStructure.Alternate = GPIO_AF12_FMC;
 
     /* GPIOB configuration */
@@ -340,43 +348,43 @@ static void MspInit(void)
     HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);    
     
     /* GPIOD configuration */
-    GPIO_InitStructure.Pin = GPIO_PIN_0 | GPIO_PIN_1    | GPIO_PIN_8 |
-                                                     GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_14 |
-                                                     GPIO_PIN_15;
+    GPIO_InitStructure.Pin = GPIO_PIN_0 | GPIO_PIN_1  | GPIO_PIN_8  |
+                             GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_14 |
+                             GPIO_PIN_15;
     HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
 
     /* GPIOE configuration */
-    GPIO_InitStructure.Pin = GPIO_PIN_0    | GPIO_PIN_1    | GPIO_PIN_7 |
-                                                     GPIO_PIN_8    | GPIO_PIN_9    | GPIO_PIN_10 |
-                                                     GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13 |
-                                                     GPIO_PIN_14 | GPIO_PIN_15;
+    GPIO_InitStructure.Pin = GPIO_PIN_0    | GPIO_PIN_1  | GPIO_PIN_7  |
+                             GPIO_PIN_8    | GPIO_PIN_9  | GPIO_PIN_10 |
+                             GPIO_PIN_11   | GPIO_PIN_12 | GPIO_PIN_13 |
+                             GPIO_PIN_14   | GPIO_PIN_15;
     HAL_GPIO_Init(GPIOE, &GPIO_InitStructure);
 
     /* GPIOF configuration */
-    GPIO_InitStructure.Pin = GPIO_PIN_0    | GPIO_PIN_1 | GPIO_PIN_2 | 
-                                                     GPIO_PIN_3    | GPIO_PIN_4 | GPIO_PIN_5 |
-                                                     GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13 |
-                                                     GPIO_PIN_14 | GPIO_PIN_15;
+    GPIO_InitStructure.Pin = GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_2  |
+                             GPIO_PIN_3  | GPIO_PIN_4  | GPIO_PIN_5  |
+                             GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13 |
+                             GPIO_PIN_14 | GPIO_PIN_15;
     HAL_GPIO_Init(GPIOF, &GPIO_InitStructure);
 
     /* GPIOG configuration */
     GPIO_InitStructure.Pin = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_4 |
-                                                     GPIO_PIN_5 | GPIO_PIN_8 | GPIO_PIN_15;
+                             GPIO_PIN_5 | GPIO_PIN_8 | GPIO_PIN_15;
     HAL_GPIO_Init(GPIOG, &GPIO_InitStructure);
 
     /* Configure common DMA parameters */
-    dmaHandle.Init.Channel                         = SDRAM_DMAx_CHANNEL;
-    dmaHandle.Init.Direction                     = DMA_MEMORY_TO_MEMORY;
-    dmaHandle.Init.PeriphInc                     = DMA_PINC_ENABLE;
-    dmaHandle.Init.MemInc                            = DMA_MINC_ENABLE;
+    dmaHandle.Init.Channel             = SDRAM_DMAx_CHANNEL;
+    dmaHandle.Init.Direction           = DMA_MEMORY_TO_MEMORY;
+    dmaHandle.Init.PeriphInc           = DMA_PINC_ENABLE;
+    dmaHandle.Init.MemInc              = DMA_MINC_ENABLE;
     dmaHandle.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-    dmaHandle.Init.MemDataAlignment        = DMA_MDATAALIGN_WORD;
-    dmaHandle.Init.Mode                                = DMA_NORMAL;
-    dmaHandle.Init.Priority                        = DMA_PRIORITY_HIGH;
-    dmaHandle.Init.FIFOMode                        = DMA_FIFOMODE_DISABLE;
-    dmaHandle.Init.FIFOThreshold             = DMA_FIFO_THRESHOLD_FULL;
-    dmaHandle.Init.MemBurst                        = DMA_MBURST_SINGLE;
-    dmaHandle.Init.PeriphBurst                 = DMA_PBURST_SINGLE; 
+    dmaHandle.Init.MemDataAlignment    = DMA_MDATAALIGN_WORD;
+    dmaHandle.Init.Mode                = DMA_NORMAL;
+    dmaHandle.Init.Priority            = DMA_PRIORITY_HIGH;
+    dmaHandle.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
+    dmaHandle.Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_FULL;
+    dmaHandle.Init.MemBurst            = DMA_MBURST_SINGLE;
+    dmaHandle.Init.PeriphBurst         = DMA_PBURST_SINGLE;
     
     dmaHandle.Instance = SDRAM_DMAx_STREAM;
     
