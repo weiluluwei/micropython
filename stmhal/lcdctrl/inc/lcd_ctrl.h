@@ -1,40 +1,47 @@
 /**
-    ******************************************************************************
-    * @file        stm32f429i_discovery_lcd.h
-    * @author    MCD Application Team
-    * @version V2.1.2
-    * @date        02-March-2015
-    * @brief     This file contains all the functions prototypes for the 
-    *                    stm32f429i_discovery_lcd.c driver.
-    ******************************************************************************
-    * @attention
-    *
-    * <h2><center>&copy; COPYRIGHT(c) 2015 STMicroelectronics</center></h2>
-    *
-    * Redistribution and use in source and binary forms, with or without modification,
-    * are permitted provided that the following conditions are met:
-    *     1. Redistributions of source code must retain the above copyright notice,
-    *            this list of conditions and the following disclaimer.
-    *     2. Redistributions in binary form must reproduce the above copyright notice,
-    *            this list of conditions and the following disclaimer in the documentation
-    *            and/or other materials provided with the distribution.
-    *     3. Neither the name of STMicroelectronics nor the names of its contributors
-    *            may be used to endorse or promote products derived from this software
-    *            without specific prior written permission.
-    *
-    * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-    * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-    * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-    * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-    * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-    * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-    * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-    * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-    *
-    ******************************************************************************
-    */
+ * lcd_ctrl.h
+ *
+ * This file is a copy of stm32f429i_discovery_sdram.h from
+ * STM32Cube_FW_F4_V1.7.0/Drivers/BSP/STM32F429I-Discovery/stm32f429i_discovery_lcd.h
+ * function names were fixed with following sed command:
+ * 's/\(BSP_LCD_\)\([A-Z]\)/lcd_ctrl_\l\2/g'
+ *
+ ******************************************************************************
+ * @file    stm32f429i_discovery_lcd.h
+ * @author  MCD Application Team
+ * @version V2.1.2
+ * @date    02-March-2015
+ * @brief   This file contains all the functions prototypes for the
+ *          stm32f429i_discovery_lcd.c driver.
+ ******************************************************************************
+ * @attention
+ *
+ * <h2><center>&copy; COPYRIGHT(c) 2015 STMicroelectronics</center></h2>
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *     1. Redistributions of source code must retain the above copyright notice,
+ *            this list of conditions and the following disclaimer.
+ *     2. Redistributions in binary form must reproduce the above copyright notice,
+ *            this list of conditions and the following disclaimer in the documentation
+ *            and/or other materials provided with the distribution.
+ *     3. Neither the name of STMicroelectronics nor the names of its contributors
+ *            may be used to endorse or promote products derived from this software
+ *            without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ ******************************************************************************
+ */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __LCDCTRL_H
@@ -45,7 +52,8 @@
 #endif 
 
 /* Includes ------------------------------------------------------------------*/
-#include <lcdctrl/inc/lcd_io.h>
+#include <stdint.h>
+#include "lcd_io.h"
 /* Include SDRAM Driver */
 #include "sdram.h"
 #include "fonts.h"
@@ -80,9 +88,9 @@ typedef struct
 */
 typedef enum
 {
-    CENTER_MODE                         = 0x01,        /* center mode */
-    RIGHT_MODE                            = 0x02,        /* right mode    */         
-    LEFT_MODE                             = 0x03,        /* left mode     */                                                                                                                                                             
+    CENTER_MODE = 0x01,        /* center mode */
+    RIGHT_MODE  = 0x02,        /* right mode    */
+    LEFT_MODE   = 0x03,        /* left mode     */
 }Text_AlignModeTypdef;
 
 
@@ -98,9 +106,9 @@ typedef enum
 /** 
 * @brief    LCD status structure definition
 */
-#define MAX_LAYER_NUMBER             2
-#define LCD_FRAME_BUFFER             ((uint32_t)0xD0000000)
-#define BUFFER_OFFSET                    ((uint32_t)0x50000) 
+#define MAX_LAYER_NUMBER          2
+#define LCD_FRAME_BUFFER          ((uint32_t)0xD0000000)
+#define BUFFER_OFFSET             ((uint32_t)0x50000)
 
 /** 
 * @brief    LCD color
@@ -134,13 +142,13 @@ typedef enum
 /** 
     * @brief LCD default font 
     */ 
-#define LCD_DEFAULT_FONT                 Font24
+#define LCD_DEFAULT_FONT          Font24
 
 /** 
     * @brief    LCD Layer    
     */ 
-#define LCD_BACKGROUND_LAYER         0x0000
-#define LCD_FOREGROUND_LAYER         0x0001
+#define LCD_BACKGROUND_LAYER      0x0000
+#define LCD_FOREGROUND_LAYER      0x0001
 
 /**
     * @}
@@ -152,14 +160,14 @@ typedef enum
 /** 
     * @brief LCD Pixel format 
     */    
-#define LCD_PIXEL_FORMAT_ARGB8888                 LTDC_PIXEL_FORMAT_ARGB8888
-#define LCD_PIXEL_FORMAT_RGB888                     LTDC_PIXEL_FORMAT_RGB888                
-#define LCD_PIXEL_FORMAT_RGB565                     LTDC_PIXEL_FORMAT_RGB565                                
-#define LCD_PIXEL_FORMAT_ARGB1555                 LTDC_PIXEL_FORMAT_ARGB1555                
-#define LCD_PIXEL_FORMAT_ARGB4444                 LTDC_PIXEL_FORMAT_ARGB4444                
-#define LCD_PIXEL_FORMAT_L8                             LTDC_PIXEL_FORMAT_L8                
-#define LCD_PIXEL_FORMAT_AL44                         LTDC_PIXEL_FORMAT_AL44                
-#define LCD_PIXEL_FORMAT_AL88                         LTDC_PIXEL_FORMAT_AL88
+#define LCD_PIXEL_FORMAT_ARGB8888  LTDC_PIXEL_FORMAT_ARGB8888
+#define LCD_PIXEL_FORMAT_RGB888    LTDC_PIXEL_FORMAT_RGB888
+#define LCD_PIXEL_FORMAT_RGB565    LTDC_PIXEL_FORMAT_RGB565
+#define LCD_PIXEL_FORMAT_ARGB1555  LTDC_PIXEL_FORMAT_ARGB1555
+#define LCD_PIXEL_FORMAT_ARGB4444  LTDC_PIXEL_FORMAT_ARGB4444
+#define LCD_PIXEL_FORMAT_L8        LTDC_PIXEL_FORMAT_L8
+#define LCD_PIXEL_FORMAT_AL44      LTDC_PIXEL_FORMAT_AL44
+#define LCD_PIXEL_FORMAT_AL88      LTDC_PIXEL_FORMAT_AL88
 /**
     * @}
     */ 
@@ -167,52 +175,52 @@ typedef enum
 /** @defgroup STM32F429I_DISCOVERY_LCD_Exported_Functions
     * @{
     */ 
-uint8_t    BSP_LCD_Init(void);
-uint32_t BSP_LCD_GetXSize(void);
-uint32_t BSP_LCD_GetYSize(void);
+uint8_t  lcd_ctrl_init(void);
+uint32_t lcd_ctrl_getXSize(void);
+uint32_t lcd_ctrl_getYSize(void);
 
 /* functions using the LTDC controller */
-void         BSP_LCD_LayerDefaultInit(uint16_t LayerIndex, uint32_t FrameBuffer);
-void         BSP_LCD_SetTransparency(uint32_t LayerIndex, uint8_t Transparency);
-void         BSP_LCD_SetLayerAddress(uint32_t LayerIndex, uint32_t Address);
-void         BSP_LCD_SetColorKeying(uint32_t LayerIndex, uint32_t RGBValue);
-void         BSP_LCD_ResetColorKeying(uint32_t LayerIndex);
-void         BSP_LCD_SetLayerWindow(uint16_t LayerIndex, uint16_t Xpos, uint16_t Ypos, uint16_t Width, uint16_t Height);
-void         BSP_LCD_SelectLayer(uint32_t LayerIndex);
-void         BSP_LCD_SetLayerVisible(uint32_t LayerIndex, FunctionalState state);
+void     lcd_ctrl_layerDefaultInit(uint16_t LayerIndex, uint32_t FrameBuffer);
+void     lcd_ctrl_setTransparency(uint32_t LayerIndex, uint8_t Transparency);
+void     lcd_ctrl_setLayerAddress(uint32_t LayerIndex, uint32_t Address);
+void     lcd_ctrl_setColorKeying(uint32_t LayerIndex, uint32_t RGBValue);
+void     lcd_ctrl_resetColorKeying(uint32_t LayerIndex);
+void     lcd_ctrl_setLayerWindow(uint16_t LayerIndex, uint16_t Xpos, uint16_t Ypos, uint16_t Width, uint16_t Height);
+void     lcd_ctrl_selectLayer(uint32_t LayerIndex);
+void     lcd_ctrl_setLayerVisible(uint32_t LayerIndex, FunctionalState state);
 
-void         BSP_LCD_SetTextColor(uint32_t Color);
-void         BSP_LCD_SetBackColor(uint32_t Color);
-uint32_t BSP_LCD_GetTextColor(void);
-uint32_t BSP_LCD_GetBackColor(void);
-void         BSP_LCD_SetFont(sFONT *pFonts);
-sFONT        *BSP_LCD_GetFont(void);
+void     lcd_ctrl_setTextColor(uint32_t Color);
+void     lcd_ctrl_setBackColor(uint32_t Color);
+uint32_t lcd_ctrl_getTextColor(void);
+uint32_t lcd_ctrl_getBackColor(void);
+void     lcd_ctrl_setFont(sFONT *pFonts);
+sFONT    *lcd_ctrl_getFont(void);
 
-uint32_t BSP_LCD_ReadPixel(uint16_t Xpos, uint16_t Ypos);
-void         BSP_LCD_DrawPixel(uint16_t Xpos, uint16_t Ypos, uint32_t pixel);
-void         BSP_LCD_Clear(uint32_t Color);
-void         BSP_LCD_ClearStringLine(uint32_t Line);
-void         BSP_LCD_DisplayStringAtLine(uint16_t Line, uint8_t *ptr);
-void         BSP_LCD_DisplayStringAt(uint16_t X, uint16_t Y, uint8_t *pText, Text_AlignModeTypdef mode);
-void         BSP_LCD_DisplayChar(uint16_t Xpos, uint16_t Ypos, uint8_t Ascii);
+uint32_t lcd_ctrl_readPixel(uint16_t Xpos, uint16_t Ypos);
+void     lcd_ctrl_drawPixel(uint16_t Xpos, uint16_t Ypos, uint32_t pixel);
+void     lcd_ctrl_clear(uint32_t Color);
+void     lcd_ctrl_clearStringLine(uint32_t Line);
+void     lcd_ctrl_displayStringAtLine(uint16_t Line, uint8_t *ptr);
+void     lcd_ctrl_displayStringAt(uint16_t X, uint16_t Y, uint8_t *pText, Text_AlignModeTypdef mode);
+void     lcd_ctrl_displayChar(uint16_t Xpos, uint16_t Ypos, uint8_t Ascii);
 
-void         BSP_LCD_DrawHLine(uint16_t Xpos, uint16_t Ypos, uint16_t Length);
-void         BSP_LCD_DrawVLine(uint16_t Xpos, uint16_t Ypos, uint16_t Length);
-void         BSP_LCD_DrawLine(uint16_t X1, uint16_t Y1, uint16_t X2, uint16_t Y2);
-void         BSP_LCD_DrawRect(uint16_t Xpos, uint16_t Ypos, uint16_t Width, uint16_t Height);
-void         BSP_LCD_DrawCircle(uint16_t Xpos, uint16_t Ypos, uint16_t Radius);
-void         BSP_LCD_DrawPolygon(pPoint Points, uint16_t PointCount);
-void         BSP_LCD_DrawEllipse(int Xpos, int Ypos, int XRadius, int YRadius);
-void         BSP_LCD_DrawBitmap(uint32_t X, uint32_t Y, uint8_t *pBmp);
+void     lcd_ctrl_drawHLine(uint16_t Xpos, uint16_t Ypos, uint16_t Length);
+void     lcd_ctrl_drawVLine(uint16_t Xpos, uint16_t Ypos, uint16_t Length);
+void     lcd_ctrl_drawLine(uint16_t X1, uint16_t Y1, uint16_t X2, uint16_t Y2);
+void     lcd_ctrl_drawRect(uint16_t Xpos, uint16_t Ypos, uint16_t Width, uint16_t Height);
+void     lcd_ctrl_drawCircle(uint16_t Xpos, uint16_t Ypos, uint16_t Radius);
+void     lcd_ctrl_drawPolygon(pPoint Points, uint16_t PointCount);
+void     lcd_ctrl_drawEllipse(int Xpos, int Ypos, int XRadius, int YRadius);
+void     lcd_ctrl_drawBitmap(uint32_t X, uint32_t Y, uint8_t *pBmp);
 
-void         BSP_LCD_FillRect(uint16_t Xpos, uint16_t Ypos, uint16_t Width, uint16_t Height);
-void         BSP_LCD_FillCircle(uint16_t Xpos, uint16_t Ypos, uint16_t Radius);
-void         BSP_LCD_FillTriangle(uint16_t X1, uint16_t X2, uint16_t X3, uint16_t Y1, uint16_t Y2, uint16_t Y3);
-void         BSP_LCD_FillPolygon(pPoint Points, uint16_t PointCount);
-void         BSP_LCD_FillEllipse(int Xpos, int Ypos, int XRadius, int YRadius);
+void     lcd_ctrl_fillRect(uint16_t Xpos, uint16_t Ypos, uint16_t Width, uint16_t Height);
+void     lcd_ctrl_fillCircle(uint16_t Xpos, uint16_t Ypos, uint16_t Radius);
+void     lcd_ctrl_fillTriangle(uint16_t X1, uint16_t X2, uint16_t X3, uint16_t Y1, uint16_t Y2, uint16_t Y3);
+void     lcd_ctrl_fillPolygon(pPoint Points, uint16_t PointCount);
+void     lcd_ctrl_fillEllipse(int Xpos, int Ypos, int XRadius, int YRadius);
 
-void         BSP_LCD_DisplayOff(void);
-void         BSP_LCD_DisplayOn(void);
+void     lcd_ctrl_displayOff(void);
+void     lcd_ctrl_displayOn(void);
 
 /**
     * @}
