@@ -61,7 +61,7 @@ void mp_hal_stdout_tx_strn(const char *str, size_t len) {
         usb_vcp_send_strn(str, len);
     }
 #if defined(MICROPY_PY_LCDCTRL) && (MICROPY_PY_LCDCTRL == 1)
-    lcd_log_write(0, str, len);
+    //lcd_log_write(0, str, len);
 #endif
 }
 
@@ -74,7 +74,7 @@ void mp_hal_stdout_tx_strn_cooked(const char *str, size_t len) {
         usb_vcp_send_strn_cooked(str, len);
     }
 #if defined(MICROPY_PY_LCDCTRL) && (MICROPY_PY_LCDCTRL == 1)
-    lcd_log_write(0, str, len);
+    //lcd_log_write(0, str, len);
 #endif
 }
 

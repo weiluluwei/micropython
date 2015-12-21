@@ -90,7 +90,7 @@
     */ 
 typedef struct _LCD_LOG_line
 {
-    uint8_t    line[128];
+    char     line[128];
     uint32_t color;
 }LCD_LOG_line;
 

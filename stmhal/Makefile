@@ -256,6 +256,7 @@ SRC_MOD += $(addprefix $(LCDCTRL_DIR)/src/,\
 	lcd_ctrl.c \
 	lcd_log.c \
 	lcd_io.c \
+	pyb_lcd_ctrl.c \
 )
 SRC_MOD += $(addprefix $(LCDCTRL_DIR)/src/Fonts/,\
 	font12.c \

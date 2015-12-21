@@ -201,7 +201,7 @@ void     lcd_ctrl_drawPixel(uint16_t Xpos, uint16_t Ypos, uint32_t pixel);
 void     lcd_ctrl_clear(uint32_t Color);
 void     lcd_ctrl_clearStringLine(uint32_t Line);
 void     lcd_ctrl_displayStringAtLine(uint16_t Line, uint8_t *ptr);
-void     lcd_ctrl_displayStringAt(uint16_t X, uint16_t Y, uint8_t *pText, Text_AlignModeTypdef mode);
+void     lcd_ctrl_displayStringAt(uint16_t X, uint16_t Y, const uint8_t *pText, Text_AlignModeTypdef mode);
 void     lcd_ctrl_displayChar(uint16_t Xpos, uint16_t Ypos, uint8_t Ascii);
 
 void     lcd_ctrl_drawHLine(uint16_t Xpos, uint16_t Ypos, uint16_t Length);

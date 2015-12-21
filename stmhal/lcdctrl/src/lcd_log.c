@@ -198,7 +198,7 @@ void lcd_log_setHeader (uint8_t *header)
         lcd_ctrl_setTextColor(LCD_LOG_SOLID_TEXT_COLOR);
         lcd_ctrl_setBackColor(LCD_LOG_SOLID_BACKGROUND_COLOR);
 
-        lcd_ctrl_displayStringAt(0, ((LCD_LOG_HEADER_FONT.Height * (LCD_LOG_HEADER_SIZE - 1))>>2), header, CENTER_MODE);
+        lcd_ctrl_displayStringAt(0, ((LCD_LOG_HEADER_FONT.Height * (LCD_LOG_HEADER_SIZE - 1))>>2), (uint8_t*)header, CENTER_MODE);
 
         lcd_ctrl_setBackColor(LCD_LOG_BACKGROUND_COLOR);
         lcd_ctrl_setTextColor(LCD_LOG_TEXT_COLOR);

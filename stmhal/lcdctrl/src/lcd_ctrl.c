@@ -537,11 +537,11 @@ void lcd_ctrl_displayChar(uint16_t Xpos, uint16_t Ypos, uint8_t Ascii)
     *                                @arg LEFT_MODE     
     * @retval None
     */
-void lcd_ctrl_displayStringAt(uint16_t X, uint16_t Y, uint8_t *pText, Text_AlignModeTypdef mode)
+void lcd_ctrl_displayStringAt(uint16_t X, uint16_t Y, const uint8_t *pText, Text_AlignModeTypdef mode)
 {
     uint16_t refcolumn = 1, i = 0;
     uint32_t size = 0, xsize = 0; 
-    uint8_t    *ptr = pText;
+    const uint8_t    *ptr = pText;
     
     /* Get the text size */
     while (*ptr++) size ++ ;
