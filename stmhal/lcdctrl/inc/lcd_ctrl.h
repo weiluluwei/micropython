@@ -37,34 +37,22 @@
     */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32F429I_DISCOVERY_LCD_H
-#define __STM32F429I_DISCOVERY_LCD_H
+#ifndef __LCDCTRL_H
+#define __LCDCTRL_H
 
 #ifdef __cplusplus
  extern "C" {
 #endif 
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f429i_discovery.h"
+#include <lcdctrl/inc/lcd_io.h>
 /* Include SDRAM Driver */
-#include "stm32f429i_discovery_sdram.h"
+#include "sdram.h"
 #include "fonts.h"
 /* Include LCD component driver */
 #include "ili9341.h"
 
-/** @addtogroup BSP
-    * @{
-    */
-
-/** @addtogroup STM32F429I_DISCOVERY
-    * @{
-    */ 
-        
-/** @defgroup STM32F429I_DISCOVERY_LCD
-    * @{
-    */ 
-
-/** @defgroup STM32F429I_DISCOVERY_LCD_Exported_Types
+/** @defgroup lcdctrl_Exported_Types
     * @{
     */
 typedef enum 
@@ -88,17 +76,19 @@ typedef struct
 } Point, * pPoint;     
      
 /** 
-    * @brief    Line mode structures definition    
-    */ 
+* @brief    Line mode structures definition
+*/
 typedef enum
 {
     CENTER_MODE                         = 0x01,        /* center mode */
     RIGHT_MODE                            = 0x02,        /* right mode    */         
     LEFT_MODE                             = 0x03,        /* left mode     */                                                                                                                                                             
 }Text_AlignModeTypdef;
+
+
 /**
-    * @}
-    */ 
+* @}
+*/
 
 /** @defgroup STM32F429I_DISCOVERY_LCD_Exported_Constants
     * @{
@@ -106,15 +96,15 @@ typedef enum
 #define LCD_LayerCfgTypeDef        LTDC_LayerCfgTypeDef
 
 /** 
-    * @brief    LCD status structure definition    
-    */         
+* @brief    LCD status structure definition
+*/
 #define MAX_LAYER_NUMBER             2
 #define LCD_FRAME_BUFFER             ((uint32_t)0xD0000000)
 #define BUFFER_OFFSET                    ((uint32_t)0x50000) 
 
 /** 
-    * @brief    LCD color    
-    */ 
+* @brief    LCD color
+*/
 #define LCD_COLOR_BLUE            0xFF0000FF
 #define LCD_COLOR_GREEN           0xFF00FF00
 #define LCD_COLOR_RED             0xFFFF0000
@@ -244,6 +234,6 @@ void         BSP_LCD_DisplayOn(void);
 }
 #endif
 
-#endif /* __STM32F429I_DISCOVERY_LCD_H */
+#endif /* __LCDCTRL_H__LCDCTRL_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

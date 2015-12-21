@@ -129,7 +129,7 @@ void LCD_LOG_SetFooter(uint8_t *Status);
 void LCD_LOG_ClearTextZone(void);
 void LCD_LOG_UpdateDisplay (void);
 void LCD_LOG_Write(int fd, const char* buf, size_t nbyte);
-void LCD_LOG_Putc(int ch);
+int  LCD_LOG_Putc(int ch);
 
 #if (LCD_SCROLL_ENABLED == 1)
  ErrorStatus LCD_LOG_ScrollBack(void);

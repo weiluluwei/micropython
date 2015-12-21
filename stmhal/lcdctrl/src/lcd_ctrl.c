@@ -74,7 +74,11 @@
 ------------------------------------------------------------------------------*/
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f429i_discovery_lcd.h"
+#include <stdint.h>
+#include STM32_HAL_H
+#include "lcd_drv.h"
+#include "lcd_ctrl.h"
+#include "ili9341.h"
 #include "fonts.h"
 /** @addtogroup BSP
     * @{
@@ -142,6 +146,7 @@ static void ConvertLineToARGB8888(void *pSrc, void *pDst, uint32_t xSize, uint32
 /** @defgroup STM32F429I_DISCOVERY_LCD_Private_Functions
     * @{
     */ 
+
 
 /**
     * @brief    Initializes the LCD.

@@ -1,6 +1,6 @@
 /**
     ******************************************************************************
-    * @file        lcd.h
+    * @file        lcd_drv.h
     * @author    MCD Application Team
     * @version V4.0.1
     * @date        21-July-2015
@@ -36,8 +36,8 @@
     */ 
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __LCD_H
-#define __LCD_H
+#ifndef __LCD_DRV_H
+#define __LCD_DRV_H
 
 #ifdef __cplusplus
  extern "C" {

@@ -245,6 +245,39 @@ SRC_MOD += $(addprefix $(CC3000_DIR)/src/,\
 	)
 endif
 
+
+# for simple lcd support
+ifeq ($(MICROPY_PY_LCDCTRL),1)
+LCDCTRL_DIR=lcdctrl
+INC += -I$(LCDCTRL_DIR)/inc
+CFLAGS_MOD += -DMICROPY_PY_LCDCTRL=1
+SRC_MOD += $(addprefix $(LCDCTRL_DIR)/src/,\
+	ili9341.c \
+	lcd_ctrl.c \
+	lcd_log.c \
+	lcd_io.c \
+)
+SRC_MOD += $(addprefix $(LCDCTRL_DIR)/src/Fonts/,\
+	font12.c \
+	font16.c \
+	font20.c \
+	font24.c \
+	font8.c  \
+)
+SDRAM_DIR=sdram
+INC += -I$(SDRAM_DIR)/inc
+SRC_MOD += $(addprefix $(SDRAM_DIR)/src/,\
+	sdram.c \
+)
+SRC_HAL += $(addprefix $(HAL_DIR)/src/stm32$(MCU_SERIES)xx_,\
+	hal_dma2d.c \
+	hal_ltdc.c \
+	hal_sdram.c \
+	ll_fmc.c \
+)
+endif
+
+
 OBJ =
 OBJ += $(PY_O)
 OBJ += $(addprefix $(BUILD)/, $(SRC_LIB:.c=.o))

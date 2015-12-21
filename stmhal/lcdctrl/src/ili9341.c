@@ -36,6 +36,9 @@
     */ 
 
 /* Includes ------------------------------------------------------------------*/
+#include <stdint.h>
+#include "lcd_drv.h"
+#include "lcd_io.h"
 #include "ili9341.h"
 
 /** @addtogroup BSP

@@ -40,7 +40,7 @@
 #define    __LCD_LOG_CONF_H
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f429i_discovery_lcd.h"
+#include "lcd_ctrl.h"
 #include <stdio.h>
 
 

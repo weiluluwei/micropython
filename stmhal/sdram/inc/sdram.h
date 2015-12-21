@@ -45,7 +45,7 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f429i_discovery.h"
+#include <lcdctrl/inc/lcd_io.h>
 
 /** @addtogroup BSP
     * @{

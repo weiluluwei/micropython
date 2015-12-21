@@ -47,9 +47,11 @@
     */
 
 /* Includes ------------------------------------------------------------------*/
-#include    <stdio.h>
+#include <stdio.h>
 #include <stdbool.h>
-#include    "lcd_log.h"
+#include "stm32f4xx.h"
+#include "lcd_drv.h"
+#include "lcd_log.h"
 
 /** @addtogroup Utilities
     * @{
@@ -249,7 +251,7 @@ void LCD_LOG_ClearTextZone(void)
 
 LCD_LOG_PUTCHAR
 {
-    return LCD_LOG_putc(ch);
+    return LCD_LOG_Putc(ch);
 }
 
 /**
@@ -269,7 +271,7 @@ void LCD_LOG_Write(int fd, const char* buf, size_t nbyte)
         	LCD_LineColor = (fd == 2)?LCD_COLOR_RED:LCD_LOG_TEXT_COLOR;
             for (i=0;i<nbyte;i++)
             {
-                LCD_LOG_putc(buf[i]);
+                LCD_LOG_Putc(buf[i]);
             }
         }
     }
@@ -279,10 +281,9 @@ void LCD_LOG_Write(int fd, const char* buf, size_t nbyte)
 /**
     * @brief    Redirect the printf to the LCD
     * @param    c: character to be displayed
-    * @param    f: output file pointer
-    * @retval None
+    * @retval char
  */
-void LCD_LOG_putc(int ch)
+int LCD_LOG_Putc(int ch)
 {
     if (LCD_is_initialized)
     {
@@ -350,8 +351,8 @@ void LCD_LOG_putc(int ch)
 
             }
         }
-        return ch;
     }
+    return ch;
 }
     
 /**
