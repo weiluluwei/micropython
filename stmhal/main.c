@@ -354,11 +354,11 @@ static void LCD_Config(void)
     lcd_ctrl_selectLayer(LCD_FOREGROUND_LAYER);
 
     /* LCD Log initialization */
-    LCD_LOG_Init();
+    lcd_log_init();
 
-    LCD_LOG_SetHeader((uint8_t *)"MICROPYTHON");
+    lcd_log_setHeader((uint8_t *)"MICROPYTHON");
     LCD_UsrLog("*** Application started. ***\n");
-    LCD_LOG_SetFooter ((uint8_t *)"                   Baerospace GmbH");
+    lcd_log_setFooter ((uint8_t *)"                   Baerospace GmbH");
 }
 
 int main(void) {

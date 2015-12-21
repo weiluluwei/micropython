@@ -1,43 +1,50 @@
 /**
-    ******************************************************************************
-    * @file        lcd_log.h
-    * @author    MCD Application Team
-    * @version V1.0.0
-    * @date        18-February-2014
-    * @brief     header for the lcd_log.c file
-    ******************************************************************************
-    * @attention
-    *
-    * <h2><center>&copy; COPYRIGHT(c) 2014 STMicroelectronics</center></h2>
-    *
-    * Redistribution and use in source and binary forms, with or without modification,
-    * are permitted provided that the following conditions are met:
-    *     1. Redistributions of source code must retain the above copyright notice,
-    *            this list of conditions and the following disclaimer.
-    *     2. Redistributions in binary form must reproduce the above copyright notice,
-    *            this list of conditions and the following disclaimer in the documentation
-    *            and/or other materials provided with the distribution.
-    *     3. Neither the name of STMicroelectronics nor the names of its contributors
-    *            may be used to endorse or promote products derived from this software
-    *            without specific prior written permission.
-    *
-    * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-    * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-    * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-    * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-    * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-    * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-    * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-    * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-    *
-    ******************************************************************************
-    */ 
+ * lcd_log.h
+ *
+ * This file is a copy of lcd_log.h from
+ * STM32Cube_FW_F4_V1.7.0/Utilities/Log/lcd_log.h
+ * function names were fixed with following sed command:
+ * 's/\(LCD_LOG_\)\([A-Z]\)/lcd_log_\l\2/g'
+ *
+ ******************************************************************************
+ * @file      lcd_log.h
+ * @author    MCD Application Team
+ * @version   V1.0.0
+ * @date      18-February-2014
+ * @brief     header for the lcd_log.c file
+ ******************************************************************************
+ * @attention
+ *
+ * <h2><center>&copy; COPYRIGHT(c) 2014 STMicroelectronics</center></h2>
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *     1. Redistributions of source code must retain the above copyright notice,
+ *            this list of conditions and the following disclaimer.
+ *     2. Redistributions in binary form must reproduce the above copyright notice,
+ *            this list of conditions and the following disclaimer in the documentation
+ *            and/or other materials provided with the distribution.
+ *     3. Neither the name of STMicroelectronics nor the names of its contributors
+ *            may be used to endorse or promote products derived from this software
+ *            without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ ******************************************************************************
+ */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef    __LCD_LOG_H__
-#define    __LCD_LOG_H__
+#ifndef    __lcd_log_h__
+#define    __lcd_log_h__
 
 /* Includes ------------------------------------------------------------------*/
 
@@ -65,7 +72,7 @@
     */ 
 
 
-/** @defgroup LCD_LOG_Exported_Defines
+/** @defgroup lcd_log_exported_Defines
     * @{
     */ 
 
@@ -78,7 +85,7 @@
     * @}
     */ 
 
-/** @defgroup LCD_LOG_Exported_Types
+/** @defgroup lcd_log_exported_Types
     * @{
     */ 
 typedef struct _LCD_LOG_line
@@ -91,26 +98,26 @@ typedef struct _LCD_LOG_line
     * @}
     */ 
 
-/** @defgroup LCD_LOG_Exported_Macros
+/** @defgroup lcd_log_exported_Macros
     * @{
     */ 
 #define    LCD_ErrLog(...)        LCD_LineColor = LCD_COLOR_RED;\
-                                                        printf("ERROR: ") ;\
-                                                        printf(__VA_ARGS__);\
-                                                        LCD_LineColor = LCD_LOG_DEFAULT_COLOR
+                                                  printf("ERROR: ") ;\
+                                                  printf(__VA_ARGS__);\
+                                                  LCD_LineColor = lcd_log_dEFAULT_COLOR
 
 #define    LCD_UsrLog(...)        LCD_LineColor = LCD_LOG_TEXT_COLOR;\
-                                                        printf(__VA_ARGS__);\
+                                                  printf(__VA_ARGS__);\
 
 
 #define    LCD_DbgLog(...)        LCD_LineColor = LCD_COLOR_CYAN;\
-                                                        printf(__VA_ARGS__);\
-                                                        LCD_LineColor = LCD_LOG_DEFAULT_COLOR
+                                                  printf(__VA_ARGS__);\
+                                                  LCD_LineColor = lcd_log_dEFAULT_COLOR
 /**
     * @}
     */ 
 
-/** @defgroup LCD_LOG_Exported_Variables
+/** @defgroup lcd_log_exported_Variables
     * @{
     */ 
 extern uint32_t LCD_LineColor;
@@ -119,28 +126,28 @@ extern uint32_t LCD_LineColor;
     * @}
     */ 
 
-/** @defgroup LCD_LOG_Exported_FunctionsPrototype
+/** @defgroup lcd_log_exported_FunctionsPrototype
     * @{
     */ 
-void LCD_LOG_Init(void);
-void LCD_LOG_DeInit(void);
-void LCD_LOG_SetHeader(uint8_t *Title);
-void LCD_LOG_SetFooter(uint8_t *Status);
-void LCD_LOG_ClearTextZone(void);
-void LCD_LOG_UpdateDisplay (void);
-void LCD_LOG_Write(int fd, const char* buf, size_t nbyte);
-int  LCD_LOG_Putc(int ch);
+void lcd_log_init(void);
+void lcd_log_deInit(void);
+void lcd_log_setHeader(uint8_t *Title);
+void lcd_log_setFooter(uint8_t *Status);
+void lcd_log_clearTextZone(void);
+void lcd_log_updateDisplay (void);
+void lcd_log_write(int fd, const char* buf, size_t nbyte);
+int  lcd_log_putc(int ch);
 
 #if (LCD_SCROLL_ENABLED == 1)
- ErrorStatus LCD_LOG_ScrollBack(void);
- ErrorStatus LCD_LOG_ScrollForward(void);
+ ErrorStatus lcd_log_scrollBack(void);
+ ErrorStatus lcd_log_scrollForward(void);
 #endif
 /**
     * @}
     */ 
 
 
-#endif /* __LCD_LOG_H__ */
+#endif /* __lcd_log_h__ */
 
 /**
     * @}

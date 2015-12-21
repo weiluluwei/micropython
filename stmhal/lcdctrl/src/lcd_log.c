@@ -1,105 +1,110 @@
 /**
-    ******************************************************************************
-    * @file        lcd_log.c
-    * @author    MCD Application Team
-    * @version V1.0.0
-    * @date        18-February-2014
-    * @brief     This file provides all the LCD Log firmware functions.
-    *                    
-    *                    The LCD Log module allows to automatically set a header and footer
-    *                    on any application using the LCD display and allows to dump user,
-    *                    debug and error messages by using the following macros: LCD_ErrLog(),
-    *                    LCD_UsrLog() and LCD_DbgLog().
-    *                 
-    *                    It supports also the scroll feature by embedding an internal software
-    *                    cache for display. This feature allows to dump message sequentially
-    *                    on the display even if the number of displayed lines is bigger than
-    *                    the total number of line allowed by the display.
-    *            
-    ******************************************************************************
-    * @attention
-    *
-    * <h2><center>&copy; COPYRIGHT(c) 2014 STMicroelectronics</center></h2>
-    *
-    * Redistribution and use in source and binary forms, with or without modification,
-    * are permitted provided that the following conditions are met:
-    *     1. Redistributions of source code must retain the above copyright notice,
-    *            this list of conditions and the following disclaimer.
-    *     2. Redistributions in binary form must reproduce the above copyright notice,
-    *            this list of conditions and the following disclaimer in the documentation
-    *            and/or other materials provided with the distribution.
-    *     3. Neither the name of STMicroelectronics nor the names of its contributors
-    *            may be used to endorse or promote products derived from this software
-    *            without specific prior written permission.
-    *
-    * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-    * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-    * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-    * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-    * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-    * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-    * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-    * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-    *
-    ******************************************************************************
-    */
+ * This file is a copy of lcd_log.c from
+ * STM32Cube_FW_F4_V1.7.0/Utilities/Log/lcd_log.c
+ * function names were fixed with following sed command:
+ * 's/\(LCD_LOG_\)\([A-Z]\)/lcd_log_\l\2/g'
+ ******************************************************************************
+ * @file        lcd_log.c
+ * @author    MCD Application Team
+ * @version V1.0.0
+ * @date        18-February-2014
+ * @brief     This file provides all the LCD Log firmware functions.
+ *
+ *                    The LCD Log module allows to automatically set a header and footer
+ *                    on any application using the LCD display and allows to dump user,
+ *                    debug and error messages by using the following macros: LCD_ErrLog(),
+ *                    LCD_UsrLog() and LCD_DbgLog().
+ *
+ *                    It supports also the scroll feature by embedding an internal software
+ *                    cache for display. This feature allows to dump message sequentially
+ *                    on the display even if the number of displayed lines is bigger than
+ *                    the total number of line allowed by the display.
+ *
+ ******************************************************************************
+ * @attention
+ *
+ * <h2><center>&copy; COPYRIGHT(c) 2014 STMicroelectronics</center></h2>
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *     1. Redistributions of source code must retain the above copyright notice,
+ *            this list of conditions and the following disclaimer.
+ *     2. Redistributions in binary form must reproduce the above copyright notice,
+ *            this list of conditions and the following disclaimer in the documentation
+ *            and/or other materials provided with the distribution.
+ *     3. Neither the name of STMicroelectronics nor the names of its contributors
+ *            may be used to endorse or promote products derived from this software
+ *            without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ ******************************************************************************
+ */
 
 /* Includes ------------------------------------------------------------------*/
 #include <stdio.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include "stm32f4xx.h"
 #include "lcd_drv.h"
 #include "lcd_log.h"
 
 /** @addtogroup Utilities
-    * @{
-    */
+ * @{
+ */
 
 /** @addtogroup STM32_EVAL
-* @{
-*/
+ * @{
+ */
 
 /** @addtogroup Common
-    * @{
-    */
+ * @{
+ */
 
 /** @defgroup LCD_LOG 
-* @brief LCD Log LCD_Application module
-* @{
-*/ 
+ * @brief LCD Log LCD_Application module
+ * @{
+ */ 
 
-/** @defgroup LCD_LOG_Private_Types
-* @{
-*/ 
+/** @defgroup lcd_log_private_Types
+ * @{
+ */ 
 /**
-* @}
-*/ 
+ * @}
+ */ 
 
 
-/** @defgroup LCD_LOG_Private_Defines
-* @{
-*/ 
+/** @defgroup lcd_log_private_Defines
+ * @{
+ */ 
 
 /**
-* @}
-*/ 
+ * @}
+ */ 
 
 /* Define the display window settings */
 #define         YWINDOW_MIN                 (LCD_LOG_HEADER_SIZE)
 
-/** @defgroup LCD_LOG_Private_Macros
-* @{
-*/ 
+/** @defgroup lcd_log_private_Macros
+ * @{
+ */ 
 /**
-* @}
-*/ 
+ * @}
+ */ 
 
 
-/** @defgroup LCD_LOG_Private_Variables
-* @{
-*/ 
+/** @defgroup lcd_log_private_Variables
+ * @{
+ */ 
 bool LCD_is_initialized = false;
 LCD_LOG_line LCD_CacheBuffer [LCD_CACHE_DEPTH]; 
 uint32_t LCD_LineColor;
@@ -117,34 +122,34 @@ FunctionalState LCD_Scrolled;
 uint16_t LCD_ScrollBackStep;
 
 /**
-* @}
-*/ 
+ * @}
+ */ 
 
 
-/** @defgroup LCD_LOG_Private_FunctionPrototypes
-* @{
-*/ 
-
-/**
-* @}
-*/ 
-
-
-/** @defgroup LCD_LOG_Private_Functions
-* @{
-*/ 
-
+/** @defgroup lcd_log_private_FunctionPrototypes
+ * @{
+ */ 
 
 /**
-    * @brief    Initializes the LCD Log module 
-    * @param    None
-    * @retval None
-    */
+ * @}
+ */ 
 
-void LCD_LOG_Init ( void)
+
+/** @defgroup lcd_log_private_Functions
+ * @{
+ */ 
+
+
+/**
+ * @brief    Initializes the LCD Log module 
+ * @param    None
+ * @retval None
+ */
+
+void lcd_log_init ( void)
 {
     /* Deinit LCD cache */
-    LCD_LOG_DeInit();
+    lcd_log_deInit();
 
     /* Clear the LCD */
     lcd_ctrl_clear(LCD_LOG_BACKGROUND_COLOR);
@@ -153,11 +158,11 @@ void LCD_LOG_Init ( void)
 }
 
 /**
-    * @brief DeInitializes the LCD Log module. 
-    * @param    None
-    * @retval None
-    */
-void LCD_LOG_DeInit(void)
+ * @brief DeInitializes the LCD Log module. 
+ * @param    None
+ * @retval None
+ */
+void lcd_log_deInit(void)
 {
     LCD_LineColor = LCD_LOG_TEXT_COLOR;
     LCD_CacheBuffer_xptr = 0;
@@ -175,11 +180,11 @@ void LCD_LOG_DeInit(void)
 }
 
 /**
-* @brief    Display the application header on the LCD screen
-* @param    header: pointer to the string to be displayed
-* @retval None
-*/
-void LCD_LOG_SetHeader (uint8_t *header)
+ * @brief    Display the application header on the LCD screen
+ * @param    header: pointer to the string to be displayed
+ * @retval None
+ */
+void lcd_log_setHeader (uint8_t *header)
 {
     if (LCD_is_initialized)
     {
@@ -202,11 +207,11 @@ void LCD_LOG_SetHeader (uint8_t *header)
 }
 
 /**
-* @brief    Display the application footer on the LCD screen
-* @param    footer: pointer to the string to be displayed
-* @retval None
-*/
-void LCD_LOG_SetFooter(uint8_t *footer)
+ * @brief    Display the application footer on the LCD screen
+ * @param    footer: pointer to the string to be displayed
+ * @retval None
+ */
+void lcd_log_setFooter(uint8_t *footer)
 {
     if (LCD_is_initialized)
     {
@@ -230,11 +235,11 @@ void LCD_LOG_SetFooter(uint8_t *footer)
 }
 
 /**
-* @brief    Clear the Text Zone
-* @param    None
-* @retval None
-*/
-void LCD_LOG_ClearTextZone(void)
+ * @brief    Clear the Text Zone
+ * @param    None
+ * @retval None
+ */
+void lcd_log_clearTextZone(void)
 {
     if (LCD_is_initialized)
     {
@@ -245,23 +250,18 @@ void LCD_LOG_ClearTextZone(void)
             lcd_ctrl_clearStringLine(i + YWINDOW_MIN);
         }
 
-        LCD_LOG_DeInit();
+        lcd_log_deInit();
     }
 }
 
-LCD_LOG_PUTCHAR
-{
-    return LCD_LOG_Putc(ch);
-}
-
 /**
-    * @brief    Write buffer content to LCD
-    * @param    fd: File descripto (not used)
-    * @param    buf: buffer which should be written to LCD
-    * @param    nbyte: Count of bytes to write
-    * @retval None
+ * @brief    Write buffer content to LCD
+ * @param    fd: File descripto (not used)
+ * @param    buf: buffer which should be written to LCD
+ * @param    nbyte: Count of bytes to write
+ * @retval None
  */
-void LCD_LOG_Write(int fd, const char* buf, size_t nbyte)
+void lcd_log_write(int fd, const char* buf, size_t nbyte)
 {
     if (LCD_is_initialized)
     {
@@ -271,7 +271,7 @@ void LCD_LOG_Write(int fd, const char* buf, size_t nbyte)
         	LCD_LineColor = (fd == 2)?LCD_COLOR_RED:LCD_LOG_TEXT_COLOR;
             for (i=0;i<nbyte;i++)
             {
-                LCD_LOG_Putc(buf[i]);
+                lcd_log_putc(buf[i]);
             }
         }
     }
@@ -279,11 +279,11 @@ void LCD_LOG_Write(int fd, const char* buf, size_t nbyte)
 
 
 /**
-    * @brief    Redirect the printf to the LCD
-    * @param    c: character to be displayed
-    * @retval char
+ * @brief    Redirect the printf to the LCD
+ * @param    c: character to be displayed
+ * @retval char
  */
-int LCD_LOG_Putc(int ch)
+int lcd_log_putc(int ch)
 {
     if (LCD_is_initialized)
     {
@@ -333,7 +333,7 @@ int LCD_LOG_Putc(int ch)
 
                 LCD_CacheBuffer_xptr = 0;
 
-                LCD_LOG_UpdateDisplay();
+                lcd_log_updateDisplay();
 
                 LCD_CacheBuffer_yptr_bottom ++;
 
@@ -356,11 +356,11 @@ int LCD_LOG_Putc(int ch)
 }
     
 /**
-    * @brief    Update the text area display
-    * @param    None
-    * @retval None
-    */
-void LCD_LOG_UpdateDisplay (void)
+ * @brief    Update the text area display
+ * @param    None
+ * @retval None
+ */
+void lcd_log_updateDisplay (void)
 {
     if (LCD_is_initialized)
     {
@@ -407,11 +407,11 @@ void LCD_LOG_UpdateDisplay (void)
 
 #if( LCD_SCROLL_ENABLED == 1)
 /**
-    * @brief    Display previous text frame
-    * @param    None
-    * @retval Status
-    */
-ErrorStatus LCD_LOG_ScrollBack(void)
+ * @brief    Display previous text frame
+ * @param    None
+ * @retval Status
+ */
+ErrorStatus lcd_log_scrollBack(void)
 {
     if (LCD_is_initialized)
     {
@@ -474,7 +474,7 @@ ErrorStatus LCD_LOG_ScrollBack(void)
                 }
             }
             LCD_ScrollBackStep++;
-            LCD_LOG_UpdateDisplay();
+            lcd_log_updateDisplay();
             LCD_Lock = DISABLE;
         }
     }
@@ -482,11 +482,11 @@ ErrorStatus LCD_LOG_ScrollBack(void)
 }
 
 /**
-    * @brief    Display next text frame
-    * @param    None
-    * @retval Status
-    */
-ErrorStatus LCD_LOG_ScrollForward(void)
+ * @brief    Display next text frame
+ * @param    None
+ * @retval Status
+ */
+ErrorStatus lcd_log_scrollForward(void)
 {
     if (LCD_is_initialized)
     {
@@ -529,7 +529,7 @@ ErrorStatus LCD_LOG_ScrollForward(void)
                     LCD_CacheBuffer_yptr_bottom = 0;
                 }
 
-                LCD_LOG_UpdateDisplay();
+                lcd_log_updateDisplay();
                 LCD_Lock = DISABLE;
 
             }
@@ -546,24 +546,24 @@ ErrorStatus LCD_LOG_ScrollForward(void)
 #endif /* LCD_SCROLL_ENABLED */
 
 /**
-    * @}
-    */
+ * @}
+ */
     
 /**
-    * @}
-    */ 
+ * @}
+ */ 
 
 /**
-    * @}
-    */
+ * @}
+ */
 
 /**
-    * @}
-    */
+ * @}
+ */
 
 /**
-    * @}
-    */
+ * @}
+ */
 
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
