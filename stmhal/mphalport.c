@@ -5,6 +5,8 @@
 #include "py/mphal.h"
 #include "usb.h"
 #include "uart.h"
+#include "lcd_drv.h"
+#include "lcd_log.h"
 
 // this table converts from HAL_StatusTypeDef to POSIX errno
 const byte mp_hal_status_to_errno_table[4] = {
@@ -58,6 +60,9 @@ void mp_hal_stdout_tx_strn(const char *str, size_t len) {
     if (usb_vcp_is_enabled()) {
         usb_vcp_send_strn(str, len);
     }
+#if defined(MICROPY_PY_LCDCTRL) && (MICROPY_PY_LCDCTRL == 1)
+    LCD_LOG_Write(0, str, len);
+#endif
 }
 
 void mp_hal_stdout_tx_strn_cooked(const char *str, size_t len) {
@@ -68,6 +73,9 @@ void mp_hal_stdout_tx_strn_cooked(const char *str, size_t len) {
     if (usb_vcp_is_enabled()) {
         usb_vcp_send_strn_cooked(str, len);
     }
+#if defined(MICROPY_PY_LCDCTRL) && (MICROPY_PY_LCDCTRL == 1)
+    LCD_LOG_Write(0, str, len);
+#endif
 }
 
 void mp_hal_gpio_clock_enable(GPIO_TypeDef *gpio) {
