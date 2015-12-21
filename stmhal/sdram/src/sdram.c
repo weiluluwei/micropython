@@ -107,7 +107,7 @@ static void MspInit(void);
     * @param    None
     * @retval None
     */
-void BSP_SDRAM_Init(void)
+void sdram_init(void)
 {
     /* SDRAM device configuration */
     SdramHandle.Instance = FMC_SDRAM_DEVICE;
@@ -149,7 +149,7 @@ void BSP_SDRAM_Init(void)
     HAL_SDRAM_Init(&SdramHandle, &Timing);
     
     /* SDRAM initialization sequence */
-    BSP_SDRAM_Initialization_sequence(REFRESH_COUNT);
+    sdram_initialization_sequence(REFRESH_COUNT);
 }
 
 /**
@@ -157,7 +157,7 @@ void BSP_SDRAM_Init(void)
     * @param    RefreshCount: SDRAM refresh counter value 
     * @retval None
     */
-void BSP_SDRAM_Initialization_sequence(uint32_t RefreshCount)
+void sdram_initialization_sequence(uint32_t RefreshCount)
 {
     __IO uint32_t tmpmrd =0;
     
@@ -219,7 +219,7 @@ void BSP_SDRAM_Initialization_sequence(uint32_t RefreshCount)
     * @param    uwDataSize: Size of read data from the memory
     * @retval None
     */
-void BSP_SDRAM_ReadData(uint32_t uwStartAddress, uint32_t *pData, uint32_t uwDataSize)
+void sdram_readData(uint32_t uwStartAddress, uint32_t *pData, uint32_t uwDataSize)
 {
     HAL_SDRAM_Read_32b(&SdramHandle, (uint32_t *)uwStartAddress, pData, uwDataSize); 
 }
@@ -231,7 +231,7 @@ void BSP_SDRAM_ReadData(uint32_t uwStartAddress, uint32_t *pData, uint32_t uwDat
     * @param    uwDataSize: Size of read data from the memory
     * @retval None
     */
-void BSP_SDRAM_ReadData_DMA(uint32_t uwStartAddress, uint32_t *pData, uint32_t uwDataSize)
+void sdram_readData_DMA(uint32_t uwStartAddress, uint32_t *pData, uint32_t uwDataSize)
 {
     HAL_SDRAM_Read_DMA(&SdramHandle, (uint32_t *)uwStartAddress, pData, uwDataSize);         
 }
@@ -243,7 +243,7 @@ void BSP_SDRAM_ReadData_DMA(uint32_t uwStartAddress, uint32_t *pData, uint32_t u
     * @param    uwDataSize: Size of written data from the memory
     * @retval None
     */
-void BSP_SDRAM_WriteData(uint32_t uwStartAddress, uint32_t *pData, uint32_t uwDataSize) 
+void sdram_writeData(uint32_t uwStartAddress, uint32_t *pData, uint32_t uwDataSize) 
 {
     /* Disable write protection */
     HAL_SDRAM_WriteProtection_Disable(&SdramHandle);
@@ -259,7 +259,7 @@ void BSP_SDRAM_WriteData(uint32_t uwStartAddress, uint32_t *pData, uint32_t uwDa
     * @param    uwDataSize: Size of written data from the memory
     * @retval None
     */
-void BSP_SDRAM_WriteData_DMA(uint32_t uwStartAddress, uint32_t *pData, uint32_t uwDataSize) 
+void sdram_writeData_DMA(uint32_t uwStartAddress, uint32_t *pData, uint32_t uwDataSize) 
 {
     HAL_SDRAM_Write_DMA(&SdramHandle, (uint32_t *)uwStartAddress, pData, uwDataSize); 
 }
@@ -269,7 +269,7 @@ void BSP_SDRAM_WriteData_DMA(uint32_t uwStartAddress, uint32_t *pData, uint32_t 
     * @param    SdramCmd: Pointer to SDRAM command structure 
     * @retval HAL status
     */    
-HAL_StatusTypeDef BSP_SDRAM_Sendcmd(FMC_SDRAM_CommandTypeDef *SdramCmd)
+HAL_StatusTypeDef sdram_sendcmd(FMC_SDRAM_CommandTypeDef *SdramCmd)
 {
     return(HAL_SDRAM_SendCommand(&SdramHandle, SdramCmd, SDRAM_TIMEOUT));
 }
@@ -279,7 +279,7 @@ HAL_StatusTypeDef BSP_SDRAM_Sendcmd(FMC_SDRAM_CommandTypeDef *SdramCmd)
     * @param    None
     * @retval None
     */
-void BSP_SDRAM_DMA_IRQHandler(void)
+void sdram_DMA_IRQHandler(void)
 {
     HAL_DMA_IRQHandler(SdramHandle.hdma); 
 }

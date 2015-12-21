@@ -3,7 +3,8 @@
  *
  * This file is a copy of stm32f429i_discovery_sdram.h from
  * STM32Cube_FW_F4_V1.7.0/Drivers/BSP/STM32F429I-Discovery/stm32f429i_discovery_sdram.h
- *
+ * function names were fixed with following sed command:
+ * 's/\(BSP_SDRAM_\)\([A-Z]\)/sdram_\l\2/g'
  *
     ******************************************************************************
     * @file    stm32f429i_discovery_sdram.h
@@ -149,14 +150,14 @@
 /** @defgroup STM32F429I_DISCOVERY_SDRAM_Exported_Functions
     * @{
     */
-void              BSP_SDRAM_Init(void);
-void              BSP_SDRAM_Initialization_sequence(uint32_t RefreshCount);
-void              BSP_SDRAM_ReadData(uint32_t uwStartAddress, uint32_t* pData, uint32_t uwDataSize);
-void              BSP_SDRAM_ReadData_DMA(uint32_t uwStartAddress, uint32_t* pData, uint32_t uwDataSize);
-void              BSP_SDRAM_WriteData(uint32_t uwStartAddress, uint32_t* pData, uint32_t uwDataSize);
-void              BSP_SDRAM_WriteData_DMA(uint32_t uwStartAddress, uint32_t* pData, uint32_t uwDataSize);
-HAL_StatusTypeDef BSP_SDRAM_Sendcmd(FMC_SDRAM_CommandTypeDef *SdramCmd);
-void              BSP_SDRAM_DMA_IRQHandler(void);
+void              sdram_init(void);
+void              sdram_initialization_sequence(uint32_t RefreshCount);
+void              sdram_readData(uint32_t uwStartAddress, uint32_t* pData, uint32_t uwDataSize);
+void              sdram_readData_DMA(uint32_t uwStartAddress, uint32_t* pData, uint32_t uwDataSize);
+void              sdram_writeData(uint32_t uwStartAddress, uint32_t* pData, uint32_t uwDataSize);
+void              sdram_writeData_DMA(uint32_t uwStartAddress, uint32_t* pData, uint32_t uwDataSize);
+HAL_StatusTypeDef sdram_sendcmd(FMC_SDRAM_CommandTypeDef *SdramCmd);
+void              sdram_DMA_IRQHandler(void);
 
 /**
     * @}

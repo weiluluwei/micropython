@@ -438,7 +438,7 @@ int main(void) {
 
 #if MICROPY_PY_LCDCTRL == 1
     /* Initialize the SDRAM */
-    BSP_SDRAM_Init();
+    sdram_init();
 
     /* Initialize LCD driver */
     LCD_Config();
