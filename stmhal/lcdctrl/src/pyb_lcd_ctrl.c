@@ -156,7 +156,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(pyb_lcd_write_obj, pyb_lcd_write);
 /// This method writes to the hidden buffer.  Use `show()` to show the buffer.
 STATIC mp_obj_t pyb_lcd_fill(mp_obj_t self_in, mp_obj_t col_in) {
     pyb_lcd_ctrl_obj_t *self = self_in;
-    int col = mp_obj_get_int(col_in)>0?LCD_COLOR_WHITE:LCD_COLOR_BLACK;
+    mp_int_t col = mp_obj_get_int(col_in);
     lcd_ctrl_setTextColor(col);
     lcd_ctrl_fillRect(0, 0, self->xSize, self->ySize);
     return mp_const_none;
@@ -187,9 +187,10 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_3(pyb_lcd_get_obj, pyb_lcd_get);
 /// This method writes to the hidden buffer.  Use `show()` to show the buffer.
 STATIC mp_obj_t pyb_lcd_pixel(mp_uint_t n_args, const mp_obj_t *args) {
     pyb_lcd_ctrl_obj_t *self = args[0];
-    int x = mp_obj_get_int(args[1]);
-    int y = mp_obj_get_int(args[2]);
-    int col = mp_obj_get_int(args[3])>0?LCD_COLOR_WHITE:LCD_COLOR_BLACK;
+    mp_int_t x = mp_obj_get_int(args[1]);
+    mp_int_t y = mp_obj_get_int(args[2]);
+    mp_int_t col = mp_obj_get_int(args[3]);
+    col |= 0xFF000000u;
     if (0 <= x && x < self->xSize && 0 <= y && y < self->ySize) {
         lcd_ctrl_drawPixel(x,y, col);
     }
@@ -206,9 +207,10 @@ STATIC mp_obj_t pyb_lcd_text(mp_uint_t n_args, const mp_obj_t *args) {
     // extract arguments
     mp_uint_t len;
     const char *data = mp_obj_str_get_data(args[1], &len);
-    int x0 = mp_obj_get_int(args[2]);
-    int y0 = mp_obj_get_int(args[3]);
-    int col = mp_obj_get_int(args[4])>0?LCD_COLOR_WHITE:LCD_COLOR_BLACK;
+    mp_int_t x0 = mp_obj_get_int(args[2]);
+    mp_int_t y0 = mp_obj_get_int(args[3]);
+    mp_int_t col = mp_obj_get_int(args[4]);
+    col |= 0xFF000000u;
 
     lcd_ctrl_setTextColor(col);
     lcd_ctrl_displayStringAt(x0, y0, (uint8_t *)data, LEFT_MODE);
