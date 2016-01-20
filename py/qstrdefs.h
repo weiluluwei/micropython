@@ -46,6 +46,7 @@ Q(__locals__)
 Q(__main__)
 Q(__module__)
 Q(__name__)
+Q(__dict__)
 Q(__hash__)
 Q(__next__)
 Q(__qualname__)
@@ -490,7 +491,9 @@ Q(print_exception)
 Q(struct)
 Q(ustruct)
 Q(pack)
+Q(pack_into)
 Q(unpack)
+Q(unpack_from)
 Q(calcsize)
 #endif
 
@@ -569,6 +572,7 @@ Q(property)
 Q(getter)
 Q(setter)
 Q(deleter)
+Q(doc)
 #endif
 
 #if MICROPY_PY_UZLIB
@@ -664,4 +668,14 @@ Q(readblocks)
 Q(writeblocks)
 Q(sync)
 Q(count)
+#endif
+
+#if MICROPY_PY_OS_DUPTERM
+Q(dupterm)
+#endif
+
+#if MICROPY_PY_URANDOM
+Q(urandom)
+Q(getrandbits)
+Q(seed)
 #endif

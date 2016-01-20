@@ -45,6 +45,7 @@
 #include "py/gc.h"
 #include "py/stackctrl.h"
 #include "py/mphal.h"
+#include "extmod/misc.h"
 #include "genhdr/mpversion.h"
 #include "input.h"
 
@@ -61,7 +62,7 @@ long heap_size = 1024*1024 * (sizeof(mp_uint_t) / 4);
 STATIC void stderr_print_strn(void *env, const char *str, size_t len) {
     (void)env;
     ssize_t dummy = write(STDERR_FILENO, str, len);
-    mp_hal_dupterm_tx_strn(str, len);
+    mp_uos_dupterm_tx_strn(str, len);
     (void)dummy;
 }
 
@@ -454,7 +455,7 @@ int main(int argc, char **argv) {
     #if defined(MICROPY_UNIX_COVERAGE)
     {
         MP_DECLARE_CONST_FUN_OBJ(extra_coverage_obj);
-        mp_store_global(QSTR_FROM_STR_STATIC("extra_coverage"), (mp_obj_t)&extra_coverage_obj);
+        mp_store_global(QSTR_FROM_STR_STATIC("extra_coverage"), MP_OBJ_FROM_PTR(&extra_coverage_obj));
     }
     #endif
 

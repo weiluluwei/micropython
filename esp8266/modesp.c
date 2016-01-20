@@ -40,6 +40,9 @@
 #include "spi_flash.h"
 #include "utils.h"
 
+#define MODESP_ESPCONN (1)
+
+#if MODESP_ESPCONN
 STATIC const mp_obj_type_t esp_socket_type;
 
 typedef struct _esp_socket_obj_t {
@@ -79,7 +82,7 @@ STATIC mp_obj_t esp_socket_make_new_base() {
 
 // constructor esp_socket(family=AF_INET, type=SOCK_STREAM, proto=IPPROTO_TCP, fileno=None)
 // Arguments ignored as we do not support UDP (yet)
-STATIC mp_obj_t esp_socket_make_new(mp_obj_t type_in, mp_uint_t n_args,
+STATIC mp_obj_t esp_socket_make_new(const mp_obj_type_t *type_in, mp_uint_t n_args,
     mp_uint_t n_kw, const mp_obj_t *args) {
     mp_arg_check_num(n_args, n_kw, 0, 4, false);
 
@@ -499,6 +502,7 @@ STATIC const mp_obj_type_t esp_socket_type = {
     .make_new = esp_socket_make_new,
     .locals_dict = (mp_obj_t)&esp_socket_locals_dict,
 };
+#endif
 
 #define MODESP_INCLUDE_CONSTANTS (1)
 
@@ -566,14 +570,16 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(esp_flash_read_obj, esp_flash_read);
 STATIC const mp_map_elem_t esp_module_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_esp) },
 
-    { MP_OBJ_NEW_QSTR(MP_QSTR_getaddrinfo), (mp_obj_t)&esp_getaddrinfo_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_wifi_mode), (mp_obj_t)&esp_wifi_mode_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_phy_mode), (mp_obj_t)&esp_phy_mode_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_sleep_type), (mp_obj_t)&esp_sleep_type_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_deepsleep), (mp_obj_t)&esp_deepsleep_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_flash_id), (mp_obj_t)&esp_flash_id_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_flash_read), (mp_obj_t)&esp_flash_read_obj },
+    #if MODESP_ESPCONN
     { MP_OBJ_NEW_QSTR(MP_QSTR_socket), (mp_obj_t)&esp_socket_type },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_getaddrinfo), (mp_obj_t)&esp_getaddrinfo_obj },
+    #endif
 
 #if MODESP_INCLUDE_CONSTANTS
     { MP_OBJ_NEW_QSTR(MP_QSTR_MODE_11B),

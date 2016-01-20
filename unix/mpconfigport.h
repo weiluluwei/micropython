@@ -104,6 +104,7 @@
 #define MICROPY_PY_UHEAPQ           (1)
 #define MICROPY_PY_UHASHLIB         (1)
 #define MICROPY_PY_UBINASCII        (1)
+#define MICROPY_PY_URANDOM          (1)
 #ifndef MICROPY_PY_USELECT
 #define MICROPY_PY_USELECT          (1)
 #endif
@@ -182,6 +183,8 @@ extern const struct _mp_obj_module_t mp_module_jni;
 
 // type definitions for the specific machine
 
+// assume that if we already defined the obj repr then we also defined types
+#ifndef MICROPY_OBJ_REPR
 #ifdef __LP64__
 typedef long mp_int_t; // must be pointer size
 typedef unsigned long mp_uint_t; // must be pointer size
@@ -190,6 +193,7 @@ typedef unsigned long mp_uint_t; // must be pointer size
 // regardless of actual size.
 typedef int mp_int_t; // must be pointer size
 typedef unsigned int mp_uint_t; // must be pointer size
+#endif
 #endif
 
 #define BYTES_PER_WORD sizeof(mp_int_t)
@@ -243,19 +247,9 @@ extern const struct _mp_obj_fun_builtin_t mp_builtin_open_obj;
 
 #define MP_STATE_PORT MP_STATE_VM
 
-#if MICROPY_PY_OS_DUPTERM
-#define ROOT_POINTERS_1 mp_obj_t term_obj
-#include <stddef.h>
-void mp_hal_dupterm_tx_strn(const char *str, size_t len);
-#else
-#define ROOT_POINTERS_1
-#define mp_hal_dupterm_tx_strn(s, l)
-#endif
-
 #define MICROPY_PORT_ROOT_POINTERS \
     const char *readline_hist[50]; \
     mp_obj_t keyboard_interrupt_obj; \
-    ROOT_POINTERS_1; \
     void *mmap_region_head; \
 
 // We need to provide a declaration/definition of alloca()

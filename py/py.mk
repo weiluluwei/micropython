@@ -168,7 +168,9 @@ PY_O_BASENAME = \
 	../extmod/modubinascii.o \
 	../extmod/machine_mem.o \
 	../extmod/modussl.o \
+	../extmod/modurandom.o \
 	../extmod/fsusermount.o \
+	../extmod/moduos_dupterm.o \
 
 # prepend the build destination prefix to the py object files
 PY_O = $(addprefix $(PY_BUILD)/, $(PY_O_BASENAME))
