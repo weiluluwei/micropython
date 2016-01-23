@@ -45,6 +45,8 @@
  extern "C" {
 #endif
 
+#define USB_USE_LSE_MSI_CLOCK
+
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 
