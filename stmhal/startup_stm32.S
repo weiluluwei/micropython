@@ -46,8 +46,10 @@
   .syntax unified
 #if defined(MCU_SERIES_M7)
   .cpu cortex-m7
-#else
+#elif defined(MCU_SERIES_M4)
   .cpu cortex-m4
+#else
+  #error "Unknown MCU Series"
 #endif
   .fpu softvfp
   .thumb

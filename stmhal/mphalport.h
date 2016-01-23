@@ -8,6 +8,8 @@
 #define MP_HAL_UNIQUE_ID_ADDRESS (0x1fff7a10)
 #elif defined(MCU_SERIES_F7)
 #define MP_HAL_UNIQUE_ID_ADDRESS (0x1ff0f420)
+#elif defined(MCU_SERIES_L4)
+#define MP_HAL_UNIQUE_ID_ADDRESS (0x1fff7590)
 #else
 #error mphalport.h: Unrecognized MCU_SERIES
 #endif

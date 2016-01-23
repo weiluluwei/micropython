@@ -372,8 +372,12 @@ int main(void) {
     // which behaves more or less like normal SRAM.
     __HAL_RCC_DTCMRAMEN_CLK_ENABLE();
     #else
-    // enable the CCM RAM
-    __CCMDATARAMEN_CLK_ENABLE();
+        #if defined(__HAL_RCC_CCMDATARAMEN_CLK_ENABLE)
+        // enable the CCM RAM clock
+        __HAL_RCC_CCMDATARAMEN_CLK_ENABLE();
+        #else
+        // The STM32L476 does not have any additional RAM
+        #endif
     #endif
 
     #if defined(MICROPY_BOARD_EARLY_INIT)

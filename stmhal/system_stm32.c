@@ -165,6 +165,7 @@ void __fatal_error(const char *msg);
   * @param  None
   * @retval None
   */
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
 void SystemInit(void)
 {
   /* FPU settings ------------------------------------------------------------*/
@@ -187,6 +188,7 @@ void SystemInit(void)
   /* Reset HSEBYP bit */
   RCC->CR &= (uint32_t)0xFFFBFFFF;
 
+
   /* Disable all interrupts */
   RCC->CIR = 0x00000000;
 
@@ -200,7 +202,6 @@ void SystemInit(void)
   /* dpgeorge: enable 8-byte stack alignment for IRQ handlers, in accord with EABI */
   SCB->CCR |= SCB_CCR_STKALIGN_Msk;
 }
-
 
 /**
   * @brief  System Clock Configuration
@@ -359,6 +360,181 @@ void SystemClock_Config(void)
   RCC->DCKCFGR2 = 0;
 #endif
 }
+
+#elif defined(MCU_SERIES_L4)
+void SystemInit(void)
+{
+  /* FPU settings ------------------------------------------------------------*/
+  #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
+    SCB->CPACR |= ((3UL << 10*2)|(3UL << 11*2));  /* set CP10 and CP11 Full Access */
+  #endif
+  /* Reset the RCC clock configuration to the default reset state ------------*/
+  /* Set MSION bit */
+  RCC->CR |= RCC_CR_MSION;
+
+  /* Reset CFGR register */
+  RCC->CFGR = 0x00000000;
+
+  /* Reset HSEON, CSSON , HSION, and PLLON bits */
+  RCC->CR &= (uint32_t)0xEAF6FFFF;
+
+  /* Reset PLLCFGR register */
+  RCC->PLLCFGR = 0x00001000;
+
+  /* Reset HSEBYP bit */
+  RCC->CR &= (uint32_t)0xFFFBFFFF;
+
+  /* Disable all interrupts */
+  RCC->CIER = 0x00000000;
+
+  /* Configure the Vector Table location add offset address ------------------*/
+#ifdef VECT_TAB_SRAM
+  SCB->VTOR = SRAM_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM */
+#else
+  SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
+#endif
+}
+
+/**
+  * @brief  System Clock Configuration
+  *         The system Clock is configured as follow :
+  *
+  *         If define USB_USE_LSE_MSI_CLOCK enabled:
+  *            System Clock source            = PLL (MSI)
+  *            SYSCLK(Hz)                     = 80000000
+  *            HCLK(Hz)                       = 80000000
+  *            AHB Prescaler                  = 1
+  *            APB1 Prescaler                 = 1
+  *            APB2 Prescaler                 = 2
+  *            MSI Frequency(Hz)              = 4800000
+  *            LSE Frequency(Hz)              = 32768
+  *            PLL_M                          = 6
+  *            PLL_N                          = 40
+  *            PLL_P                          = 7
+  *            PLL_Q                          = 4
+  *            PLL_R                          = 4
+  *            Flash Latency(WS)              = 4
+  *
+  *         If define USB_USE_HSE_CLOCK enabled:
+  *            System Clock source            = PLL (HSE)
+  *            SYSCLK(Hz)                     = 80000000
+  *            HCLK(Hz)                       = 80000000
+  *            AHB Prescaler                  = 1
+  *            APB1 Prescaler                 = 1
+  *            APB2 Prescaler                 = 2
+  *            HSE Frequency(Hz)              = 8000000
+  *            PLL_M                          = 1
+  *            PLL_N                          = 24
+  *            PLL_P                          = 7
+  *            PLL_Q                          = 4
+  *            PLL_R                          = 4
+  *            Flash Latency(WS)              = 4
+  *
+  * @param  None
+  * @retval None
+  */
+void SystemClock_Config(void)
+{
+    RCC_ClkInitTypeDef RCC_ClkInitStruct;
+    RCC_OscInitTypeDef RCC_OscInitStruct;
+    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
+
+    #if defined (USB_USE_LSE_MSI_CLOCK)
+
+      /* Enable the LSE Oscilator */
+      RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSE;
+      RCC_OscInitStruct.LSEState = RCC_LSE_ON;
+      if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+      {
+        //Error_Handler();
+      }
+
+      /* Enable the CSS interrupt in case LSE signal is corrupted or not present */
+      HAL_RCCEx_DisableLSECSS();
+
+      /* Enable MSI Oscillator and activate PLL with MSI as source */
+      RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_MSI;
+      RCC_OscInitStruct.MSIState            = RCC_MSI_ON;
+      RCC_OscInitStruct.HSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
+      RCC_OscInitStruct.MSIClockRange       = RCC_MSIRANGE_11;
+      RCC_OscInitStruct.PLL.PLLState        = RCC_PLL_ON;
+      RCC_OscInitStruct.PLL.PLLSource       = RCC_PLLSOURCE_MSI;
+      RCC_OscInitStruct.PLL.PLLM            = 6;
+      RCC_OscInitStruct.PLL.PLLN            = 40;
+      RCC_OscInitStruct.PLL.PLLP            = 7;
+      RCC_OscInitStruct.PLL.PLLQ            = 4;
+      RCC_OscInitStruct.PLL.PLLR            = 4;
+      if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+      {
+        //Error_Handler();
+      }
+
+      /* Enable MSI Auto-calibration through LSE */
+      HAL_RCCEx_EnableMSIPLLMode();
+
+      /* Select MSI output as USB clock source */
+      PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USB;
+      PeriphClkInitStruct.UsbClockSelection = RCC_USBCLKSOURCE_MSI;
+      HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
+
+      /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2
+      clocks dividers */
+      RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
+      RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+      RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+      RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+      RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+      if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
+      {
+        //Error_Handler();
+      }
+
+    #elif defined (USB_USE_HSE_CLOCK)
+
+      /* Enable HSE Oscillator and activate PLL with HSE as source */
+      RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+      RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+      RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+      RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+      RCC_OscInitStruct.PLL.PLLM = 1;
+      RCC_OscInitStruct.PLL.PLLN = 24;
+      RCC_OscInitStruct.PLL.PLLR = 4;
+      RCC_OscInitStruct.PLL.PLLP = 7;
+      RCC_OscInitStruct.PLL.PLLQ = 4;
+      if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+      {
+        Error_Handler();
+      }
+
+      /*Select Main PLL output as USB clock source */
+      PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USB;
+      PeriphClkInitStruct.UsbClockSelection = RCC_USBCLKSOURCE_PLL;
+      HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
+
+
+      /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2
+      clocks dividers */
+      RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
+      RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+      RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+      RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+      RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+      if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
+      {
+        Error_Handler();
+      }
+
+    #endif /* USB_USE_LSE_MSI_CLOCK */
+}
+
+
+#else
+    #error "Unknown MCU Series type."
+#endif
+
+
+
+
 
 void HAL_MspInit(void) {
 #if defined(MCU_SERIES_F7)
