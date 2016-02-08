@@ -1,5 +1,5 @@
 /*
-    GNU linker script for STM32F429i-Discovery kit with external 8MByte SDRam
+    GNU linker script for STM32L476-Discovery kit
 */
 
 /* Specify the memory areas */
