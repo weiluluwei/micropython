@@ -33,11 +33,16 @@
 #include "py/obj.h"
 #include "irq.h"
 
-#define NSTREAMS_PER_CONTROLLER_LOG2 (3)
-#define NSTREAMS_PER_CONTROLLER (1 << NSTREAMS_PER_CONTROLLER_LOG2)
-#define NCONTROLLERS            (2)
-#define NSTREAM                 (NCONTROLLERS * NSTREAMS_PER_CONTROLLER)
+typedef DMA_HandleTypeDef dma_handle;
 
+#define NSTREAMS_PER_CONTROLLER_LOG2 (3)
+#define NCONTROLLERS            (2)
+
+#define MCU_SERIES_L4
+
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
+#define NSTREAMS_PER_CONTROLLER (1 << NSTREAMS_PER_CONTROLLER_LOG2)
+#define NSTREAM                 (NCONTROLLERS * NSTREAMS_PER_CONTROLLER)
 static const uint8_t dma_irqn[NSTREAM] = {
     DMA1_Stream0_IRQn,
     DMA1_Stream1_IRQn,
@@ -56,11 +61,31 @@ static const uint8_t dma_irqn[NSTREAM] = {
     DMA2_Stream6_IRQn,
     DMA2_Stream7_IRQn,
 };
+#elif defined(MCU_SERIES_L4)
+#define NSTREAMS_PER_CONTROLLER ((1 << NSTREAMS_PER_CONTROLLER_LOG2)-1)
+#define NSTREAM                 (NCONTROLLERS * NSTREAMS_PER_CONTROLLER)
+static const uint8_t dma_irqn[NSTREAM] = {
+    DMA1_Channel1_IRQn,
+    DMA1_Channel2_IRQn,
+    DMA1_Channel3_IRQn,
+    DMA1_Channel4_IRQn,
+    DMA1_Channel5_IRQn,
+    DMA1_Channel6_IRQn,
+    DMA1_Channel7_IRQn,
+    DMA2_Channel1_IRQn,
+    DMA2_Channel2_IRQn,
+    DMA2_Channel3_IRQn,
+    DMA2_Channel4_IRQn,
+    DMA2_Channel5_IRQn,
+    DMA2_Channel6_IRQn,
+    DMA2_Channel7_IRQn,
+};
+#endif
 
 // Default parameters to dma_init() shared by spi and i2c; Channel and Direction
 // vary depending on the peripheral instance so they get passed separately
 const DMA_InitTypeDef dma_init_struct_spi_i2c = {
-    .Channel             = 0,
+    /*.Channel/.Stream = */0,
     .Direction           = 0,
     .PeriphInc           = DMA_PINC_DISABLE,
     .MemInc              = DMA_MINC_ENABLE,
@@ -68,10 +93,12 @@ const DMA_InitTypeDef dma_init_struct_spi_i2c = {
     .MemDataAlignment    = DMA_MDATAALIGN_BYTE,
     .Mode                = DMA_NORMAL,
     .Priority            = DMA_PRIORITY_LOW,
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     .FIFOMode            = DMA_FIFOMODE_DISABLE,
     .FIFOThreshold       = DMA_FIFO_THRESHOLD_FULL,
     .MemBurst            = DMA_MBURST_INC4,
     .PeriphBurst         = DMA_PBURST_INC4
+#endif
 };
 
 static DMA_HandleTypeDef *dma_handle[NSTREAM] = {NULL};
@@ -84,8 +111,24 @@ volatile dma_idle_count_t dma_idle;
 #define DMA2_ENABLE_MASK    0xff00  // Bits in dma_enable_mask corresponding to DMA2
 #define DMA_INVALID_CHANNEL 0xff    // Value stored in dma_last_channel which means invalid
 
+#if defined(MCU_SERIES_L4)
 #define DMA_CHANNEL_AS_UINT8(dma_channel)   (((dma_channel) & DMA_SxCR_CHSEL) >> 24)
-
+void DMA1_Channel1_IRQHandler(void) { IRQ_ENTER(DMA1_Channel1_IRQn); if (dma_handle[0] != NULL)  { HAL_DMA_IRQHandler(dma_handle[0]); } IRQ_EXIT(DMA1_Channel1_IRQn); }
+void DMA1_Channel2_IRQHandler(void) { IRQ_ENTER(DMA1_Channel2_IRQn); if (dma_handle[1] != NULL)  { HAL_DMA_IRQHandler(dma_handle[1]); } IRQ_EXIT(DMA1_Channel2_IRQn); }
+void DMA1_Channel3_IRQHandler(void) { IRQ_ENTER(DMA1_Channel3_IRQn); if (dma_handle[2] != NULL)  { HAL_DMA_IRQHandler(dma_handle[2]); } IRQ_EXIT(DMA1_Channel3_IRQn); }
+void DMA1_Channel4_IRQHandler(void) { IRQ_ENTER(DMA1_Channel4_IRQn); if (dma_handle[3] != NULL)  { HAL_DMA_IRQHandler(dma_handle[3]); } IRQ_EXIT(DMA1_Channel4_IRQn); }
+void DMA1_Channel5_IRQHandler(void) { IRQ_ENTER(DMA1_Channel5_IRQn); if (dma_handle[4] != NULL)  { HAL_DMA_IRQHandler(dma_handle[4]); } IRQ_EXIT(DMA1_Channel5_IRQn); }
+void DMA1_Channel6_IRQHandler(void) { IRQ_ENTER(DMA1_Channel6_IRQn); if (dma_handle[5] != NULL)  { HAL_DMA_IRQHandler(dma_handle[5]); } IRQ_EXIT(DMA1_Channel6_IRQn); }
+void DMA1_Channel7_IRQHandler(void) { IRQ_ENTER(DMA1_Channel7_IRQn); if (dma_handle[6] != NULL)  { HAL_DMA_IRQHandler(dma_handle[6]); } IRQ_EXIT(DMA1_Channel7_IRQn); }
+void DMA2_Channel1_IRQHandler(void) { IRQ_ENTER(DMA2_Channel1_IRQn); if (dma_handle[7] != NULL)  { HAL_DMA_IRQHandler(dma_handle[7]); } IRQ_EXIT(DMA2_Channel1_IRQn); }
+void DMA2_Channel2_IRQHandler(void) { IRQ_ENTER(DMA2_Channel2_IRQn); if (dma_handle[8] != NULL)  { HAL_DMA_IRQHandler(dma_handle[8]); } IRQ_EXIT(DMA2_Channel2_IRQn); }
+void DMA2_Channel3_IRQHandler(void) { IRQ_ENTER(DMA2_Channel3_IRQn); if (dma_handle[9] != NULL)  { HAL_DMA_IRQHandler(dma_handle[9]); } IRQ_EXIT(DMA2_Channel3_IRQn); }
+void DMA2_Channel4_IRQHandler(void) { IRQ_ENTER(DMA2_Channel4_IRQn); if (dma_handle[10] != NULL) { HAL_DMA_IRQHandler(dma_handle[10]);} IRQ_EXIT(DMA2_Channel4_IRQn); }
+void DMA2_Channel5_IRQHandler(void) { IRQ_ENTER(DMA2_Channel5_IRQn); if (dma_handle[11] != NULL) { HAL_DMA_IRQHandler(dma_handle[11]);} IRQ_EXIT(DMA2_Channel5_IRQn); }
+void DMA2_Channel6_IRQHandler(void) { IRQ_ENTER(DMA2_Channel6_IRQn); if (dma_handle[12] != NULL) { HAL_DMA_IRQHandler(dma_handle[12]);} IRQ_EXIT(DMA2_Channel6_IRQn); }
+void DMA2_Channel7_IRQHandler(void) { IRQ_ENTER(DMA2_Channel7_IRQn); if (dma_handle[13] != NULL) { HAL_DMA_IRQHandler(dma_handle[13]);} IRQ_EXIT(DMA2_Channel7_IRQn); }
+#else
+#define DMA_CHANNEL_AS_UINT8(dma_channel)   (((dma_channel) & DMA_SxCR_CHSEL) >> 24)
 void DMA1_Stream0_IRQHandler(void) { IRQ_ENTER(DMA1_Stream0_IRQn); if (dma_handle[0] != NULL) { HAL_DMA_IRQHandler(dma_handle[0]); } IRQ_EXIT(DMA1_Stream0_IRQn); }
 void DMA1_Stream1_IRQHandler(void) { IRQ_ENTER(DMA1_Stream1_IRQn); if (dma_handle[1] != NULL) { HAL_DMA_IRQHandler(dma_handle[1]); } IRQ_EXIT(DMA1_Stream1_IRQn); }
 void DMA1_Stream2_IRQHandler(void) { IRQ_ENTER(DMA1_Stream2_IRQn); if (dma_handle[2] != NULL) { HAL_DMA_IRQHandler(dma_handle[2]); } IRQ_EXIT(DMA1_Stream2_IRQn); }
@@ -102,10 +145,22 @@ void DMA2_Stream4_IRQHandler(void) { IRQ_ENTER(DMA2_Stream4_IRQn); if (dma_handl
 void DMA2_Stream5_IRQHandler(void) { IRQ_ENTER(DMA2_Stream5_IRQn); if (dma_handle[13] != NULL) { HAL_DMA_IRQHandler(dma_handle[13]); } IRQ_EXIT(DMA2_Stream5_IRQn); }
 void DMA2_Stream6_IRQHandler(void) { IRQ_ENTER(DMA2_Stream6_IRQn); if (dma_handle[14] != NULL) { HAL_DMA_IRQHandler(dma_handle[14]); } IRQ_EXIT(DMA2_Stream6_IRQn); }
 void DMA2_Stream7_IRQHandler(void) { IRQ_ENTER(DMA2_Stream7_IRQn); if (dma_handle[15] != NULL) { HAL_DMA_IRQHandler(dma_handle[15]); } IRQ_EXIT(DMA2_Stream7_IRQn); }
+#endif
 
 #define DMA1_IS_CLK_ENABLED()   ((RCC->AHB1ENR & RCC_AHB1ENR_DMA1EN) != 0)
 #define DMA2_IS_CLK_ENABLED()   ((RCC->AHB1ENR & RCC_AHB1ENR_DMA2EN) != 0)
 
+#if defined(MCU_SERIES_L4)
+static int get_dma_id(DMA_Channel_TypeDef *dma_channel) {
+    int dma_id;
+    if (dma_channel < DMA2_Channel1) {
+        dma_id = dma_channel - DMA1_Channel1;
+    } else {
+        dma_id =  NSTREAMS_PER_CONTROLLER + (dma_channel - DMA2_Channel1);
+    }
+    return dma_id;
+}
+#else
 static int get_dma_id(DMA_Stream_TypeDef *dma_stream) {
     int dma_id;
     if (dma_stream < DMA2_Stream0) {
@@ -115,7 +170,7 @@ static int get_dma_id(DMA_Stream_TypeDef *dma_stream) {
     }
     return dma_id;
 }
-
+#endif
 // Resets the idle counter for the DMA controller associated with dma_id.
 static void dma_tickle(int dma_id) {
     dma_idle.counter[(dma_id >> NSTREAMS_PER_CONTROLLER_LOG2) & 1] = 1;
@@ -162,7 +217,12 @@ static void dma_disable_clock(int dma_id) {
     dma_enable_mask &= ~(1 << dma_id);
 }
 
-void dma_init(DMA_HandleTypeDef *dma, DMA_Stream_TypeDef *dma_stream, const DMA_InitTypeDef *dma_init, uint32_t dma_channel, uint32_t direction, void *data) {
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
+void dma_init(DMA_HandleTypeDef *dma, DMA_Stream_TypeDef *dma_stream, const DMA_InitTypeDef *dma_init, uint32_t dma_channel, uint32_t direction, void *data)
+#elif defined(MCU_SERIES_L4)
+void dma_init(DMA_HandleTypeDef *dma, DMA_Channel_TypeDef *dma_stream, const DMA_InitTypeDef *dma_init, uint32_t dma_request, uint32_t direction, void *data)
+#endif
+{
     int dma_id = get_dma_id(dma_stream);
     //printf("dma_init(%p, %p(%d), 0x%x, 0x%x, %p)\n", dma, dma_stream, dma_id, (uint)dma_channel, (uint)direction, data);
 
@@ -178,8 +238,11 @@ void dma_init(DMA_HandleTypeDef *dma, DMA_Stream_TypeDef *dma_stream, const DMA_
     dma->Instance = dma_stream;
     dma->Init = *dma_init;
     dma->Init.Direction = direction;
+#if defined(MCU_SERIES_L4)
+    dma->Init.Request = dma_request;
+#else
     dma->Init.Channel = dma_channel;
-
+#endif
     // half of __HAL_LINKDMA(data, xxx, *dma)
     // caller must implement other half by doing: data->xxx = dma
     dma->Parent = data;
@@ -188,7 +251,7 @@ void dma_init(DMA_HandleTypeDef *dma, DMA_Stream_TypeDef *dma_stream, const DMA_
 
     // if this stream was previously configured for this channel then we
     // can skip most of the initialisation
-    uint8_t channel_uint8 = DMA_CHANNEL_AS_UINT8(dma_channel);
+    uint8_t channel_uint8 = DMA_CHANNEL_AS_UINT8(dma_index);
     if (dma_last_channel[dma_id] == channel_uint8) {
         goto same_channel;
     }
