@@ -15,7 +15,7 @@
 
 // Basic GPIO functions
 #define GPIO_read_pin(gpio, pin)        (((gpio)->IDR >> (pin)) & 1)
-#if defined(MCU_SERIES_F7)
+#if defined(MCU_SERIES_F7) || defined(MCU_SERIES_L4)
 #define GPIO_set_pin(gpio, pin_mask)    (((gpio)->BSRR) = (pin_mask))
 #define GPIO_clear_pin(gpio, pin_mask)  (((gpio)->BSRR) = ((pin_mask) << 16))
 #else
