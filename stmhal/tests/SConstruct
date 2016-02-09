@@ -29,13 +29,19 @@ dutFiles = {}
 dutFiles['flash'] = (tuple2Path( srcFolder+('flash.c', )), )
 dutLib = tuple2Path(binFolder + srcLibName)
 
+# Define mock files for each ???_test
+mockLibName  =   ('mock',)
+mockFiles = {}
+mockFiles['flash'] = (tuple2Path( testFolder+('hal_flash_mock.c', )), )
+mockLib = tuple2Path(binFolder + mockLibName)
+
 # Libraries to link
 cppuTestLibName    = ('CppUTest', 'CppUTestExt')
 
 #
 # All libraries
 libPath   = (tuple2Path(binFolder),)
-allLinkLibs = (srcLibName, cppuTestLibName)
+allLinkLibs = (srcLibName, mockLibName, cppuTestLibName)
 
 
 # Include path
@@ -79,4 +85,5 @@ for testFName in glob.glob(tuple2Path(testFolder, True)+testFNamePat):
     testName = os.path.basename(testFName).split('_')[0]
     print("Testing %s" % (testName))
     env.Library(target=dutLib, source= dutFiles[testName], CPATH=incPath)
+    env.Library(target=mockLib, source= mockFiles[testName], CPATH=incPath)
     env.Program(testName, genFiles, LIBPATH=libPath, LIBS=allLinkLibs, CPATH=incPath, CFLAGS=cFlags)
