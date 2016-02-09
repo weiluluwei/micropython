@@ -13,7 +13,7 @@
 #define MICROPY_HW_ENABLE_TIMER     (1)
 #define MICROPY_HW_ENABLE_SERVO     (0)
 #define MICROPY_HW_ENABLE_DAC       (0)
-#define MICROPY_HW_ENABLE_CAN       (1)
+#define MICROPY_HW_ENABLE_CAN       (0)
 
 // HSE is 8MHz
 #define MICROPY_HW_CLK_PLLM (8)
