@@ -1,0 +1,82 @@
+#
+# SConstruct file for compile stmhal tests on the host 
+# machine.
+#
+import os
+import glob
+
+# Helper functions
+#
+def tuple2Path(tpl, addTrailing=False):
+    return os.sep.join(tpl)+ (os.sep if addTrailing else "")
+
+
+
+# Where the binaries go to
+binFolder = ('bin',)
+
+# Folder which keeps the test code
+testFolder = ('.',)
+genTestFile=('all_tests.cpp', )
+testFNamePat = r'*_test.cpp'
+
+# Folder(s) which keep the to be tested code (DUT)
+srcFolder  = ('..',)
+srcLibName  =   ('dut',)
+
+# Define dut files for each ???_test
+dutFiles = {}
+dutFiles['flash'] = (tuple2Path( srcFolder+('flash.c', )), )
+dutLib = tuple2Path(binFolder + srcLibName)
+
+# Libraries to link
+cppuTestLibName    = ('CppUTest', 'CppUTestExt')
+
+#
+# All libraries
+libPath   = (tuple2Path(binFolder),)
+allLinkLibs = (srcLibName, cppuTestLibName)
+
+
+# Include path
+#
+MCUSer = 'f4'
+
+incPath =  ( tuple2Path(('..', )), ) 
+incPath += ( tuple2Path(('..', '..' )), ) 
+incPath += ( tuple2Path(('.', )),  )
+if MCUSer == 'l4':
+    incPath += ( tuple2Path(('..','hal','l4','inc')),)
+    incPath += ( tuple2Path(('..','cmsis','devinc')),)
+    incPath += ( tuple2Path(('..','cmsis','inc')),)
+    incPath += ( tuple2Path(('..','boards','STM32L476DISC')),)
+    device = 'STM32L476xx'
+    MCU_Series = 'MCU_SERIES_L4'
+elif MCUSer == 'f4':
+    incPath += ( tuple2Path(('..','hal','f4','inc')),)
+    incPath += ( tuple2Path(('..','cmsis','devinc')),)
+    incPath += ( tuple2Path(('..','cmsis','inc')),)
+    incPath += ( tuple2Path(('..','boards','STM32F429DISC')),)
+    device = 'STM32F429xx'
+    MCU_Series = 'MCU_SERIES_F4'
+print(incPath)
+# CFLAGS
+cFlags  = '-Wall -g'
+
+
+# Define Environment
+#
+env = Environment(variant_dir=binFolder,
+                  LIBPATH=binFolder,
+                  LIBS=allLinkLibs,
+                  CPATH=incPath, CFLAGS=cFlags)
+
+env.Append(CPPDEFINES = ['STM32_HAL_H="<stm32%sxx_hal.h>"'%MCUSer,device, MCU_Series])
+env.Append(CPPPATH = incPath)
+
+for testFName in glob.glob(tuple2Path(testFolder, True)+testFNamePat):
+    genFiles = genTestFile + (testFName,)
+    testName = os.path.basename(testFName).split('_')[0]
+    print("Testing %s" % (testName))
+    env.Library(target=dutLib, source= dutFiles[testName], CPATH=incPath)
+    env.Program(testName, genFiles, LIBPATH=libPath, LIBS=allLinkLibs, CPATH=incPath, CFLAGS=cFlags)
