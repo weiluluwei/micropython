@@ -10,38 +10,36 @@ import glob
 def tuple2Path(tpl, addTrailing=False):
     return os.sep.join(tpl)+ (os.sep if addTrailing else "")
 
-
-
 # Where the binaries go to
 binFolder = ('bin',)
+objFolder = ('obj',)
 
 # Folder which keeps the test code
 testFolder = ('.',)
 genTestFile=('all_tests.cpp', )
 testFNamePat = r'*_test.cpp'
 
-# Folder(s) which keep the to be tested code (DUT)
-srcFolder  = ('..',)
-srcLibName  =   ('dut',)
-
-# Define dut files for each ???_test
-dutFiles = {}
-dutFiles['flash'] = (tuple2Path( srcFolder+('flash.c', )), )
-dutLib = tuple2Path(binFolder + srcLibName)
+#
+# Folder(s) which keep the to be tested code under test (CUT)
+cutFolder  = ('..',)
+cutLibName = ('cut',)
+# Define code under test (cut) files for each ???_test
+cutFiles = {}
+cutFiles['flash'] = (tuple2Path( cutFolder+('flash.c', )), )
+cutLib = tuple2Path(objFolder + cutLibName)
 
 # Define mock files for each ???_test
 mockLibName  =   ('mock',)
 mockFiles = {}
 mockFiles['flash'] = (tuple2Path( testFolder+('hal_flash_mock.c', )), )
-mockLib = tuple2Path(binFolder + mockLibName)
+mockLib = tuple2Path(objFolder + mockLibName)
 
 # Libraries to link
 cppuTestLibName    = ('CppUTest', 'CppUTestExt')
 
 #
 # All libraries
-libPath   = (tuple2Path(binFolder),)
-allLinkLibs = (srcLibName, mockLibName, cppuTestLibName)
+libPath   = (tuple2Path(objFolder),)
 
 
 # Include path
@@ -56,45 +54,65 @@ if MCUSer == 'l4':
     incPath += ( tuple2Path(('..','cmsis','devinc')),)
     incPath += ( tuple2Path(('..','cmsis','inc')),)
     incPath += ( tuple2Path(('..','boards','STM32L476DISC')),)
-    device = 'STM32L476xx'
+    devices = ('STM32L476xx',)
     MCU_Series = 'MCU_SERIES_L4'
 elif MCUSer == 'f4':
     incPath += ( tuple2Path(('..','hal','f4','inc')),)
     incPath += ( tuple2Path(('..','cmsis','devinc')),)
     incPath += ( tuple2Path(('..','cmsis','inc')),)
     incPath += ( tuple2Path(('..','boards','STM32F429DISC')),)
-    device = 'STM32F429xx'
+    devices = ('STM32F401xE', 'STM32F405xx', 'STM32F407xx', 'STM32F411xE','STM32F429xx')
     MCU_Series = 'MCU_SERIES_F4'
 elif MCUSer == 'f7':
     incPath += ( tuple2Path(('..','hal','f7','inc')),)
     incPath += ( tuple2Path(('..','cmsis','devinc')),)
     incPath += ( tuple2Path(('..','cmsis','inc')),)
     incPath += ( tuple2Path(('..','boards','STM32F7DISC')),)
-    device = 'STM32F746xx'
+    devices = ('STM32F746xx',)
     MCU_Series = 'MCU_SERIES_F7'
 else:
     print("Unknown MCU Series for test!")
     sys.exit()
 
-print(incPath)
 # CFLAGS
 cFlags  = '-Wall -g'
 
 
-# Define Environment
-#
-env = Environment(variant_dir=binFolder,
-                  LIBPATH=binFolder,
-                  LIBS=allLinkLibs,
-                  CPATH=incPath, CFLAGS=cFlags)
-
-env.Append(CPPDEFINES = ['STM32_HAL_H="<stm32%sxx_hal.h>"'%MCUSer,device, MCU_Series])
-env.Append(CPPPATH = incPath)
-
 for testFName in glob.glob(tuple2Path(testFolder, True)+testFNamePat):
     genFiles = genTestFile + (testFName,)
-    testName = os.path.basename(testFName).split('_')[0]
-    print("Testing %s" % (testName))
-    env.Library(target=dutLib, source= dutFiles[testName], CPATH=incPath)
-    env.Library(target=mockLib, source= mockFiles[testName], CPATH=incPath)
-    env.Program(testName, genFiles, LIBPATH=libPath, LIBS=allLinkLibs, CPATH=incPath, CFLAGS=cFlags)
+    for device in devices:
+        testName = os.path.basename(testFName).split('_')[0]
+        trgtName = os.sep.join(binFolder + (testName+"_%s" % device,))
+        print("Build %s" % (trgtName))
+        env = Environment(objFolderCPATH=incPath, CFLAGS=cFlags, LIBPATH=objFolder)
+        env['CPPFLAGS']= cFlags
+        env['CPPPATH']= incPath
+        env['CPPDEFINES'] = ['STM32_HAL_H="<stm32%sxx_hal.h>"'%MCUSer,device, MCU_Series]
+        #obj = env.Object([(os.path.basename(i).split('.')[0]+"_%s" % device, i) for i in  cutFiles[testName]])
+        #print(obj)
+        #env.Library(target=cutLib+"_%s" % device,  object = obj)
+        allLinkLibs = [cppuTestLibName, ]
+        objs = []
+        for src in cutFiles[testName]:
+            objName = os.sep.join(objFolder + (os.path.basename(src).split('.')[0]+'_%s' % device,))
+            obj = env.Object(objName, src)
+            objs.append(obj)
+        libName = cutLibName[0]+"_%s" % device
+        env.Library(cutLib+"_%s" % device, objs)
+        allLinkLibs.append(libName)
+        #+"_%s" % device+"_%s" % device
+        libName = mockLibName[0]+"_%s" % device
+        objs = []
+        for src in mockFiles[testName]:
+            objName = os.sep.join(objFolder + (os.path.basename(src).split('.')[0]+'_%s' % device,))
+            obj = env.Object(objName, src)
+            objs.append(obj)
+        env.Library(mockLib+"_%s" % device, objs)
+        allLinkLibs.append(libName)
+        objs = []
+        for src in genFiles:
+            objName = os.sep.join(objFolder + (os.path.basename(src).split('.')[0]+'_%s' % device,))
+            print(objName)
+            obj = env.Object(objName, src)
+            objs.append(obj)
+        env.Program(trgtName, objs, LIBPATH=libPath, LIBS=allLinkLibs, CPATH=incPath, CFLAGS=cFlags)
