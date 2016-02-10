@@ -65,6 +65,17 @@ elif MCUSer == 'f4':
     incPath += ( tuple2Path(('..','boards','STM32F429DISC')),)
     device = 'STM32F429xx'
     MCU_Series = 'MCU_SERIES_F4'
+elif MCUSer == 'f7':
+    incPath += ( tuple2Path(('..','hal','f7','inc')),)
+    incPath += ( tuple2Path(('..','cmsis','devinc')),)
+    incPath += ( tuple2Path(('..','cmsis','inc')),)
+    incPath += ( tuple2Path(('..','boards','STM32F7DISC')),)
+    device = 'STM32F746xx'
+    MCU_Series = 'MCU_SERIES_F7'
+else:
+    print("Unknown MCU Series for test!")
+    sys.exit()
+
 print(incPath)
 # CFLAGS
 cFlags  = '-Wall -g'
