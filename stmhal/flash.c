@@ -65,9 +65,8 @@ static const flash_organization_t flash_organisation[]= {
         {((uint32_t)0x08000000), 2048,  512 }
 };
 #else
-#error "UNKONWN Processor"
+#error "Unknown processor series"
 #endif
-
 
 uint32_t flash_get_sector_info(uint32_t addr, uint32_t *start_addr, uint32_t *size) {
     if (addr >= flash_organisation[0].base_address) {
