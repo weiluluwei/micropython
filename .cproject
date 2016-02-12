@@ -30,6 +30,7 @@
 									<listOptionValue builtIn="false" value="../stmhal/l4/inc"/>
 									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
+									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.315491992" languageId="org.eclipse.cdt.core.assembly" languageName="Assembly" sourceContentType="org.eclipse.cdt.core.asmSource" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -39,6 +40,7 @@
 									<listOptionValue builtIn="false" value="../stmhal/l4/inc"/>
 									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
+									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1929184155" languageId="org.eclipse.cdt.core.g++" languageName="GNU C++" sourceContentType="org.eclipse.cdt.core.cxxSource,org.eclipse.cdt.core.cxxHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -48,6 +50,7 @@
 									<listOptionValue builtIn="false" value="../stmhal/l4/inc"/>
 									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
+									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1556040727" languageId="org.eclipse.cdt.core.gcc" languageName="GNU C" sourceContentType="org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -86,6 +89,7 @@
 									<listOptionValue builtIn="false" value="../stmhal/l4/inc"/>
 									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
+									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1809905038" languageId="org.eclipse.cdt.core.assembly" languageName="Assembly" sourceContentType="org.eclipse.cdt.core.asmSource" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -95,6 +99,7 @@
 									<listOptionValue builtIn="false" value="../stmhal/l4/inc"/>
 									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
+									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1311649421" languageId="org.eclipse.cdt.core.g++" languageName="GNU C++" sourceContentType="org.eclipse.cdt.core.cxxSource,org.eclipse.cdt.core.cxxHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -104,6 +109,7 @@
 									<listOptionValue builtIn="false" value="../stmhal/l4/inc"/>
 									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
+									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1797855271" languageId="org.eclipse.cdt.core.gcc" languageName="GNU C" sourceContentType="org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -141,14 +147,15 @@
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/devinc"/>
 									<listOptionValue builtIn="false" value="../stmhal/l4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
+									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.702716729" languageId="org.eclipse.cdt.core.assembly" languageName="Assembly" sourceContentType="org.eclipse.cdt.core.asmSource" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
 							<tool id="org.eclipse.cdt.build.core.settings.holder.1925841473" name="GNU C++" superClass="org.eclipse.cdt.build.core.settings.holder">
 								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.427753933" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/devinc"/>
+									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
 									<listOptionValue builtIn="false" value="../stmhal/l4/inc"/>
-									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1658312910" languageId="org.eclipse.cdt.core.g++" languageName="GNU C++" sourceContentType="org.eclipse.cdt.core.cxxSource,org.eclipse.cdt.core.cxxHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
@@ -156,8 +163,8 @@
 							<tool id="org.eclipse.cdt.build.core.settings.holder.1590882747" name="GNU C" superClass="org.eclipse.cdt.build.core.settings.holder">
 								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.2078781550" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/devinc"/>
+									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
 									<listOptionValue builtIn="false" value="../stmhal/l4/inc"/>
-									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.36794030" languageId="org.eclipse.cdt.core.gcc" languageName="GNU C" sourceContentType="org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
@@ -193,6 +200,7 @@
 								<option id="gnu.cpp.compiler.exe.debug.option.debugging.level.1173211060" name="Debug Level" superClass="gnu.cpp.compiler.exe.debug.option.debugging.level" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1648976546" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/include"/>
+									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1213653023" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
@@ -201,6 +209,7 @@
 								<option id="gnu.c.compiler.exe.debug.option.debugging.level.30130003" name="Debug Level" superClass="gnu.c.compiler.exe.debug.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.329909153" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/include"/>
+									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.87033570" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
@@ -214,6 +223,7 @@
 							<tool id="cdt.managedbuild.tool.gnu.assembler.exe.debug.1221064676" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.exe.debug">
 								<option id="gnu.both.asm.option.include.paths.1026672381" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/include"/>
+									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1367654365" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
