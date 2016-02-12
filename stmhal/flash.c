@@ -65,7 +65,7 @@ static const flash_organization_t flash_organisation[]= {
         {((uint32_t)0x08000000), 2048,  512 }
 };
 #else
-#error "Unknown processor series"
+#error Unsupported processor
 #endif
 
 uint32_t flash_get_sector_info(uint32_t addr, uint32_t *start_addr, uint32_t *size) {
@@ -96,7 +96,9 @@ void flash_erase(uint32_t flash_dest, const uint32_t *src, uint32_t num_word32) 
     if (num_word32 == 0) {
         return;
     }
-
+#if defined(MCU_SERIES_L4)
+// FIXME ADD erase code here
+#else
     // unlock
     HAL_FLASH_Unlock();
 
@@ -116,6 +118,7 @@ void flash_erase(uint32_t flash_dest, const uint32_t *src, uint32_t num_word32) 
         HAL_FLASH_Lock(); // lock the flash
         return;
     }
+#endif
 }
 
 /*
@@ -149,6 +152,9 @@ void flash_erase_it(uint32_t flash_dest, const uint32_t *src, uint32_t num_word3
 
 void flash_write(uint32_t flash_dest, const uint32_t *src, uint32_t num_word32) {
     // program the flash word by word
+#if defined(MCU_SERIES_L4)
+    // FIXME ADD write code here
+#else
     for (int i = 0; i < num_word32; i++) {
         if (HAL_FLASH_Program(TYPEPROGRAM_WORD, flash_dest, *src) != HAL_OK) {
             // error occurred during flash write
@@ -161,6 +167,7 @@ void flash_write(uint32_t flash_dest, const uint32_t *src, uint32_t num_word32) 
 
     // lock the flash
     HAL_FLASH_Lock();
+#endif
 }
 
 /*
