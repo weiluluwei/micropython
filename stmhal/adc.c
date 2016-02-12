@@ -226,8 +226,7 @@ STATIC mp_obj_t adc_make_new(const mp_obj_type_t *type, mp_uint_t n_args, mp_uin
         channel = pin->adc_channel;
     }
 
-    if (!is_adcx_channel(channel))
-    {
+    if (!is_adcx_channel(channel)){
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "not a valid ADC Channel: %d", channel));
     }
     if (pin_adc1[channel] == NULL) {

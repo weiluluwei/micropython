@@ -221,6 +221,7 @@ static volatile uint32_t dma_enable_mask = 0;
 
 #if defined(MCU_SERIES_M4) || defined(MCU_SERIES_M7)
 #define DMA_CHANNEL_AS_UINT8(dma_channel)   (((dma_channel) & DMA_SxCR_CHSEL) >> 24)
+
 void DMA1_Stream0_IRQHandler(void) { IRQ_ENTER(DMA1_Stream0_IRQn); if (dma_handle[0] != NULL) { HAL_DMA_IRQHandler(dma_handle[0]); } IRQ_EXIT(DMA1_Stream0_IRQn); }
 void DMA1_Stream1_IRQHandler(void) { IRQ_ENTER(DMA1_Stream1_IRQn); if (dma_handle[1] != NULL) { HAL_DMA_IRQHandler(dma_handle[1]); } IRQ_EXIT(DMA1_Stream1_IRQn); }
 void DMA1_Stream2_IRQHandler(void) { IRQ_ENTER(DMA1_Stream2_IRQn); if (dma_handle[2] != NULL) { HAL_DMA_IRQHandler(dma_handle[2]); } IRQ_EXIT(DMA1_Stream2_IRQn); }
@@ -361,8 +362,7 @@ int dma_setup(dma_handle_t *dma, dma_descr_t * dma_descr, void *data)
 
 
 //void dma_init(DMA_HandleTypeDef *dma, DMA_Stream_TypeDef *dma_stream, const DMA_InitTypeDef *dma_init, uint32_t dma_channel, uint32_t direction, void *data)
-void dma_init(dma_handle_t *dma, dma_descr_t * dma_descr, void *data)
-{
+void dma_init(dma_handle_t *dma, dma_descr_t * dma_descr, void *data){
     int dma_idx;
     int dma_id;
     //printf("dma_init(%p, %p(%d), 0x%x, 0x%x, %p)\n", dma, dma_stream, dma_id, (uint)dma_channel, (uint)direction, data);

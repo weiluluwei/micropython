@@ -376,7 +376,7 @@ int main(void) {
         // enable the CCM RAM clock
         __HAL_RCC_CCMDATARAMEN_CLK_ENABLE();
         #else
-        // The STM32L476 does not have any additional RAM
+        // FIXME ADD Clock on for SRMA2 on STM32L476 
         #endif
     #endif
 

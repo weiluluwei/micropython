@@ -188,7 +188,6 @@ void SystemInit(void)
   /* Reset HSEBYP bit */
   RCC->CR &= (uint32_t)0xFFFBFFFF;
 
-
   /* Disable all interrupts */
   RCC->CIR = 0x00000000;
 
@@ -202,6 +201,7 @@ void SystemInit(void)
   /* dpgeorge: enable 8-byte stack alignment for IRQ handlers, in accord with EABI */
   SCB->CCR |= SCB_CCR_STKALIGN_Msk;
 }
+
 
 /**
   * @brief  System Clock Configuration
