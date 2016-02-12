@@ -26,7 +26,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <stdint.h>
 
 #include "py/nlr.h"
 #include "py/runtime.h"

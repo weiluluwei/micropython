@@ -373,8 +373,8 @@ int main(void) {
     __HAL_RCC_DTCMRAMEN_CLK_ENABLE();
     #else
         #if defined(__HAL_RCC_CCMDATARAMEN_CLK_ENABLE)
-        // enable the CCM RAM clock
-        __HAL_RCC_CCMDATARAMEN_CLK_ENABLE();
+        // enable the CCM RAM
+        __CCMDATARAMEN_CLK_ENABLE();
         #else
         // FIXME ADD Clock on for SRMA2 on STM32L476 
         #endif

@@ -56,7 +56,6 @@
 #define ADC_NUM_CHANNELS        (19)
 #define ADC_NUM_GPIO_CHANNELS   (16)
 
-
 #if defined(STM32F405xx) || defined(STM32F415xx) || \
     defined(STM32F407xx) || defined(STM32F417xx) || \
     defined(STM32F401xC) || defined(STM32F401xE) || \
