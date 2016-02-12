@@ -44,9 +44,9 @@
   */
 
   .syntax unified
-#if defined(MCU_SERIES_M7)
+#if defined(MCU_SERIES_F7)
   .cpu cortex-m7
-#elif defined(MCU_SERIES_M4) || defined(MCU_SERIES_L4)
+#elif defined(MCU_SERIES_F4) || defined(MCU_SERIES_L4)
   .cpu cortex-m4
 #else
   #error "Unknown MCU Series"
@@ -481,7 +481,7 @@ g_pfnVectors:
    .thumb_set TIM1_UP_TIM16_IRQHandler,Default_Handler
 
    .weak      TIM1_TRG_COM_TIM17_IRQHandler
-   .thumb_set TIM1_TRG_COM_TIM17_IRQHandler,Default_Handlerler
+   .thumb_set TIM1_TRG_COM_TIM17_IRQHandler,Default_Handler
 #else
    .weak      TIM1_BRK_TIM9_IRQHandler
    .thumb_set TIM1_BRK_TIM9_IRQHandler,Default_Handler
@@ -490,7 +490,7 @@ g_pfnVectors:
    .thumb_set TIM1_UP_TIM10_IRQHandler,Default_Handler
 
    .weak      TIM1_TRG_COM_TIM11_IRQHandler
-   .thumb_set TIM1_TRG_COM_TIM11_IRQHandler,Default_Han
+   .thumb_set TIM1_TRG_COM_TIM11_IRQHandler,Default_Handler
 #endif
 
    .weak      TIM1_CC_IRQHandler
@@ -549,7 +549,7 @@ g_pfnVectors:
    .thumb_set TIM8_UP_IRQHandler,Default_Handler
 
    .weak      TIM8_TRG_COM_IRQHandler
-   .thumb_set TIM8_TRG_COM_IRQHandler,Default_Handlerler
+   .thumb_set TIM8_TRG_COM_IRQHandler,Default_Handler
 #else
    .weak      OTG_FS_WKUP_IRQHandler
    .thumb_set OTG_FS_WKUP_IRQHandler,Default_Handler
@@ -561,7 +561,7 @@ g_pfnVectors:
    .thumb_set TIM8_UP_TIM13_IRQHandler,Default_Handler
 
    .weak      TIM8_TRG_COM_TIM14_IRQHandler
-   .thumb_set TIM8_TRG_COM_TIM14_IRQHandler,Default_Hand
+   .thumb_set TIM8_TRG_COM_TIM14_IRQHandler,Default_Handler
 #endif
 
    .weak      TIM8_CC_IRQHandler
