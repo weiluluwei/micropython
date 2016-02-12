@@ -309,9 +309,14 @@ STATIC mp_obj_t machine_freq(mp_uint_t n_args, const mp_obj_t *args) {
 
         // set PLL as system clock source if wanted
         if (sysclk_source == RCC_SYSCLKSOURCE_PLLCLK) {
+            #if defined(MCU_SERIES_L4)
+            uint32_t flash_latency = FLASH_LATENCY_4;
+            #else
+            uint32_t flash_latency = FLASH_LATENCY_5;
+            #endif
             RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_SYSCLK;
             RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-            if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK) {
+            if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, flash_latency) != HAL_OK) {
                 goto fail;
             }
         }
@@ -343,6 +348,9 @@ STATIC mp_obj_t machine_freq(mp_uint_t n_args, const mp_obj_t *args) {
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_freq_obj, 0, 4, machine_freq);
 
 STATIC mp_obj_t machine_sleep(void) {
+#if defined(MCU_SERIES_L4)
+    printf("machine.sleep not supported yet\n");
+#else
     // takes longer to wake but reduces stop current
     HAL_PWREx_EnableFlashPowerDown();
 
@@ -364,7 +372,7 @@ STATIC mp_obj_t machine_sleep(void) {
     MODIFY_REG(RCC->CFGR, RCC_CFGR_SW, RCC_SYSCLKSOURCE_PLLCLK);
     while (__HAL_RCC_GET_SYSCLK_SOURCE() != RCC_CFGR_SWS_PLL) {
     }
-
+#endif
     return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_0(machine_sleep_obj, machine_sleep);
@@ -372,7 +380,7 @@ MP_DEFINE_CONST_FUN_OBJ_0(machine_sleep_obj, machine_sleep);
 STATIC mp_obj_t machine_deepsleep(void) {
     rtc_init_finalise();
 
-#if defined(MCU_SERIES_F7)
+#if defined(MCU_SERIES_F7) || defined(MCU_SERIES_L4)
     printf("machine.deepsleep not supported yet\n");
 #else
     // We need to clear the PWR wake-up-flag before entering standby, since
