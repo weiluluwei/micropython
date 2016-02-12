@@ -26,6 +26,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "py/nlr.h"
 #include "py/runtime.h"
@@ -116,10 +117,8 @@
 typedef struct _pyb_i2c_obj_t {
     mp_obj_base_t base;
     I2C_HandleTypeDef *i2c;
-    DMA_Stream_TypeDef *tx_dma_stream;
-    uint32_t tx_dma_channel;
-    DMA_Stream_TypeDef *rx_dma_stream;
-    uint32_t rx_dma_channel;
+    dma_descr_t tx_dma_descr;
+    dma_descr_t rx_dma_descr;
 } pyb_i2c_obj_t;
 
 #if defined(MICROPY_HW_I2C1_SCL)
@@ -134,19 +133,19 @@ I2C_HandleTypeDef I2CHandle3 = {.Instance = NULL};
 
 STATIC const pyb_i2c_obj_t pyb_i2c_obj[] = {
     #if defined(MICROPY_HW_I2C1_SCL)
-    {{&pyb_i2c_type}, &I2CHandle1, DMA_STREAM_I2C1_TX, DMA_CHANNEL_I2C1_TX, DMA_STREAM_I2C1_RX, DMA_CHANNEL_I2C1_RX},
+    {{&pyb_i2c_type}, &I2CHandle1, {dma_I2C, 1, DMA_MEMORY_TO_PERIPH}, {dma_I2C, 1, DMA_PERIPH_TO_MEMORY}},
     #else
-    {{&pyb_i2c_type}, NULL, NULL, 0, NULL, 0},
+    {{&pyb_i2c_type}, NULL, {dma_NONE, 0, 0}, {dma_NONE, 0, 0}},
     #endif
     #if defined(MICROPY_HW_I2C2_SCL)
-    {{&pyb_i2c_type}, &I2CHandle2, DMA_STREAM_I2C2_TX, DMA_CHANNEL_I2C2_TX, DMA_STREAM_I2C2_RX, DMA_CHANNEL_I2C2_RX},
+    {{&pyb_i2c_type}, &I2CHandle2, {dma_I2C, 2, DMA_MEMORY_TO_PERIPH}, {dma_I2C, 2, DMA_PERIPH_TO_MEMORY}},
     #else
-    {{&pyb_i2c_type}, NULL, NULL, 0, NULL, 0},
+    {{&pyb_i2c_type}, NULL, {dma_NONE, 0, 0}, {dma_NONE, 0, 0}},
     #endif
     #if defined(MICROPY_HW_I2C3_SCL)
-    {{&pyb_i2c_type}, &I2CHandle3, DMA_STREAM_I2C3_TX, DMA_CHANNEL_I2C3_TX, DMA_STREAM_I2C3_RX, DMA_CHANNEL_I2C3_RX},
+    {{&pyb_i2c_type}, &I2CHandle2, {dma_I2C, 3, DMA_MEMORY_TO_PERIPH}, {dma_I2C, 3, DMA_PERIPH_TO_MEMORY}},
     #else
-    {{&pyb_i2c_type}, NULL, NULL, 0, NULL, 0},
+    {{&pyb_i2c_type}, NULL, {dma_NONE, 0, 0}, {dma_NONE, 0, 0}},
     #endif
 };
 
@@ -184,12 +183,22 @@ STATIC uint32_t i2c_get_baudrate(I2C_InitTypeDef *init) {
 #else
 
 STATIC void i2c_set_baudrate(I2C_InitTypeDef *init, uint32_t baudrate) {
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     init->ClockSpeed = baudrate;
     init->DutyCycle = I2C_DUTYCYCLE_16_9;
+#elif defined(MCU_SERIES_L4)
+    // FIXME Calculate Register value from input parameter
+    init->Timing = 0x00D00E28;
+#endif
 }
 
 STATIC uint32_t i2c_get_baudrate(I2C_InitTypeDef *init) {
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     return init->ClockSpeed;
+#elif defined(MCU_SERIES_L4)
+    // FIXME Calculate baudrate from register value
+    return 1000000;
+#endif
 }
 
 #endif // MICROPY_HW_I2C_BAUDRATE_TIMING
@@ -263,8 +272,8 @@ void i2c_init(I2C_HandleTypeDef *i2c) {
 
     // invalidate the DMA channels so they are initialised on first use
     const pyb_i2c_obj_t *self = &pyb_i2c_obj[i2c_unit - 1];
-    dma_invalidate_channel(self->tx_dma_stream, self->tx_dma_channel);
-    dma_invalidate_channel(self->rx_dma_stream, self->rx_dma_channel);
+    dma_invalidate_channel(&self->tx_dma_descr);
+    dma_invalidate_channel(&self->rx_dma_descr);
 }
 
 void i2c_deinit(I2C_HandleTypeDef *i2c) {
@@ -528,7 +537,7 @@ STATIC mp_obj_t pyb_i2c_send(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
     // if IRQs are enabled then we can use DMA
     DMA_HandleTypeDef tx_dma;
     if (query_irq() == IRQ_STATE_ENABLED) {
-        dma_init(&tx_dma, self->tx_dma_stream, &dma_init_struct_spi_i2c, self->tx_dma_channel, DMA_MEMORY_TO_PERIPH, self->i2c);
+        dma_init(&tx_dma, &self->tx_dma_descr, self->i2c);
         self->i2c->hdmatx = &tx_dma;
         self->i2c->hdmarx = NULL;
     }
@@ -602,7 +611,7 @@ STATIC mp_obj_t pyb_i2c_recv(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
     // if IRQs are enabled then we can use DMA
     DMA_HandleTypeDef rx_dma;
     if (query_irq() == IRQ_STATE_ENABLED) {
-        dma_init(&rx_dma, self->rx_dma_stream, &dma_init_struct_spi_i2c, self->rx_dma_channel, DMA_PERIPH_TO_MEMORY, self->i2c);
+        dma_init(&rx_dma, &self->rx_dma_descr, self->i2c);
         self->i2c->hdmatx = NULL;
         self->i2c->hdmarx = &rx_dma;
     }
@@ -696,7 +705,7 @@ STATIC mp_obj_t pyb_i2c_mem_read(mp_uint_t n_args, const mp_obj_t *pos_args, mp_
         status = HAL_I2C_Mem_Read(self->i2c, i2c_addr, mem_addr, mem_addr_size, (uint8_t*)vstr.buf, vstr.len, args[3].u_int);
     } else {
         DMA_HandleTypeDef rx_dma;
-        dma_init(&rx_dma, self->rx_dma_stream, &dma_init_struct_spi_i2c, self->rx_dma_channel, DMA_PERIPH_TO_MEMORY, self->i2c);
+        dma_init(&rx_dma, &self->rx_dma_descr, self->i2c);
         self->i2c->hdmatx = NULL;
         self->i2c->hdmarx = &rx_dma;
         status = HAL_I2C_Mem_Read_DMA(self->i2c, i2c_addr, mem_addr, mem_addr_size, (uint8_t*)vstr.buf, vstr.len);
@@ -760,7 +769,7 @@ STATIC mp_obj_t pyb_i2c_mem_write(mp_uint_t n_args, const mp_obj_t *pos_args, mp
         status = HAL_I2C_Mem_Write(self->i2c, i2c_addr, mem_addr, mem_addr_size, bufinfo.buf, bufinfo.len, args[3].u_int);
     } else {
         DMA_HandleTypeDef tx_dma;
-        dma_init(&tx_dma, self->tx_dma_stream, &dma_init_struct_spi_i2c, self->tx_dma_channel, DMA_MEMORY_TO_PERIPH, self->i2c);
+        dma_init(&tx_dma, &self->tx_dma_descr, self->i2c);
         self->i2c->hdmatx = &tx_dma;
         self->i2c->hdmarx = NULL;
         status = HAL_I2C_Mem_Write_DMA(self->i2c, i2c_addr, mem_addr, mem_addr_size, bufinfo.buf, bufinfo.len);
