@@ -296,10 +296,11 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
   /* Set USB Current Speed */
   switch(hpcd->Init.speed)
   {
+#if defined(PCD_SPEED_HIGH)
   case PCD_SPEED_HIGH:
     speed = USBD_SPEED_HIGH;
     break;
-    
+#endif
   case PCD_SPEED_FULL:
     speed = USBD_SPEED_FULL;    
     break;
