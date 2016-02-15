@@ -62,17 +62,64 @@ static const flash_organization_t flash_organisation[]= {
 };
 #elif defined(MCU_SERIES_L4)
 static const flash_organization_t flash_organisation[]= {
-        {((uint32_t)0x08000000), 2048,  512 }
+        {((const uint32_t)FLASH_BASE),((const uint32_t)FLASH_PAGE_SIZE),  512}
 };
 #else
 #error Unsupported processor
+#endif
+
+#if defined(MCU_SERIES_L4)
+/**
+  * @brief  Gets the bank of a given address
+  * @param  Addr: Address of the FLASH Memory
+  * @retval The bank of a given address
+  */
+static uint32_t GetBank(uint32_t Addr) {
+    uint32_t bank = 0;
+
+    if (READ_BIT(SYSCFG->MEMRMP, SYSCFG_MEMRMP_FB_MODE) == 0) {
+        /* No Bank swap */
+        if (Addr < (FLASH_BASE + FLASH_BANK_SIZE)) {
+            bank = FLASH_BANK_1;
+        } else {
+            bank = FLASH_BANK_2;
+        }
+    } else {
+        /* Bank swap */
+        if (Addr < (FLASH_BASE + FLASH_BANK_SIZE)) {
+            bank = FLASH_BANK_2;
+        } else {
+            bank = FLASH_BANK_1;
+        }
+    }
+
+    return bank;
+}
+/**
+  * @brief  Gets the page of a given address
+  * @param  Addr: Address of the FLASH Memory
+  * @retval The page of a given address
+  */
+static uint32_t GetPage(uint32_t Addr) {
+    uint32_t page = 0;
+
+    if (Addr < (FLASH_BASE + FLASH_BANK_SIZE)) {
+        /* Bank 1 */
+        page = (Addr - FLASH_BASE) / FLASH_PAGE_SIZE;
+    } else {
+        /* Bank 2 */
+        page = (Addr - (FLASH_BASE + FLASH_BANK_SIZE)) / FLASH_PAGE_SIZE;
+    }
+
+    return page;
+}
 #endif
 
 uint32_t flash_get_sector_info(uint32_t addr, uint32_t *start_addr, uint32_t *size) {
     if (addr >= flash_organisation[0].base_address) {
         uint32_t sector_index = 0;
         for (int i = 0; i < MP_ARRAY_SIZE(flash_organisation); i++) {
-            for (int j = 0; j< flash_organisation[i].sector_count; j++){
+            for (int j = 0; j< flash_organisation[i].sector_count; j++) {
                 uint32_t sector_start_next =  flash_organisation[i].base_address+((j+1)*flash_organisation[i].sector_size);
                 if (addr < sector_start_next) {
                     if (start_addr != NULL) {
@@ -90,35 +137,43 @@ uint32_t flash_get_sector_info(uint32_t addr, uint32_t *start_addr, uint32_t *si
     return 0;
 }
 
-
 void flash_erase(uint32_t flash_dest, const uint32_t *src, uint32_t num_word32) {
+    FLASH_EraseInitTypeDef EraseInitStruct;
     // check there is something to write
     if (num_word32 == 0) {
         return;
     }
-#if defined(MCU_SERIES_L4)
-// FIXME ADD erase code here
-#else
     // unlock
     HAL_FLASH_Unlock();
 
+#if defined(MCU_SERIES_L4)
+    /* Clear OPTVERR bit set on virgin samples */
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_OPTVERR);
+
+    // erase the sector(s)
+    // The sector returned by flash_get_sector_info can not be used
+    // as the flash has on bank 0 page 0..255 and on Bank 1, page 0..255
+    EraseInitStruct.TypeErase   = FLASH_TYPEERASE_PAGES;
+    EraseInitStruct.Banks       = GetBank(flash_dest);
+    EraseInitStruct.Page        = GetPage(flash_dest);
+    EraseInitStruct.NbPages     = GetPage(flash_dest + 4 * num_word32 - 1) - EraseInitStruct.Page + 1;;
+#else
     // Clear pending flags (if any)
     __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR |
                            FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
 
     // erase the sector(s)
-    FLASH_EraseInitTypeDef EraseInitStruct;
     EraseInitStruct.TypeErase = TYPEERASE_SECTORS;
     EraseInitStruct.VoltageRange = VOLTAGE_RANGE_3; // voltage range needs to be 2.7V to 3.6V
     EraseInitStruct.Sector = flash_get_sector_info(flash_dest, NULL, NULL);
     EraseInitStruct.NbSectors = flash_get_sector_info(flash_dest + 4 * num_word32 - 1, NULL, NULL) - EraseInitStruct.Sector + 1;
+#endif
     uint32_t SectorError = 0;
     if (HAL_FLASHEx_Erase(&EraseInitStruct, &SectorError) != HAL_OK) {
         // error occurred during sector erase
         HAL_FLASH_Lock(); // lock the flash
         return;
     }
-#endif
 }
 
 /*
@@ -151,10 +206,28 @@ void flash_erase_it(uint32_t flash_dest, const uint32_t *src, uint32_t num_word3
 */
 
 void flash_write(uint32_t flash_dest, const uint32_t *src, uint32_t num_word32) {
-    // program the flash word by word
 #if defined(MCU_SERIES_L4)
-    // FIXME ADD write code here
+    // program the flash word by word
+    for (int i = 0; i < (num_word32/2); i++) {
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, flash_dest, *src) != HAL_OK) {
+            // error occurred during flash write
+            HAL_FLASH_Lock(); // lock the flash
+            return;
+        }
+        flash_dest += 4;
+        src += 2;
+    }
+    if ((num_word32%2) == 1) {
+        uint64_t tmp = *(uint32_t*)flash_dest;
+        tmp = (tmp & 0xFFFFFFFF00000000uL) || (uint32_t)(*src);
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, flash_dest, tmp) != HAL_OK) {
+            // error occurred during flash write
+            HAL_FLASH_Lock(); // lock the flash
+            return;
+        }
+    }
 #else
+    // program the flash word by word
     for (int i = 0; i < num_word32; i++) {
         if (HAL_FLASH_Program(TYPEPROGRAM_WORD, flash_dest, *src) != HAL_OK) {
             // error occurred during flash write
@@ -164,10 +237,9 @@ void flash_write(uint32_t flash_dest, const uint32_t *src, uint32_t num_word32) 
         flash_dest += 4;
         src += 1;
     }
-
+#endif
     // lock the flash
     HAL_FLASH_Lock();
-#endif
 }
 
 /*
