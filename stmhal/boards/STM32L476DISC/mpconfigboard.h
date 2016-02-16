@@ -23,10 +23,8 @@
 #define MICROPY_HW_CLK_PLLQ (7)
 
 // UART config
-#define MICROPY_HW_UART1_PORT (GPIOA)
-#define MICROPY_HW_UART1_PINS (GPIO_PIN_9 | GPIO_PIN_10)
-#define MICROPY_HW_UART2_PORT (GPIOD)
-#define MICROPY_HW_UART2_PINS (GPIO_PIN_8 | GPIO_PIN_9)
+#define MICROPY_HW_UART1_PORT (GPIOD)
+#define MICROPY_HW_UART1_PINS (GPIO_PIN_5 | GPIO_PIN_6)
 
 // I2C busses
 #define MICROPY_HW_I2C1_SCL (pin_B6)
@@ -40,12 +38,12 @@
 #define MICROPY_HW_I2C_BAUDRATE_MAX     100000
 
 // SPI busses
-#define MICROPY_HW_SPI2_NSS     (pin_D7)
+#define MICROPY_HW_SPI2_NSS     (pin_D0)
 #define MICROPY_HW_SPI2_SCK     (pin_D1)
 #define MICROPY_HW_SPI2_MISO    (pin_D3)
 #define MICROPY_HW_SPI2_MOSI    (pin_D4)
 
-// USRSW is pulled low. Pressing the button makes the input go high.
+// Joystick is pulled low. Pressing the button makes the input go high.
 #define MICROPY_HW_USRSW_PIN        (pin_A0)
 #define MICROPY_HW_USRSW_PULL       (GPIO_NOPULL)
 #define MICROPY_HW_USRSW_EXTI_MODE  (GPIO_MODE_IT_RISING)
@@ -59,5 +57,5 @@
 #define MICROPY_HW_LED_OFF(pin)     (pin->gpio->BSRR = pin->pin_mask<<16)
 
 // USB config
-#define MICROPY_HW_USB_VBUS_DETECT_PIN (pin_B13)
-#define MICROPY_HW_USB_OTG_ID_PIN      (pin_B12)
+#define MICROPY_HW_USB_VBUS_DETECT_PIN (pin_C11)
+#define MICROPY_HW_USB_OTG_ID_PIN      (pin_C12)
