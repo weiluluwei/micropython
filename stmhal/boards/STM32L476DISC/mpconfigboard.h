@@ -57,5 +57,4 @@
 #define MICROPY_HW_LED_OFF(pin)     (pin->gpio->BSRR = pin->pin_mask<<16)
 
 // USB config
-#define MICROPY_HW_USB_VBUS_DETECT_PIN (pin_C11)
-#define MICROPY_HW_USB_OTG_ID_PIN      (pin_C12)
+// #define MICROPY_HW_USB_OTG_ID_PIN      (pin_C12) // This is not the official ID Pin which should be PA10
