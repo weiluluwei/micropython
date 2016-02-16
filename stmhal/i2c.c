@@ -149,7 +149,7 @@ STATIC const pyb_i2c_obj_t pyb_i2c_obj[] = {
 };
 
 #if defined(MICROPY_HW_I2C_BAUDRATE_TIMING)
-// The STM32F0, F3, and F7 use a TIMINGR register rather than ClockSpeed and
+// The STM32F0, F3, F7 and L4 use a TIMINGR register rather than ClockSpeed and
 // DutyCycle.
 
 STATIC const struct {
@@ -182,22 +182,12 @@ STATIC uint32_t i2c_get_baudrate(I2C_InitTypeDef *init) {
 #else
 
 STATIC void i2c_set_baudrate(I2C_InitTypeDef *init, uint32_t baudrate) {
-#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     init->ClockSpeed = baudrate;
     init->DutyCycle = I2C_DUTYCYCLE_16_9;
-#elif defined(MCU_SERIES_L4)
-    // FIXME Calculate Register value from input parameter
-    init->Timing = 0x00D00E28;
-#endif
 }
 
 STATIC uint32_t i2c_get_baudrate(I2C_InitTypeDef *init) {
-#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     return init->ClockSpeed;
-#elif defined(MCU_SERIES_L4)
-    // FIXME Calculate baudrate from register value
-    return 1000000;
-#endif
 }
 
 #endif // MICROPY_HW_I2C_BAUDRATE_TIMING
