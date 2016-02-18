@@ -85,7 +85,7 @@ typedef struct _pyb_obj_adc_t {
 STATIC bool is_adcx_channel(int channel)
 {
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
-    return IS_ADC_CHANNEL(adc_obj->channel);
+    return IS_ADC_CHANNEL(channel);
 #elif defined(MCU_SERIES_L4)
     ADC_HandleTypeDef handle;
     handle.Instance = ADCx;
