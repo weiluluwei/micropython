@@ -209,18 +209,19 @@ void flash_write(uint32_t flash_dest, const uint32_t *src, uint32_t num_word32) 
 #if defined(MCU_SERIES_L4)
     // program the flash word by word
     for (int i = 0; i < (num_word32/2); i++) {
-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, flash_dest, *src) != HAL_OK) {
+        uint64_t val = *(uint64_t *)src;
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, flash_dest, val) != HAL_OK) {
             // error occurred during flash write
             HAL_FLASH_Lock(); // lock the flash
             return;
         }
-        flash_dest += 4;
+        flash_dest += 8;
         src += 2;
     }
     if ((num_word32%2) == 1) {
-        uint64_t tmp = *(uint32_t*)flash_dest;
-        tmp = (tmp & 0xFFFFFFFF00000000uL) || (uint32_t)(*src);
-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, flash_dest, tmp) != HAL_OK) {
+        uint64_t val = *(uint64_t *)src;
+        val = (val & 0xFFFFFFFF00000000uL) || (*src);
+        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, flash_dest, val) != HAL_OK) {
             // error occurred during flash write
             HAL_FLASH_Lock(); // lock the flash
             return;
