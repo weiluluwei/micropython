@@ -77,22 +77,6 @@
 static SD_HandleTypeDef sd_handle;
 static DMA_HandleTypeDef sd_rx_dma, sd_tx_dma;
 
-// Parameters to dma_init() for SDIO tx and rx.
-static const DMA_InitTypeDef dma_init_struct_sdio = {
-    .Channel             = 0,
-    .Direction           = 0,
-    .PeriphInc           = DMA_PINC_DISABLE,
-    .MemInc              = DMA_MINC_ENABLE,
-    .PeriphDataAlignment = DMA_PDATAALIGN_WORD,
-    .MemDataAlignment    = DMA_MDATAALIGN_WORD,
-    .Mode                = DMA_PFCTRL,
-    .Priority            = DMA_PRIORITY_VERY_HIGH,
-    .FIFOMode            = DMA_FIFOMODE_ENABLE,
-    .FIFOThreshold       = DMA_FIFO_THRESHOLD_FULL,
-    .MemBurst            = DMA_MBURST_INC4,
-    .PeriphBurst         = DMA_PBURST_INC4,
-};
-
 void sdcard_init(void) {
     GPIO_InitTypeDef GPIO_Init_Structure;
 
@@ -218,9 +202,14 @@ mp_uint_t sdcard_read_blocks(uint8_t *dest, uint32_t block_num, uint32_t num_blo
     if (query_irq() == IRQ_STATE_ENABLED) {
         // we must disable USB irqs to prevent MSC contention with SD card
         uint32_t basepri = raise_irq_pri(IRQ_PRI_OTG_FS);
+        dma_descr_t rx_dma_descr;
 
-        dma_init(&sd_rx_dma, DMA_STREAM_SDIO_RX, &dma_init_struct_sdio,
-            DMA_CHANNEL_SDIO_RX, DMA_PERIPH_TO_MEMORY, &sd_handle);
+        rx_dma_descr.dma_inst_nr =  dma_instance2;
+        rx_dma_descr.pType = dma_SDIO;
+        rx_dma_descr.tDirection = DMA_PERIPH_TO_MEMORY;
+        rx_dma_descr.pInstanceNr = 0;
+
+        dma_init(&sd_rx_dma, &rx_dma_descr, &sd_handle);
         sd_handle.hdmarx = &sd_rx_dma;
 
         err = HAL_SD_ReadBlocks_BlockNumber_DMA(&sd_handle, (uint32_t*)dest, block_num, SDCARD_BLOCK_SIZE, num_blocks);
