@@ -67,7 +67,7 @@
 ///     dac = DAC(1)
 ///     dac.write_timed(buf, 400 * len(buf), mode=DAC.CIRCULAR)
 
-#if MICROPY_HW_ENABLE_DAC
+#if defined(MICROPY_HW_ENABLE_DAC) && MICROPY_HW_ENABLE_DAC
 
 STATIC DAC_HandleTypeDef DAC_Handle;
 
@@ -138,6 +138,8 @@ typedef enum {
 
 typedef struct _pyb_dac_obj_t {
     mp_obj_base_t base;
+    dma_descr_t tx_dma_descr;
+
     uint32_t dac_channel; // DAC_CHANNEL_1 or DAC_CHANNEL_2
     DMA_Stream_TypeDef *dma_stream; // DMA1_Stream5 or DMA1_Stream6
     uint16_t pin; // GPIO_PIN_4 or GPIO_PIN_5
@@ -216,12 +218,16 @@ STATIC mp_obj_t pyb_dac_make_new(const mp_obj_type_t *type, mp_uint_t n_args, mp
 
     if (dac_id == 1) {
         dac->pin = GPIO_PIN_4;
-        dac->dac_channel = DAC_CHANNEL_1;
-        dac->dma_stream = DMA_STREAM_DAC1;
+        dac->tx_dma_descr.pType = dma_DAC;
+        dac->tx_dma_descr.pInstanceNr = 1;
+        dac->tx_dma_descr.tType = DMA_MEMORY_TO_PERIPH;
+        dac->tx_dma_descr.dmaInstNr = 1;
     } else if (dac_id == 2) {
         dac->pin = GPIO_PIN_5;
-        dac->dac_channel = DAC_CHANNEL_2;
-        dac->dma_stream = DMA_STREAM_DAC2;
+        dac->tx_dma_descr.pType = dma_DAC;
+        dac->tx_dma_descr.pInstanceNr = 2;
+        dac->tx_dma_descr.tType = DMA_MEMORY_TO_PERIPH;
+        dac->tx_dma_descr.dmaInstNr = 1;
     } else {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "DAC %d does not exist", dac_id));
     }
@@ -369,6 +375,9 @@ mp_obj_t pyb_dac_write_timed(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
         dac_trigger = TIMx_Config(args[1].u_obj);
     }
 
+
+
+
     __DMA1_CLK_ENABLE();
 
     /*
@@ -388,6 +397,8 @@ mp_obj_t pyb_dac_write_timed(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
     DAC_InitStructure.DAC_OutputBuffer = DAC_OutputBuffer_Enable;
     DAC_Init(self->dac_channel, &DAC_InitStructure);
     */
+
+
 
     // DMA1_Stream[67] channel7 configuration
     DMA_HandleTypeDef DMA_Handle;
