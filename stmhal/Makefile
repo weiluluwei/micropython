@@ -33,8 +33,6 @@ STFLASH ?= st-flash
 OPENOCD ?= openocd
 OPENOCD_CONFIG ?= boards/openocd_stm32f4.cfg
 
-LIBGCC = $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
-
 CROSS_COMPILE = arm-none-eabi-
 
 INC += -I.
@@ -62,7 +60,7 @@ CFLAGS += -Iboards/$(BOARD)
 CFLAGS += -DSTM32_HAL_H='<stm32$(MCU_SERIES)xx_hal.h>'
 
 LDFLAGS = -nostdlib -T $(LD_FILE) -Map=$(@:.elf=.map) --cref
-LIBS = $(LIBGCC)
+LIBS = 
 
 # Remove uncalled code from the final image.
 CFLAGS += -fdata-sections -ffunction-sections
@@ -76,8 +74,9 @@ else
 COPT += -Os -DNDEBUG
 endif
 
-# uncomment this if you want libgcc
-#LIBS += $(shell $(CC) -print-libgcc-file-name)
+# Uncomment this if you want libgcc. CFLAGS are added to have 
+# core specific library.
+LIBS += $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
 SRC_LIB = $(addprefix lib/,\
 	libc/string0.c \
