@@ -39,13 +39,11 @@ typedef enum {
 
 typedef struct _dmaDescr
 {
-    dma_instance_t  dmaInstNr;     /* Instance of dma for trasnfer */
+    dma_instance_t  dma_inst_nr;     /* Instance of dma for transfer */
     periphery_t     pType;         /* Periphery type */
-    uint32_t        tType;         /* Transfer type */
+    uint32_t        tDirection;    /* FIXME BADI rename! Transfer direction Periphery to memory or vis-versa */
     uint8_t         pInstanceNr;   /* Instance of Periphery */
 } dma_descr_t;
-
-typedef DMA_HandleTypeDef dma_handle_t;
 
 typedef union {
     uint16_t    enabled;    // Used to test if both counters are == 0
@@ -59,7 +57,7 @@ extern volatile dma_idle_count_t dma_idle;
 #define DMA_IDLE_TICK_MAX           (8)     // 128 msec
 #define DMA_IDLE_TICK(tick)         (((tick) & DMA_SYSTICK_MASK) == 0)
 
-void dma_init(dma_handle_t *dma, dma_descr_t * dma_descr, void *data);
+void dma_init(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *data);
 void dma_deinit(DMA_HandleTypeDef *dma);
 void dma_invalidate_channel(const dma_descr_t * dma_descr);
 void dma_idle_handler(int controller);

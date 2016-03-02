@@ -56,7 +56,7 @@ typedef struct
 {
     periphery_t     pType;          /* Periphery type */
     uint8_t         pInstanceNr;    /* Instance of Periphery */
-    uint32_t        tType;          /* Transfer type */
+    uint32_t        tDirection;     /* Transfer direction */
 #if defined(MCU_SERIES_L4)
     DMA_Channel_TypeDef *instance;
 #else
@@ -285,7 +285,7 @@ static int get_dma_entry(const dma_descr_t *dma_descr) {
     {
         if ((dma_transfer_info[idx].pType == dma_descr->pType) &&
             (dma_transfer_info[idx].pInstanceNr == dma_descr->pInstanceNr) &&
-            (dma_transfer_info[idx].tType == dma_descr->tType) )
+            (dma_transfer_info[idx].tDirection == dma_descr->tDirection) )
         {
             dma_entry = idx;
             break;
@@ -340,13 +340,13 @@ static void dma_disable_clock(int dma_id) {
     dma_enable_mask &= ~(1 << dma_id);
 }
 
-int dma_setup(dma_handle_t *dma, dma_descr_t * dma_descr, void *data)
+int dma_setup(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *data)
 {
     int dma_idx =  get_dma_entry(dma_descr);
     // initialise parameters
     dma->Instance = dma_transfer_info[dma_idx].instance;
     dma->Init = *dma_transfer_info[dma_idx].init;
-    dma->Init.Direction = dma_transfer_info[dma_idx].tType;
+    dma->Init.Direction = dma_transfer_info[dma_idx].tDirection;
 #if defined(MCU_SERIES_L4)
     dma->Init.Request = dma_transfer_info[dma_idx].sub_instance;
 #else
@@ -362,7 +362,7 @@ int dma_setup(dma_handle_t *dma, dma_descr_t * dma_descr, void *data)
 
 
 //void dma_init(DMA_HandleTypeDef *dma, DMA_Stream_TypeDef *dma_stream, const DMA_InitTypeDef *dma_init, uint32_t dma_channel, uint32_t direction, void *data)
-void dma_init(dma_handle_t *dma, dma_descr_t * dma_descr, void *data){
+void dma_init(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *data){
     int dma_idx;
     int dma_id;
     //printf("dma_init(%p, %p(%d), 0x%x, 0x%x, %p)\n", dma, dma_stream, dma_id, (uint)dma_channel, (uint)direction, data);
