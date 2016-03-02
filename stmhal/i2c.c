@@ -142,7 +142,7 @@ STATIC const pyb_i2c_obj_t pyb_i2c_obj[] = {
     {{&pyb_i2c_type}, NULL, {dma_NONE, 0, 0}, {dma_NONE, 0, 0}},
     #endif
     #if defined(MICROPY_HW_I2C3_SCL)
-    {{&pyb_i2c_type}, &I2CHandle2, {dma_I2C, 3, DMA_MEMORY_TO_PERIPH}, {dma_I2C, 3, DMA_PERIPH_TO_MEMORY}},
+    {{&pyb_i2c_type}, &I2CHandle3, {dma_I2C, 3, DMA_MEMORY_TO_PERIPH}, {dma_I2C, 3, DMA_PERIPH_TO_MEMORY}},
     #else
     {{&pyb_i2c_type}, NULL, {dma_NONE, 0, 0}, {dma_NONE, 0, 0}},
     #endif
