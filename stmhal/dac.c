@@ -218,16 +218,16 @@ STATIC mp_obj_t pyb_dac_make_new(const mp_obj_type_t *type, mp_uint_t n_args, mp
 
     if (dac_id == 1) {
         dac->pin = GPIO_PIN_4;
-        dac->tx_dma_descr.pType = dma_DAC;
-        dac->tx_dma_descr.pInstanceNr = 1;
-        dac->tx_dma_descr.tType = DMA_MEMORY_TO_PERIPH;
-        dac->tx_dma_descr.dmaInstNr = 1;
+        dac->tx_dma_descr.periphery_type = dma_DAC;
+        dac->tx_dma_descr.periphery_inst_nr = 1;
+        dac->tx_dma_descr.transfer_direction = DMA_MEMORY_TO_PERIPH;
+        dac->tx_dma_descr.dma_inst_nr = 1;
     } else if (dac_id == 2) {
         dac->pin = GPIO_PIN_5;
-        dac->tx_dma_descr.pType = dma_DAC;
-        dac->tx_dma_descr.pInstanceNr = 2;
-        dac->tx_dma_descr.tType = DMA_MEMORY_TO_PERIPH;
-        dac->tx_dma_descr.dmaInstNr = 1;
+        dac->tx_dma_descr.periphery_type = dma_DAC;
+        dac->tx_dma_descr.periphery_inst_nr = 2;
+        dac->tx_dma_descr.transfer_direction = DMA_MEMORY_TO_PERIPH;
+        dac->tx_dma_descr.dma_inst_nr = 1;
     } else {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "DAC %d does not exist", dac_id));
     }
@@ -397,19 +397,23 @@ mp_obj_t pyb_dac_write_timed(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
     DAC_InitStructure.DAC_OutputBuffer = DAC_OutputBuffer_Enable;
     DAC_Init(self->dac_channel, &DAC_InitStructure);
     */
+    dma_descr_t tx_dma_descr;
 
-
+    tx_dma_descr.dma_inst_nr =  dma_instance1;
+    tx_dma_descr.periphery_type = dma_DAC;
+    tx_dma_descr.transfer_direction = DMA_MEMORY_TO_PERIPH;
+    tx_dma_descr.periphery_inst_nr = 1;
 
     // DMA1_Stream[67] channel7 configuration
     DMA_HandleTypeDef DMA_Handle;
     DMA_Handle.Instance = self->dma_stream;
 
+
     // Need to deinit DMA first
     DMA_Handle.State = HAL_DMA_STATE_READY;
     HAL_DMA_DeInit(&DMA_Handle);
 
-    DMA_Handle.Init.Channel = DMA_CHANNEL_DAC1;  // DAC1 & DAC2 both use the same channel
-    DMA_Handle.Init.Direction = DMA_MEMORY_TO_PERIPH;
+    dma_init_handle(&DMA_Handle, &tx_dma_descr, (void*)NULL);
     DMA_Handle.Init.PeriphInc = DMA_PINC_DISABLE;
     DMA_Handle.Init.MemInc = DMA_MINC_ENABLE;
     if (self->bits == 8) {
@@ -421,8 +425,10 @@ mp_obj_t pyb_dac_write_timed(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
     }
     DMA_Handle.Init.Mode = args[2].u_int;
     DMA_Handle.Init.Priority = DMA_PRIORITY_HIGH;
+#if ! defined(MCU_SERIES_L4)
     DMA_Handle.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
     DMA_Handle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_HALFFULL;
+#endif
     DMA_Handle.Init.MemBurst = DMA_MBURST_SINGLE;
     DMA_Handle.Init.PeriphBurst = DMA_PBURST_SINGLE;
     HAL_DMA_Init(&DMA_Handle);
