@@ -54,9 +54,9 @@ typedef enum {
 
 typedef struct
 {
-    periphery_t     pType;          /* Periphery type */
-    uint8_t         pInstanceNr;    /* Instance of Periphery */
-    uint32_t        tDirection;     /* Transfer direction */
+    periphery_t     periphery_type;          /* Periphery type */
+    uint8_t         periphery_inst_nr;    /* Instance of Periphery */
+    uint32_t        transfer_direction;     /* Transfer direction */
 #if defined(MCU_SERIES_L4)
     DMA_Channel_TypeDef *instance;
 #else
@@ -283,9 +283,9 @@ static int get_dma_entry(const dma_descr_t *dma_descr) {
     int idx=0;
     for (idx = 0; idx<MP_ARRAY_SIZE(dma_transfer_info);idx++)
     {
-        if ((dma_transfer_info[idx].pType == dma_descr->pType) &&
-            (dma_transfer_info[idx].pInstanceNr == dma_descr->pInstanceNr) &&
-            (dma_transfer_info[idx].tDirection == dma_descr->tDirection) )
+        if ((dma_transfer_info[idx].periphery_type == dma_descr->periphery_type) &&
+            (dma_transfer_info[idx].periphery_inst_nr == dma_descr->periphery_inst_nr) &&
+            (dma_transfer_info[idx].transfer_direction == dma_descr->transfer_direction) )
         {
             dma_entry = idx;
             break;
@@ -340,13 +340,13 @@ static void dma_disable_clock(int dma_id) {
     dma_enable_mask &= ~(1 << dma_id);
 }
 
-int dma_setup(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *data)
+int dma_init_handle(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *data)
 {
     int dma_idx =  get_dma_entry(dma_descr);
     // initialise parameters
     dma->Instance = dma_transfer_info[dma_idx].instance;
     dma->Init = *dma_transfer_info[dma_idx].init;
-    dma->Init.Direction = dma_transfer_info[dma_idx].tDirection;
+    dma->Init.Direction = dma_transfer_info[dma_idx].transfer_direction;
 #if defined(MCU_SERIES_L4)
     dma->Init.Request = dma_transfer_info[dma_idx].sub_instance;
 #else
@@ -372,7 +372,7 @@ void dma_init(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *data){
     // structure so we don't get random values from the stack)
     memset(dma, 0, sizeof(*dma));
 
-    dma_idx = dma_setup(dma, dma_descr, data);
+    dma_idx = dma_init_handle(dma, dma_descr, data);
     dma_id  = dma_transfer_info[dma_idx].id;
 
     // set global pointer for IRQ handler

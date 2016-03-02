@@ -33,16 +33,16 @@ typedef enum {
 } periphery_t;
 
 typedef enum {
-    dma_instance1,    /* First instance o */
-    dma_instance2     /* Transfer Periphery -> Memeory */
+    dma_instance1,
+    dma_instance2
 } dma_instance_t;
 
 typedef struct _dmaDescr
 {
-    dma_instance_t  dma_inst_nr;     /* Instance of dma for transfer */
-    periphery_t     pType;         /* Periphery type */
-    uint32_t        tDirection;    /* FIXME BADI rename! Transfer direction Periphery to memory or vis-versa */
-    uint8_t         pInstanceNr;   /* Instance of Periphery */
+    dma_instance_t  dma_inst_nr;        /* Instance of dma for transfer */
+    periphery_t     periphery_type;     /* Periphery type */
+    uint32_t        transfer_direction; /* Transfer direction Periphery to memory or vis-versa */
+    uint8_t         periphery_inst_nr;  /* Instance of Periphery */
 } dma_descr_t;
 
 typedef union {
@@ -58,6 +58,7 @@ extern volatile dma_idle_count_t dma_idle;
 #define DMA_IDLE_TICK(tick)         (((tick) & DMA_SYSTICK_MASK) == 0)
 
 void dma_init(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *data);
+int  dma_init_handle(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *data);
 void dma_deinit(DMA_HandleTypeDef *dma);
 void dma_invalidate_channel(const dma_descr_t * dma_descr);
 void dma_idle_handler(int controller);
