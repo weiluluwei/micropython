@@ -138,14 +138,8 @@ typedef enum {
 
 typedef struct _pyb_dac_obj_t {
     mp_obj_base_t base;
-    dma_descr_t tx_dma_descr;
-
     uint32_t dac_channel; // DAC_CHANNEL_1 or DAC_CHANNEL_2
-#if defined(MCU_SERIES_L4)
-    DMA_Channel_TypeDef *dma_stream;
-#else
-    DMA_Stream_TypeDef  *dma_stream; // DMA1_Stream5 or DMA1_Stream6
-#endif
+    dma_descr_t tx_dma_descr;
     uint16_t pin; // GPIO_PIN_4 or GPIO_PIN_5
     uint8_t bits; // 8 or 12
     uint8_t state;
@@ -226,6 +220,7 @@ STATIC mp_obj_t pyb_dac_make_new(const mp_obj_type_t *type, mp_uint_t n_args, mp
 
     if (dac_id == 1) {
         dac->pin = GPIO_PIN_4;
+    	DMA_HandleTypeDef DMA_Handle;
         dac->tx_dma_descr.periphery_type = dma_DAC;
         dac->tx_dma_descr.periphery_inst_nr = 1;
         dac->tx_dma_descr.transfer_direction = DMA_MEMORY_TO_PERIPH;
@@ -383,14 +378,13 @@ mp_obj_t pyb_dac_write_timed(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
         dac_trigger = TIMx_Config(args[1].u_obj);
     }
 
-
-
-
     __DMA1_CLK_ENABLE();
 
+    DMA_HandleTypeDef DMA_Handle;
+    dma_init_handle(&DMA_Handle, &self->tx_dma_descr, (void*)NULL);
     /*
-    DMA_Cmd(self->dma_stream, DISABLE);
-    while (DMA_GetCmdStatus(self->dma_stream) != DISABLE) {
+    DMA_Cmd(DMA_Handle->Instance, DISABLE);
+    while (DMA_GetCmdStatus(DMA_Handle->Instance) != DISABLE) {
     }
 
     DAC_Cmd(self->dac_channel, DISABLE);
@@ -405,22 +399,18 @@ mp_obj_t pyb_dac_write_timed(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
     DAC_InitStructure.DAC_OutputBuffer = DAC_OutputBuffer_Enable;
     DAC_Init(self->dac_channel, &DAC_InitStructure);
     */
-    dma_descr_t tx_dma_descr;
-
-    tx_dma_descr.dma_inst_nr =  dma_instance1;
-    tx_dma_descr.periphery_type = dma_DAC;
-    tx_dma_descr.transfer_direction = DMA_MEMORY_TO_PERIPH;
-    tx_dma_descr.periphery_inst_nr = 1;
-
-    // DMA1_Stream[67] channel7 configuration
-    DMA_HandleTypeDef DMA_Handle;
-    DMA_Handle.Instance = self->dma_stream;
-
 
     // Need to deinit DMA first
     DMA_Handle.State = HAL_DMA_STATE_READY;
     HAL_DMA_DeInit(&DMA_Handle);
 
+    dma_descr_t tx_dma_descr;
+
+    // DMA1_Stream[67] channel7 configuration
+    tx_dma_descr.dma_inst_nr =  dma_instance1;
+    tx_dma_descr.transfer_direction = DMA_MEMORY_TO_PERIPH;
+    tx_dma_descr.periphery_type = dma_DAC;
+    tx_dma_descr.periphery_inst_nr = 1;
     dma_init_handle(&DMA_Handle, &tx_dma_descr, (void*)NULL);
     DMA_Handle.Init.PeriphInc = DMA_PINC_DISABLE;
     DMA_Handle.Init.MemInc = DMA_MINC_ENABLE;
@@ -469,8 +459,8 @@ mp_obj_t pyb_dac_write_timed(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
 
     /*
     // enable DMA stream
-    DMA_Cmd(self->dma_stream, ENABLE);
-    while (DMA_GetCmdStatus(self->dma_stream) == DISABLE) {
+    DMA_Cmd(DMA_Handle->Instance, ENABLE);
+    while (DMA_GetCmdStatus(DMA_Handle->Instance) == DISABLE) {
     }
 
     // enable DAC channel
