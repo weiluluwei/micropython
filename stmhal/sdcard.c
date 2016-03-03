@@ -62,7 +62,8 @@
 #define SDIO_HARDWARE_FLOW_CONTROL_ENABLE   SDMMC_HARDWARE_FLOW_CONTROL_ENABLE
 
 #define SDIO_TRANSFER_CLK_DIV               SDMMC_TRANSFER_CLK_DIV
-
+#elif defined(MCU_SERIES_L4)
+#error Unsupported Processor
 #endif
 
 // TODO: Since SDIO is fundamentally half-duplex, we really only need to
