@@ -105,7 +105,7 @@ STATIC void adc_wait_for_eoc_or_timeout(int32_t timeout)
             break; // timeout
         }
     }
-#else
+#elif defined(MCU_SERIES_L4)
     while (READ_BIT(ADCx->ISR, ADC_FLAG_EOC) != ADC_FLAG_EOC) {
         if (((HAL_GetTick() - tickstart ) > timeout)) {
             break; // timeout
@@ -135,7 +135,7 @@ STATIC void adc_init_single(pyb_obj_adc_t *adc_obj) {
 
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     ADCx_CLK_ENABLE();
-#else
+#elif defined(MCU_SERIES_L4)
     __HAL_RCC_ADC_CLK_ENABLE();
 #endif
     ADC_HandleTypeDef *adcHandle = &adc_obj->handle;
@@ -153,7 +153,7 @@ STATIC void adc_init_single(pyb_obj_adc_t *adc_obj) {
     adcHandle->Init.ClockPrescaler        = ADC_CLOCKPRESCALER_PCLK_DIV2;
     adcHandle->Init.ScanConvMode          = DISABLE;
     adcHandle->Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T1_CC1;
-#else
+#elif defined(MCU_SERIES_L4)
     adcHandle->Init.ClockPrescaler        = ADC_CLOCK_ASYNC_DIV2;
     adcHandle->Init.ScanConvMode          = ADC_SCAN_DISABLE;
     adcHandle->Init.ExternalTrigConv      = ADC_EXTERNALTRIG_T1_CC1;
@@ -172,7 +172,7 @@ STATIC void adc_config_channel(pyb_obj_adc_t *adc_obj) {
     sConfig.Rank = 1;
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
-#else
+#elif defined(MCU_SERIES_L4)
     sConfig.SamplingTime = ADC_SAMPLETIME_12CYCLES_5;
 #endif
     sConfig.Offset = 0;
@@ -328,7 +328,7 @@ STATIC mp_obj_t adc_read_timed(mp_obj_t self_in, mp_obj_t buf_in, mp_obj_t freq_
             // for subsequent samples we can just set the "start sample" bit
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
             ADCx->CR2 |= (uint32_t)ADC_CR2_SWSTART;
-#else
+#elif defined(MCU_SERIES_L4)
             SET_BIT(ADCx->CR, ADC_CR_ADSTART);
 #endif
         }
@@ -409,7 +409,7 @@ void adc_init_all(pyb_adc_all_obj_t *adc_all, uint32_t resolution) {
 
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     ADCx_CLK_ENABLE();
-#else
+#elif defined(MCU_SERIES_L4)
     __HAL_RCC_ADC_CLK_ENABLE();
 #endif
 
@@ -428,7 +428,7 @@ void adc_init_all(pyb_adc_all_obj_t *adc_all, uint32_t resolution) {
     adcHandle->Init.ClockPrescaler        = ADC_CLOCKPRESCALER_PCLK_DIV2;
     adcHandle->Init.ScanConvMode          = DISABLE;
     adcHandle->Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T1_CC1;
-#else
+#elif defined(MCU_SERIES_L4)
     adcHandle->Init.ClockPrescaler        = ADC_CLOCK_ASYNC_DIV2;
     adcHandle->Init.ScanConvMode          = ADC_SCAN_DISABLE;
     adcHandle->Init.ExternalTrigConv      = ADC_EXTERNALTRIG_T1_CC1;
@@ -446,7 +446,7 @@ uint32_t adc_config_and_read_channel(ADC_HandleTypeDef *adcHandle, uint32_t chan
     sConfig.Rank = 1;
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
-#else
+#elif defined(MCU_SERIES_L4)
     sConfig.SamplingTime = ADC_SAMPLETIME_12CYCLES_5;
 #endif
     sConfig.Offset = 0;
