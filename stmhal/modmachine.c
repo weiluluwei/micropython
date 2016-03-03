@@ -187,6 +187,10 @@ STATIC mp_obj_t machine_freq(mp_uint_t n_args, const mp_obj_t *args) {
         return mp_obj_new_tuple(4, tuple);
     } else {
         // set
+#if defined(MCU_SERIES_L4)
+        nlr_raise(mp_obj_new_exception_msg(&mp_type_NotImplementedError, "machine.freq set not supported yet"));
+#endif
+
         mp_int_t wanted_sysclk = mp_obj_get_int(args[0]) / 1000000;
 
         // default PLL parameters that give 48MHz on PLL48CK
@@ -349,7 +353,7 @@ MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(machine_freq_obj, 0, 4, machine_freq);
 
 STATIC mp_obj_t machine_sleep(void) {
 #if defined(MCU_SERIES_L4)
-    printf("machine.sleep not supported yet\n");
+    nlr_raise(mp_obj_new_exception_msg(&mp_type_NotImplementedError, "Machine.sleep not supported yet"));
 #else
     // takes longer to wake but reduces stop current
     HAL_PWREx_EnableFlashPowerDown();
@@ -381,7 +385,7 @@ STATIC mp_obj_t machine_deepsleep(void) {
     rtc_init_finalise();
 
 #if defined(MCU_SERIES_F7) || defined(MCU_SERIES_L4)
-    printf("machine.deepsleep not supported yet\n");
+    printf("Machine.deepsleep not supported yet\n");
 #else
     // We need to clear the PWR wake-up-flag before entering standby, since
     // the flag may have been set by a previous wake-up event.  Furthermore,
