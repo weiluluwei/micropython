@@ -107,7 +107,28 @@ void __fatal_error(const char *msg);
 /** @addtogroup STM32Fxxx_System_Private_Defines
   * @{
   */
-
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
+        /* Set HSION bit */
+#define CONFIG_RCC_CR_1ST  RCC_CR_HSION
+#define CONFIG_RCC_CR_2ND  (RCC_CR_HSEON || RCC_CR_CSSON || RCC_CR_PLLON)
+#define CONFIG_RCC_PLLCFGR (0x24003010)  /* Reset register Value is set */
+#elif defined(MCU_SERIES_L4)
+        /* Set MSION bit */
+#define CONFIG_RCC_CR_1ST  RCC_CR_MSION
+#define CONFIG_RCC_CR_2ND  (RCC_CR_HSEON || RCC_CR_CSSON || RCC_CR_HSION || RCC_CR_PLLON)
+#define CONFIG_RCC_PLLCFGR (0x00001000)
+/*
+ * FIXME Do not know why I have to define these arrays here! they should be defined in the
+ * hal_rcc-file!!
+ *
+ */
+const uint8_t  AHBPrescTable[16] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
+const uint8_t  APBPrescTable[8] =  {0, 0, 0, 0, 1, 2, 3, 4};
+const uint32_t MSIRangeTable[12] = {100000, 200000, 400000, 800000, 1000000, 2000000, \
+                                  4000000, 8000000, 16000000, 24000000, 32000000, 48000000};
+#else
+    #error Unknown processor
+#endif
 /************************* Miscellaneous Configuration ************************/
 
 /*!< Uncomment the following line if you need to relocate your vector Table in
@@ -165,7 +186,6 @@ void __fatal_error(const char *msg);
   * @param  None
   * @retval None
   */
-#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
 void SystemInit(void)
 {
   /* FPU settings ------------------------------------------------------------*/
@@ -173,24 +193,27 @@ void SystemInit(void)
     SCB->CPACR |= ((3UL << 10*2)|(3UL << 11*2));  /* set CP10 and CP11 Full Access */
   #endif
   /* Reset the RCC clock configuration to the default reset state ------------*/
-  /* Set HSION bit */
-  RCC->CR |= (uint32_t)0x00000001;
+
+  RCC->CR |= CONFIG_RCC_CR_1ST;
 
   /* Reset CFGR register */
   RCC->CFGR = 0x00000000;
 
   /* Reset HSEON, CSSON and PLLON bits */
-  RCC->CR &= (uint32_t)0xFEF6FFFF;
+  RCC->CR &= ~ CONFIG_RCC_CR_2ND;
 
   /* Reset PLLCFGR register */
-  RCC->PLLCFGR = 0x24003010;
+  RCC->PLLCFGR = CONFIG_RCC_PLLCFGR;
 
   /* Reset HSEBYP bit */
   RCC->CR &= (uint32_t)0xFFFBFFFF;
 
   /* Disable all interrupts */
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
   RCC->CIR = 0x00000000;
-
+#elif defined(MCU_SERIES_L4)
+  RCC->CIER = 0x00000000;
+#endif
   /* Configure the Vector Table location add offset address ------------------*/
 #ifdef VECT_TAB_SRAM
   SCB->VTOR = SRAM1_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM */
@@ -202,7 +225,7 @@ void SystemInit(void)
   SCB->CCR |= SCB_CCR_STKALIGN_Msk;
 }
 
-
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
 /**
   * @brief  System Clock Configuration
   *         The system Clock is configured as follow :
@@ -362,51 +385,6 @@ void SystemClock_Config(void)
 }
 
 #elif defined(MCU_SERIES_L4)
-/*
- * FIXME Do not know why I have to define these arrays here! they should be defined in the
- * hal_rcc-file!!
- *
- */
-const uint8_t  AHBPrescTable[16] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 6, 7, 8, 9};
-const uint8_t  APBPrescTable[8] =  {0, 0, 0, 0, 1, 2, 3, 4};
-const uint32_t MSIRangeTable[12] = {100000, 200000, 400000, 800000, 1000000, 2000000, \
-                                  4000000, 8000000, 16000000, 24000000, 32000000, 48000000};
-
-
-
-void SystemInit(void)
-{
-  /* FPU settings ------------------------------------------------------------*/
-  #if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
-    SCB->CPACR |= ((3UL << 10*2)|(3UL << 11*2));  /* set CP10 and CP11 Full Access */
-  #endif
-  /* Reset the RCC clock configuration to the default reset state ------------*/
-  /* Set MSION bit */
-  RCC->CR |= RCC_CR_MSION;
-
-  /* Reset CFGR register */
-  RCC->CFGR = 0x00000000;
-
-  /* Reset HSEON, CSSON , HSION, and PLLON bits */
-  RCC->CR &= (uint32_t)0xEAF6FFFF;
-
-  /* Reset PLLCFGR register */
-  RCC->PLLCFGR = 0x00001000;
-
-  /* Reset HSEBYP bit */
-  RCC->CR &= (uint32_t)0xFFFBFFFF;
-
-  /* Disable all interrupts */
-  RCC->CIER = 0x00000000;
-
-  /* Configure the Vector Table location add offset address ------------------*/
-#ifdef VECT_TAB_SRAM
-  SCB->VTOR = SRAM_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM */
-#else
-  SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
-#endif
-}
-
 /**
   * @brief  System Clock Configuration
   *         The system Clock is configured as follow :
@@ -435,12 +413,12 @@ void SystemClock_Config(void)
     RCC_OscInitTypeDef RCC_OscInitStruct;
     RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
 
-    /* Enable the LSE Oscilator */
+    /* Enable the LSE Oscillator */
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSE;
     RCC_OscInitStruct.LSEState = RCC_LSE_ON;
     if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
     {
-    //Error_Handler();
+        __fatal_error("HAL_RCC_ClockConfig");
     }
 
     /* Enable the CSS interrupt in case LSE signal is corrupted or not present */
@@ -469,7 +447,7 @@ void SystemClock_Config(void)
     RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
     RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
     RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-    HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4);
+    HAL_RCC_ClockConfig(&RCC_ClkInitStruct, MICROPY_HW_FLASH_LATENCY);
 
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SAI1|RCC_PERIPHCLK_I2C1
                               |RCC_PERIPHCLK_USB|RCC_PERIPHCLK_ADC;
@@ -484,6 +462,7 @@ void SystemClock_Config(void)
     PeriphClkInitStruct.PLLSAI1.PLLSAI1ClockOut = RCC_PLLSAI1_SAI1CLK|RCC_PLLSAI1_48M2CLK
                               |RCC_PLLSAI1_ADC1CLK;
     HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
+
 
     __PWR_CLK_ENABLE();
 
@@ -500,9 +479,6 @@ void SystemClock_Config(void)
 
 }
 
-
-#else
-    #error "Unknown MCU Series type."
 #endif
 
 
