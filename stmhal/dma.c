@@ -73,7 +73,11 @@ typedef struct
 // Default parameters to dma_init() shared by spi and i2c; Channel and Direction
 // vary depending on the peripheral instance so they get passed separately
 static const DMA_InitTypeDef dma_init_struct_spi_i2c = {
-    /*.Channel/.Stream = */0,
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
+    .Channel             = 0,
+#elif defined(MCU_SERIES_L4)
+    .Request             = 0,
+#endif
     .Direction           = 0,
     .PeriphInc           = DMA_PINC_DISABLE,
     .MemInc              = DMA_MINC_ENABLE,
@@ -92,13 +96,21 @@ static const DMA_InitTypeDef dma_init_struct_spi_i2c = {
 #if MICROPY_HW_HAS_SDCARD
 // Parameters to dma_init() for SDIO tx and rx.
 static const DMA_InitTypeDef dma_init_struct_sdio = {
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     .Channel             = 0,
+#elif defined(MCU_SERIES_L4)
+    .Request             = 0,
+#endif
     .Direction           = 0,
     .PeriphInc           = DMA_PINC_DISABLE,
     .MemInc              = DMA_MINC_ENABLE,
     .PeriphDataAlignment = DMA_PDATAALIGN_WORD,
     .MemDataAlignment    = DMA_MDATAALIGN_WORD,
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     .Mode                = DMA_PFCTRL,
+#else
+    .Mode                = DMA_NORMAL,
+#endif
     .Priority            = DMA_PRIORITY_VERY_HIGH,
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     .FIFOMode            = DMA_FIFOMODE_ENABLE,
