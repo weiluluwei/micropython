@@ -114,6 +114,16 @@ STATIC void adc_wait_for_eoc_or_timeout(int32_t timeout)
 #endif
 }
 
+STATIC void adc_clock_enable(void)
+{
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
+    ADCx_CLK_ENABLE();
+#elif defined(MCU_SERIES_L4)
+    __HAL_RCC_ADC_CLK_ENABLE();
+#endif
+}
+
+
 
 STATIC void adc_init_single(pyb_obj_adc_t *adc_obj) {
     if (!is_adcx_channel(adc_obj->channel))
@@ -132,12 +142,7 @@ STATIC void adc_init_single(pyb_obj_adc_t *adc_obj) {
       GPIO_InitStructure.Pull = GPIO_NOPULL;
       HAL_GPIO_Init(pin->gpio, &GPIO_InitStructure);
     }
-
-#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
-    ADCx_CLK_ENABLE();
-#elif defined(MCU_SERIES_L4)
-    __HAL_RCC_ADC_CLK_ENABLE();
-#endif
+    adc_clock_enable();
     ADC_HandleTypeDef *adcHandle = &adc_obj->handle;
     adcHandle->Instance                   = ADCx;
     adcHandle->Init.Resolution            = ADC_RESOLUTION12b;
@@ -407,11 +412,7 @@ void adc_init_all(pyb_adc_all_obj_t *adc_all, uint32_t resolution) {
         HAL_GPIO_Init(pin->gpio, &GPIO_InitStructure);
     }
 
-#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
-    ADCx_CLK_ENABLE();
-#elif defined(MCU_SERIES_L4)
-    __HAL_RCC_ADC_CLK_ENABLE();
-#endif
+    adc_clock_enable();
 
     ADC_HandleTypeDef *adcHandle = &adc_all->handle;
     adcHandle->Instance = ADCx;
