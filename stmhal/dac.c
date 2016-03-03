@@ -141,7 +141,11 @@ typedef struct _pyb_dac_obj_t {
     dma_descr_t tx_dma_descr;
 
     uint32_t dac_channel; // DAC_CHANNEL_1 or DAC_CHANNEL_2
-    DMA_Stream_TypeDef *dma_stream; // DMA1_Stream5 or DMA1_Stream6
+#if defined(MCU_SERIES_L4)
+    DMA_Channel_TypeDef *dma_stream;
+#else
+    DMA_Stream_TypeDef  *dma_stream; // DMA1_Stream5 or DMA1_Stream6
+#endif
     uint16_t pin; // GPIO_PIN_4 or GPIO_PIN_5
     uint8_t bits; // 8 or 12
     uint8_t state;
@@ -164,7 +168,11 @@ STATIC mp_obj_t pyb_dac_init_helper(pyb_dac_obj_t *self, mp_uint_t n_args, const
     HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 
     // DAC peripheral clock
+#if defined(MCU_SERIES_L4)
+    __HAL_RCC_DAC1_CLK_ENABLE();
+#else
     __DAC_CLK_ENABLE();
+#endif
 
     // stop anything already going on
     HAL_DAC_Stop(&DAC_Handle, self->dac_channel);
@@ -428,9 +436,9 @@ mp_obj_t pyb_dac_write_timed(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
 #if ! defined(MCU_SERIES_L4)
     DMA_Handle.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
     DMA_Handle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_HALFFULL;
-#endif
     DMA_Handle.Init.MemBurst = DMA_MBURST_SINGLE;
     DMA_Handle.Init.PeriphBurst = DMA_PBURST_SINGLE;
+#endif
     HAL_DMA_Init(&DMA_Handle);
 
     if (self->dac_channel == DAC_CHANNEL_1) {
