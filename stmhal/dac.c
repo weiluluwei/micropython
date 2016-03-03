@@ -220,7 +220,6 @@ STATIC mp_obj_t pyb_dac_make_new(const mp_obj_type_t *type, mp_uint_t n_args, mp
 
     if (dac_id == 1) {
         dac->pin = GPIO_PIN_4;
-    	DMA_HandleTypeDef DMA_Handle;
         dac->tx_dma_descr.periphery_type = dma_DAC;
         dac->tx_dma_descr.periphery_inst_nr = 1;
         dac->tx_dma_descr.transfer_direction = DMA_MEMORY_TO_PERIPH;
