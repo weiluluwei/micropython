@@ -287,7 +287,7 @@ void DMA2_Stream6_IRQHandler(void) { IRQ_ENTER(DMA2_Stream6_IRQn); if (dma_handl
 void DMA2_Stream7_IRQHandler(void) { IRQ_ENTER(DMA2_Stream7_IRQn); if (dma_handle[15] != NULL) { HAL_DMA_IRQHandler(dma_handle[15]); } IRQ_EXIT(DMA2_Stream7_IRQn); }
 
 #elif defined(MCU_SERIES_L4)
-#define DMA_CHANNEL_AS_UINT8(dma_id)    (dma_id % NSTREAMS_PER_CONTROLLER))
+#define DMA_CHANNEL_AS_UINT8(dma_id)    ((dma_id) % NSTREAMS_PER_CONTROLLER)
 
 void DMA1_Channel1_IRQHandler(void) { IRQ_ENTER(DMA1_Channel1_IRQn); if (dma_handle[0] != NULL)  { HAL_DMA_IRQHandler(dma_handle[0]); } IRQ_EXIT(DMA1_Channel1_IRQn); }
 void DMA1_Channel2_IRQHandler(void) { IRQ_ENTER(DMA1_Channel2_IRQn); if (dma_handle[1] != NULL)  { HAL_DMA_IRQHandler(dma_handle[1]); } IRQ_EXIT(DMA1_Channel2_IRQn); }
@@ -406,9 +406,9 @@ int32_t dma_init_handle(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *d
         // half of __HAL_LINKDMA(data, xxx, *dma)
         // caller must implement other half by doing: data->xxx = dma
         dma->Parent = data;
-    } else {
-        printf("No DMA with pType %u, pInstNr %u, tDir %u\n", (uint)dma_descr->periphery_type, (uint)dma_descr->periphery_inst_nr, (uint)dma_descr->transfer_direction );
-    }
+    }/* else {
+        printf("No DMA with periphery_type %u, periphery_inst_nr %u, transfer_direction %u\n", (uint)dma_descr->periphery_type, (uint)dma_descr->periphery_inst_nr, (uint)dma_descr->transfer_direction );
+    }*/
 
     return dma_idx;
 }
@@ -417,8 +417,7 @@ int32_t dma_init_handle(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *d
 
 void dma_init(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *data){
     int32_t dma_idx;
-    //printf("dma_init(%p, %p(%d), 0x%x, 0x%x, %p)\n", dma, dma_stream, dma_id, (uint)dma_channel, (uint)direction, data);
-    printf("dma_init( periphery_type=%u, periphery_inst_nr=%u, direction=%u)\n", (uint)dma_descr->periphery_type, (uint)dma_descr->periphery_inst_nr, (uint)dma_descr->transfer_direction );
+    //printf("dma_init( periphery_type=%u, periphery_inst_nr=%u, transfer_direction=%u)\n", (uint)dma_descr->periphery_type, (uint)dma_descr->periphery_inst_nr, (uint)dma_descr->transfer_direction );
 
     // Some drivers allocate the DMA_HandleTypeDef from the stack
     // (i.e. dac, i2c, spi) and for those cases we need to clear the
