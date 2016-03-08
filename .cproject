@@ -31,6 +31,7 @@
 									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabi/include/"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.315491992" languageId="org.eclipse.cdt.core.assembly" languageName="Assembly" sourceContentType="org.eclipse.cdt.core.asmSource" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -41,6 +42,7 @@
 									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabi/include/"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1929184155" languageId="org.eclipse.cdt.core.g++" languageName="GNU C++" sourceContentType="org.eclipse.cdt.core.cxxSource,org.eclipse.cdt.core.cxxHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -51,6 +53,7 @@
 									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabi/include/"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1556040727" languageId="org.eclipse.cdt.core.gcc" languageName="GNU C" sourceContentType="org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -90,6 +93,7 @@
 									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabi/include/"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1809905038" languageId="org.eclipse.cdt.core.assembly" languageName="Assembly" sourceContentType="org.eclipse.cdt.core.asmSource" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -100,6 +104,7 @@
 									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabi/include/"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1311649421" languageId="org.eclipse.cdt.core.g++" languageName="GNU C++" sourceContentType="org.eclipse.cdt.core.cxxSource,org.eclipse.cdt.core.cxxHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -110,6 +115,7 @@
 									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabi/include/"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1797855271" languageId="org.eclipse.cdt.core.gcc" languageName="GNU C" sourceContentType="org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -148,6 +154,7 @@
 									<listOptionValue builtIn="false" value="../stmhal/l4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabi/include/"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.702716729" languageId="org.eclipse.cdt.core.assembly" languageName="Assembly" sourceContentType="org.eclipse.cdt.core.asmSource" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -157,6 +164,7 @@
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
 									<listOptionValue builtIn="false" value="../stmhal/l4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabi/include/"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.1658312910" languageId="org.eclipse.cdt.core.g++" languageName="GNU C++" sourceContentType="org.eclipse.cdt.core.cxxSource,org.eclipse.cdt.core.cxxHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -166,6 +174,7 @@
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
 									<listOptionValue builtIn="false" value="../stmhal/l4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabi/include/"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.36794030" languageId="org.eclipse.cdt.core.gcc" languageName="GNU C" sourceContentType="org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -201,6 +210,7 @@
 								<option id="gnu.cpp.compiler.option.include.paths.1648976546" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/include"/>
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabi/include/"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1213653023" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
@@ -210,6 +220,7 @@
 								<option id="gnu.c.compiler.option.include.paths.329909153" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/include"/>
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabi/include/"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.87033570" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
@@ -224,6 +235,7 @@
 								<option id="gnu.both.asm.option.include.paths.1026672381" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/usr/include"/>
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabi/include/"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1367654365" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
@@ -234,7 +246,7 @@
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 		</cconfiguration>
 		<cconfiguration id="0.157429536.388604218">
-			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="0.157429536.388604218" moduleId="org.eclipse.cdt.core.settings" name="407">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="0.157429536.388604218" moduleId="org.eclipse.cdt.core.settings" name="Debug 407">
 				<macros>
 					<stringMacro name="cross_suffix" type="VALUE_TEXT" value=""/>
 					<stringMacro name="cross_prefix" type="VALUE_TEXT" value="arm-none-eabi-"/>
@@ -250,14 +262,15 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration buildProperties="" description="" id="0.157429536.388604218" name="407" parent="org.eclipse.cdt.build.core.prefbase.cfg">
+				<configuration artifactName="${ProjName}" buildProperties="" description="" id="0.157429536.388604218" name="Debug 407" parent="org.eclipse.cdt.build.core.prefbase.cfg">
 					<folderInfo id="0.157429536.388604218." name="/" resourcePath="">
 						<toolChain id="org.eclipse.cdt.build.core.prefbase.toolchain.1202356943" name="No ToolChain" resourceTypeBasedDiscovery="false" superClass="org.eclipse.cdt.build.core.prefbase.toolchain">
 							<targetPlatform id="org.eclipse.cdt.build.core.prefbase.toolchain.1202356943.533777220" name=""/>
-							<builder arguments="BOARD=STM32F4DISC DEBUG=1" buildPath="${workspace_loc:/micropython}/stmhal/" command="make" id="org.eclipse.cdt.build.core.settings.default.builder.1046278860" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="org.eclipse.cdt.build.core.settings.default.builder"/>
+							<builder arguments="BOARD=STM32F4DISC DEBUG=1" buildPath="${workspace_loc:/micropython}/stmhal/" command="make" id="org.eclipse.cdt.build.core.settings.default.builder.1046278860" incrementalBuildTarget="" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="org.eclipse.cdt.build.core.settings.default.builder"/>
 							<tool id="org.eclipse.cdt.build.core.settings.holder.libs.666769527" name="holder for library settings" superClass="org.eclipse.cdt.build.core.settings.holder.libs"/>
 							<tool id="org.eclipse.cdt.build.core.settings.holder.1068756761" name="Assembly" superClass="org.eclipse.cdt.build.core.settings.holder">
 								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.676712254" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabi/include/"/>
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/devinc"/>
 									<listOptionValue builtIn="false" value="../stmhal/l4/inc"/>
 									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
@@ -268,6 +281,7 @@
 							</tool>
 							<tool id="org.eclipse.cdt.build.core.settings.holder.532583813" name="GNU C++" superClass="org.eclipse.cdt.build.core.settings.holder">
 								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.454316842" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabi/include/"/>
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/devinc"/>
 									<listOptionValue builtIn="false" value="../stmhal/l4/inc"/>
 									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
@@ -278,6 +292,7 @@
 							</tool>
 							<tool id="org.eclipse.cdt.build.core.settings.holder.1792049046" name="GNU C" superClass="org.eclipse.cdt.build.core.settings.holder">
 								<option id="org.eclipse.cdt.build.core.settings.holder.incpaths.1751260879" name="Include Paths" superClass="org.eclipse.cdt.build.core.settings.holder.incpaths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabi/include/"/>
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/devinc"/>
 									<listOptionValue builtIn="false" value="../stmhal/l4/inc"/>
 									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
@@ -291,6 +306,7 @@
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+			<storageModule moduleId="ilg.gnuarmeclipse.managedbuild.packs"/>
 		</cconfiguration>
 		<cconfiguration id="0.157429536.2000165399">
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="0.157429536.2000165399" moduleId="org.eclipse.cdt.core.settings" name="PYBV10">
@@ -322,6 +338,7 @@
 									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabi/include/"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.585905589" languageId="org.eclipse.cdt.core.assembly" languageName="Assembly" sourceContentType="org.eclipse.cdt.core.asmSource" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -332,6 +349,7 @@
 									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabi/include/"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.2145117612" languageId="org.eclipse.cdt.core.g++" languageName="GNU C++" sourceContentType="org.eclipse.cdt.core.cxxSource,org.eclipse.cdt.core.cxxHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -342,6 +360,7 @@
 									<listOptionValue builtIn="false" value="../stmhal/f4/inc"/>
 									<listOptionValue builtIn="false" value="/usr/include"/>
 									<listOptionValue builtIn="false" value="../stmhal/cmsis/inc"/>
+									<listOptionValue builtIn="false" value="/usr/arm-linux-gnueabi/include/"/>
 								</option>
 								<inputType id="org.eclipse.cdt.build.core.settings.holder.inType.473612733" languageId="org.eclipse.cdt.core.gcc" languageName="GNU C" sourceContentType="org.eclipse.cdt.core.cSource,org.eclipse.cdt.core.cHeader" superClass="org.eclipse.cdt.build.core.settings.holder.inType"/>
 							</tool>
@@ -357,13 +376,13 @@
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="refreshScope" versionNumber="2">
-		<configuration configurationName="PYBV10">
-			<resource resourceType="PROJECT" workspacePath="/micropython"/>
-		</configuration>
 		<configuration configurationName="Release">
 			<resource resourceType="PROJECT" workspacePath="/micropython"/>
 		</configuration>
 		<configuration configurationName="Default">
+			<resource resourceType="PROJECT" workspacePath="/micropython"/>
+		</configuration>
+		<configuration configurationName="PYBV10">
 			<resource resourceType="PROJECT" workspacePath="/micropython"/>
 		</configuration>
 		<configuration configurationName="Debug L476"/>
@@ -378,9 +397,13 @@
 		<configuration configurationName="Debug">
 			<resource resourceType="PROJECT" workspacePath="/micropython"/>
 		</configuration>
+		<configuration configurationName="Debug 407"/>
 	</storageModule>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="0.157429536.2000165399">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="0.157429536">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
@@ -393,8 +416,12 @@
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.152084079;cdt.managedbuild.config.gnu.exe.debug.152084079.;cdt.managedbuild.tool.gnu.c.compiler.exe.debug.1787062682;cdt.managedbuild.tool.gnu.c.compiler.input.87033570">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="0.157429536.388604218">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.152084079;cdt.managedbuild.config.gnu.exe.debug.152084079.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.878552570;cdt.managedbuild.tool.gnu.cpp.compiler.input.1213653023">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 </cproject>
