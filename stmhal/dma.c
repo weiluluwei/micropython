@@ -57,10 +57,12 @@ typedef enum {
 typedef struct
 {
     dma_descr_t     dma_descr;
-#if defined(MCU_SERIES_L4)
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
+    DMA_Stream_TypeDef  *instance;
+#elif defined(MCU_SERIES_L4)
     DMA_Channel_TypeDef *instance;
 #else
-    DMA_Stream_TypeDef  *instance;
+#error "Unsupported Processor"
 #endif
     uint32_t        sub_instance;
     dma_id_t        id;
@@ -72,14 +74,6 @@ typedef struct
 #define DMA_TX_TRANSFER      DMA_MEMORY_TO_PERIPH
 #define DMA_RX_TRANSFER      DMA_PERIPH_TO_MEMORY
 
-
-#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
-#define DMA_CHANNEL_AS_UINT8(dma_channel)   (((dma_channel) & DMA_SxCR_CHSEL) >> 24)
-#elif defined(MCU_SERIES_L4)
-#define DMA_CHANNEL_AS_UINT8(dma_id)    (dma_id % NSTREAMS_PER_CONTROLLER))*/
-#else
-#error "Unsupported Processor"
-#endif
 
 
 
@@ -121,7 +115,7 @@ static const DMA_InitTypeDef dma_init_struct_sdio = {
     .MemDataAlignment    = DMA_MDATAALIGN_WORD,
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     .Mode                = DMA_PFCTRL,
-#else
+#elif defined(MCU_SERIES_L4)
     .Mode                = DMA_NORMAL,
 #endif
     .Priority            = DMA_PRIORITY_VERY_HIGH,
@@ -272,7 +266,7 @@ static DMA_HandleTypeDef *dma_handle[NSTREAM] = {NULL};
 static uint8_t  dma_last_subidx[NSTREAM];
 static volatile uint32_t dma_enable_mask = 0;
 
-#if defined(MCU_SERIES_M4) || defined(MCU_SERIES_M7)
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
 #define DMA_CHANNEL_AS_UINT8(dma_channel)   (((dma_channel) & DMA_SxCR_CHSEL) >> 24)
 
 void DMA1_Stream0_IRQHandler(void) { IRQ_ENTER(DMA1_Stream0_IRQn); if (dma_handle[0] != NULL) { HAL_DMA_IRQHandler(dma_handle[0]); } IRQ_EXIT(DMA1_Stream0_IRQn); }
@@ -291,7 +285,10 @@ void DMA2_Stream4_IRQHandler(void) { IRQ_ENTER(DMA2_Stream4_IRQn); if (dma_handl
 void DMA2_Stream5_IRQHandler(void) { IRQ_ENTER(DMA2_Stream5_IRQn); if (dma_handle[13] != NULL) { HAL_DMA_IRQHandler(dma_handle[13]); } IRQ_EXIT(DMA2_Stream5_IRQn); }
 void DMA2_Stream6_IRQHandler(void) { IRQ_ENTER(DMA2_Stream6_IRQn); if (dma_handle[14] != NULL) { HAL_DMA_IRQHandler(dma_handle[14]); } IRQ_EXIT(DMA2_Stream6_IRQn); }
 void DMA2_Stream7_IRQHandler(void) { IRQ_ENTER(DMA2_Stream7_IRQn); if (dma_handle[15] != NULL) { HAL_DMA_IRQHandler(dma_handle[15]); } IRQ_EXIT(DMA2_Stream7_IRQn); }
+
 #elif defined(MCU_SERIES_L4)
+#define DMA_CHANNEL_AS_UINT8(dma_id)    (dma_id % NSTREAMS_PER_CONTROLLER))
+
 void DMA1_Channel1_IRQHandler(void) { IRQ_ENTER(DMA1_Channel1_IRQn); if (dma_handle[0] != NULL)  { HAL_DMA_IRQHandler(dma_handle[0]); } IRQ_EXIT(DMA1_Channel1_IRQn); }
 void DMA1_Channel2_IRQHandler(void) { IRQ_ENTER(DMA1_Channel2_IRQn); if (dma_handle[1] != NULL)  { HAL_DMA_IRQHandler(dma_handle[1]); } IRQ_EXIT(DMA1_Channel2_IRQn); }
 void DMA1_Channel3_IRQHandler(void) { IRQ_ENTER(DMA1_Channel3_IRQn); if (dma_handle[2] != NULL)  { HAL_DMA_IRQHandler(dma_handle[2]); } IRQ_EXIT(DMA1_Channel3_IRQn); }
