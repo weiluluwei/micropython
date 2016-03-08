@@ -162,10 +162,12 @@ STATIC mp_obj_t pyb_dac_init_helper(pyb_dac_obj_t *self, mp_uint_t n_args, const
     HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
 
     // DAC peripheral clock
-#if defined(MCU_SERIES_L4)
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
+    __DAC_CLK_ENABLE();
+#elif defined(MCU_SERIES_L4)
     __HAL_RCC_DAC1_CLK_ENABLE();
 #else
-    __DAC_CLK_ENABLE();
+    #error Unsupported Processor
 #endif
 
     // stop anything already going on
@@ -220,16 +222,16 @@ STATIC mp_obj_t pyb_dac_make_new(const mp_obj_type_t *type, mp_uint_t n_args, mp
 
     if (dac_id == 1) {
         dac->pin = GPIO_PIN_4;
+	dac->dac_channel = DAC_CHANNEL_1;
         dac->tx_dma_descr.periphery_type = dma_DAC;
         dac->tx_dma_descr.periphery_inst_nr = 1;
         dac->tx_dma_descr.transfer_direction = DMA_MEMORY_TO_PERIPH;
-        dac->tx_dma_descr.dma_inst_nr = 1;
     } else if (dac_id == 2) {
         dac->pin = GPIO_PIN_5;
+	dac->dac_channel = DAC_CHANNEL_2;
         dac->tx_dma_descr.periphery_type = dma_DAC;
         dac->tx_dma_descr.periphery_inst_nr = 2;
         dac->tx_dma_descr.transfer_direction = DMA_MEMORY_TO_PERIPH;
-        dac->tx_dma_descr.dma_inst_nr = 1;
     } else {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "DAC %d does not exist", dac_id));
     }
@@ -406,7 +408,6 @@ mp_obj_t pyb_dac_write_timed(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
     dma_descr_t tx_dma_descr;
 
     // DMA1_Stream[67] channel7 configuration
-    tx_dma_descr.dma_inst_nr =  dma_instance1;
     tx_dma_descr.transfer_direction = DMA_MEMORY_TO_PERIPH;
     tx_dma_descr.periphery_type = dma_DAC;
     tx_dma_descr.periphery_inst_nr = 1;
