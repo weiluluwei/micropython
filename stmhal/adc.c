@@ -114,7 +114,7 @@ STATIC void adc_wait_for_eoc_or_timeout(int32_t timeout)
 #endif
 }
 
-STATIC void adc_clock_enable(void)
+STATIC void adcx_clock_enable(void)
 {
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     ADCx_CLK_ENABLE();
@@ -126,8 +126,7 @@ STATIC void adc_clock_enable(void)
 
 
 STATIC void adc_init_single(pyb_obj_adc_t *adc_obj) {
-    if (!is_adcx_channel(adc_obj->channel))
-    {
+    if (!is_adcx_channel(adc_obj->channel)) {
         return;
     }
 
@@ -142,7 +141,9 @@ STATIC void adc_init_single(pyb_obj_adc_t *adc_obj) {
       GPIO_InitStructure.Pull = GPIO_NOPULL;
       HAL_GPIO_Init(pin->gpio, &GPIO_InitStructure);
     }
-    adc_clock_enable();
+
+    adcx_clock_enable();
+
     ADC_HandleTypeDef *adcHandle = &adc_obj->handle;
     adcHandle->Instance                   = ADCx;
     adcHandle->Init.Resolution            = ADC_RESOLUTION12b;
@@ -230,7 +231,7 @@ STATIC mp_obj_t adc_make_new(const mp_obj_type_t *type, mp_uint_t n_args, mp_uin
         channel = pin->adc_channel;
     }
 
-    if (!is_adcx_channel(channel)){
+    if (!is_adcx_channel(channel)) {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "not a valid ADC Channel: %d", channel));
     }
     if (pin_adc1[channel] == NULL) {
@@ -412,7 +413,7 @@ void adc_init_all(pyb_adc_all_obj_t *adc_all, uint32_t resolution) {
         HAL_GPIO_Init(pin->gpio, &GPIO_InitStructure);
     }
 
-    adc_clock_enable();
+    adcx_clock_enable();
 
     ADC_HandleTypeDef *adcHandle = &adc_all->handle;
     adcHandle->Instance = ADCx;
