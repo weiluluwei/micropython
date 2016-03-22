@@ -239,6 +239,7 @@ void flash_write(uint32_t flash_dest, const uint32_t *src, uint32_t num_word32) 
         src += 1;
     }
 #endif
+
     // lock the flash
     HAL_FLASH_Lock();
 }
