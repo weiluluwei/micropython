@@ -338,6 +338,7 @@ STATIC mp_obj_t adc_read_timed(mp_obj_t self_in, mp_obj_t buf_in, mp_obj_t freq_
             SET_BIT(ADCx->CR, ADC_CR_ADSTART);
 #endif
         }
+
         // wait for sample to complete
         #define READ_TIMED_TIMEOUT (10) // in ms
         adc_wait_for_eoc_or_timeout(READ_TIMED_TIMEOUT);
