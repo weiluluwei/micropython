@@ -225,13 +225,13 @@ STATIC mp_obj_t pyb_dac_make_new(const mp_obj_type_t *type, mp_uint_t n_args, mp
         dac->dac_channel = DAC_CHANNEL_1;
         dac->tx_dma_descr.periphery_type = dma_DAC;
         dac->tx_dma_descr.periphery_inst_nr = 1;
-        dac->tx_dma_descr.transfer_direction = DMA_MEMORY_TO_PERIPH;
+        dac->tx_dma_descr.transfer_direction = DMA_TX_TRANSFER;
     } else if (dac_id == 2) {
         dac->pin = GPIO_PIN_5;
         dac->dac_channel = DAC_CHANNEL_2;
         dac->tx_dma_descr.periphery_type = dma_DAC;
         dac->tx_dma_descr.periphery_inst_nr = 2;
-        dac->tx_dma_descr.transfer_direction = DMA_MEMORY_TO_PERIPH;
+        dac->tx_dma_descr.transfer_direction = DMA_TX_TRANSFER;
     } else {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "DAC %d does not exist", dac_id));
     }

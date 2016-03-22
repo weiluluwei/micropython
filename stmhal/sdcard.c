@@ -206,7 +206,7 @@ mp_uint_t sdcard_read_blocks(uint8_t *dest, uint32_t block_num, uint32_t num_blo
         dma_descr_t rx_dma_descr;
 
         rx_dma_descr.periphery_type = dma_SDIO;
-        rx_dma_descr.transfer_direction = DMA_PERIPH_TO_MEMORY;
+        rx_dma_descr.transfer_direction = DMA_RX_TRANSFER;
         rx_dma_descr.periphery_inst_nr = 0;
 
         dma_init(&sd_rx_dma, &rx_dma_descr, &sd_handle);
@@ -248,7 +248,7 @@ mp_uint_t sdcard_write_blocks(const uint8_t *src, uint32_t block_num, uint32_t n
         dma_descr_t tx_dma_descr;
 
         tx_dma_descr.periphery_type = dma_SDIO;
-        tx_dma_descr.transfer_direction = DMA_MEMORY_TO_PERIPH;
+        tx_dma_descr.transfer_direction = DMA_TX_TRANSFER;
         tx_dma_descr.periphery_inst_nr = 0;
 
         dma_init(&sd_rx_dma, &tx_dma_descr, &sd_handle);

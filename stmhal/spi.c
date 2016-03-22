@@ -103,32 +103,32 @@ SPI_HandleTypeDef SPIHandle6 = {.Instance = NULL};
 
 STATIC const pyb_spi_obj_t pyb_spi_obj[] = {
     #if defined(MICROPY_HW_SPI1_SCK)
-    {{&pyb_spi_type}, &SPIHandle1, {dma_SPI, 1, DMA_MEMORY_TO_PERIPH},{dma_SPI, 1, DMA_PERIPH_TO_MEMORY}},
+    {{&pyb_spi_type}, &SPIHandle1, {dma_SPI, 1, DMA_TX_TRANSFER},{dma_SPI, 1, DMA_RX_TRANSFER}},
     #else
     {{&pyb_spi_type}, NULL, {dma_NONE, 0, 0}, {dma_NONE, 0, 0}},
     #endif
     #if defined(MICROPY_HW_SPI2_SCK)
-    {{&pyb_spi_type}, &SPIHandle2, {dma_SPI, 2, DMA_MEMORY_TO_PERIPH},{dma_SPI, 2, DMA_PERIPH_TO_MEMORY}},
+    {{&pyb_spi_type}, &SPIHandle2, {dma_SPI, 2, DMA_TX_TRANSFER},{dma_SPI, 2, DMA_RX_TRANSFER}},
     #else
     {{&pyb_spi_type}, NULL, {dma_NONE, 0, 0}, {dma_NONE, 0, 0}},
     #endif
     #if defined(MICROPY_HW_SPI3_SCK)
-    {{&pyb_spi_type}, &SPIHandle3, {dma_SPI, 3, DMA_MEMORY_TO_PERIPH},{dma_SPI, 3, DMA_PERIPH_TO_MEMORY}},
+    {{&pyb_spi_type}, &SPIHandle3, {dma_SPI, 3, DMA_TX_TRANSFER},{dma_SPI, 3, DMA_RX_TRANSFER}},
     #else
     {{&pyb_spi_type}, NULL, {dma_NONE, 0, 0}, {dma_NONE, 0, 0}},
     #endif
     #if defined(MICROPY_HW_SPI4_SCK)
-    {{&pyb_spi_type}, &SPIHandle4, {dma_SPI, 4, DMA_MEMORY_TO_PERIPH},{dma_SPI, 4, DMA_PERIPH_TO_MEMORY}},
+    {{&pyb_spi_type}, &SPIHandle4, {dma_SPI, 4, DMA_TX_TRANSFER},{dma_SPI, 4, DMA_RX_TRANSFER}},
     #else
     {{&pyb_spi_type}, NULL, {dma_NONE, 0, 0}, {dma_NONE, 0, 0}},
     #endif
     #if defined(MICROPY_HW_SPI5_SCK)
-    {{&pyb_spi_type}, &SPIHandle5, {dma_SPI, 5, DMA_MEMORY_TO_PERIPH},{dma_SPI, 5, DMA_PERIPH_TO_MEMORY}},
+    {{&pyb_spi_type}, &SPIHandle5, {dma_SPI, 5, DMA_TX_TRANSFER},{dma_SPI, 5, DMA_RX_TRANSFER}},
     #else
     {{&pyb_spi_type}, NULL, {dma_NONE, 0, 0}, {dma_NONE, 0, 0}},
     #endif
     #if defined(MICROPY_HW_SPI6_SCK)
-    {{&pyb_spi_type}, &SPIHandle6, {dma_SPI, 6, DMA_MEMORY_TO_PERIPH},{dma_SPI, 6, DMA_PERIPH_TO_MEMORY}},
+    {{&pyb_spi_type}, &SPIHandle6, {dma_SPI, 6, DMA_TX_TRANSFER},{dma_SPI, 6, DMA_RX_TRANSFER}},
     #else
     {{&pyb_spi_type}, NULL, {dma_NONE, 0, 0}, {dma_NONE, 0, 0}},
     #endif

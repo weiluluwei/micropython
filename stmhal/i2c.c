@@ -132,17 +132,17 @@ I2C_HandleTypeDef I2CHandle3 = {.Instance = NULL};
 
 STATIC const pyb_i2c_obj_t pyb_i2c_obj[] = {
     #if defined(MICROPY_HW_I2C1_SCL)
-    {{&pyb_i2c_type}, &I2CHandle1, {dma_I2C, 1, DMA_MEMORY_TO_PERIPH}, {dma_I2C, 1, DMA_PERIPH_TO_MEMORY}},
+    {{&pyb_i2c_type}, &I2CHandle1, {dma_I2C, 1, DMA_TX_TRANSFER}, {dma_I2C, 1, DMA_RX_TRANSFER}},
     #else
     {{&pyb_i2c_type}, NULL, {dma_NONE, 0, 0}, {dma_NONE, 0, 0}},
     #endif
     #if defined(MICROPY_HW_I2C2_SCL)
-    {{&pyb_i2c_type}, &I2CHandle2, {dma_I2C, 2, DMA_MEMORY_TO_PERIPH}, {dma_I2C, 2, DMA_PERIPH_TO_MEMORY}},
+    {{&pyb_i2c_type}, &I2CHandle2, {dma_I2C, 2, DMA_TX_TRANSFER}, {dma_I2C, 2, DMA_RX_TRANSFER}},
     #else
     {{&pyb_i2c_type}, NULL, {dma_NONE, 0, 0}, {dma_NONE, 0, 0}},
     #endif
     #if defined(MICROPY_HW_I2C3_SCL)
-    {{&pyb_i2c_type}, &I2CHandle3, {dma_I2C, 3, DMA_MEMORY_TO_PERIPH}, {dma_I2C, 3, DMA_PERIPH_TO_MEMORY}},
+    {{&pyb_i2c_type}, &I2CHandle3, {dma_I2C, 3, DMA_TX_TRANSFER}, {dma_I2C, 3, DMA_RX_TRANSFER}},
     #else
     {{&pyb_i2c_type}, NULL, {dma_NONE, 0, 0}, {dma_NONE, 0, 0}},
     #endif

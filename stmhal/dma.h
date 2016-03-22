@@ -40,6 +40,9 @@ typedef struct _dmaDescr
     uint32_t        transfer_direction; /* Transfer direction Periphery to memory or vis-versa */
 } dma_descr_t;
 
+#define DMA_TX_TRANSFER      DMA_MEMORY_TO_PERIPH
+#define DMA_RX_TRANSFER      DMA_PERIPH_TO_MEMORY
+
 typedef union {
     uint16_t    enabled;    // Used to test if both counters are == 0
     uint8_t     counter[2];

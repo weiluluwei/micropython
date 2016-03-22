@@ -71,10 +71,6 @@ typedef struct
 
 #define NSTREAMS_PER_CONTROLLER_LOG2 (3)
 #define NCONTROLLERS            (2)
-#define DMA_TX_TRANSFER      DMA_MEMORY_TO_PERIPH
-#define DMA_RX_TRANSFER      DMA_PERIPH_TO_MEMORY
-
-
 
 
 // Default parameters to dma_init() shared by spi and i2c; Channel and Direction
@@ -183,6 +179,7 @@ static const dma_p2dma_t dma_transfer_info[]= {
 
 #define NSTREAMS_PER_CONTROLLER (1 << NSTREAMS_PER_CONTROLLER_LOG2)
 #define NSTREAM                 (NCONTROLLERS * NSTREAMS_PER_CONTROLLER)
+
 static const uint8_t dma_irqn[NSTREAM] = {
     DMA1_Stream0_IRQn,
     DMA1_Stream1_IRQn,
@@ -449,8 +446,7 @@ void dma_init(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *data){
         }
 
         HAL_NVIC_EnableIRQ(dma_irqn[dma_id]);
-    } else { printf("DMA not available.\n"); }
-
+    }
 }
 
 void dma_deinit(DMA_HandleTypeDef *dma) {
