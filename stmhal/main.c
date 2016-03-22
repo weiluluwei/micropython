@@ -376,7 +376,7 @@ int main(void) {
         // enable the CCM RAM
         __CCMDATARAMEN_CLK_ENABLE();
         #else
-        // FIXME ADD Clock on for SRMA2 on STM32L476 
+        // FIXME ADD Clock on for SRAM2 on STM32L476
         #endif
     #endif
 
