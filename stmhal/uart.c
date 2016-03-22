@@ -150,7 +150,6 @@ STATIC bool uart_init2(pyb_uart_obj_t *uart_obj) {
         #endif
 
         #if defined(MICROPY_HW_UART2_PORT) && defined(MICROPY_HW_UART2_PINS)
-        // USART2 is on PA2/PA3 (CTS,RTS,CK on PA0,PA1,PA4), PD5/PD6 (CK on PD7)
         case PYB_UART_2:
             UARTx = USART2;
             irqn = USART2_IRQn;

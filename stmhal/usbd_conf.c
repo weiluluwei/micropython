@@ -91,9 +91,9 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef *hpcd)
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct); 
 #endif
 
-    /* Enable USB FS Clocks */
+    /* Enable USB FS Clocks */ 
     __USB_OTG_FS_CLK_ENABLE();
-
+    
 #if defined (MCU_SERIES_L4)
     /* Enable VDDUSB */
     if(__HAL_RCC_PWR_IS_CLK_DISABLED())
@@ -315,6 +315,7 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
     speed = USBD_SPEED_HIGH;
     break;
 #endif
+    
   case PCD_SPEED_FULL:
     speed = USBD_SPEED_FULL;    
     break;
