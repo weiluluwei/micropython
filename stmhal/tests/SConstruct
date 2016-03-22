@@ -34,6 +34,12 @@ mockFiles = {}
 mockFiles['flash'] = (tuple2Path( testFolder+('hal_flash_mock.c', )), )
 mockLib = tuple2Path(objFolder + mockLibName)
 
+# Define helper files for each ???_test
+helpLibName  =   ('help',)
+helpFiles = {}
+helpFiles['flash'] = (tuple2Path( testFolder+('helper.c', )), )
+helpLib = tuple2Path(objFolder + helpLibName)
+
 # Libraries to link
 cppuTestLibName    = ('CppUTest', 'CppUTestExt')
 
@@ -44,7 +50,7 @@ libPath   = (tuple2Path(objFolder),)
 
 # Include path
 #
-MCUSer = 'f4'
+MCUSer = 'l4'
 
 incPath =  ( tuple2Path(('..', )), ) 
 incPath += ( tuple2Path(('..', '..' )), ) 
@@ -77,6 +83,16 @@ else:
 # CFLAGS
 cFlags  = '-Wall -g'
 
+def add_objects(env, srcFiles, testName, lib, libName):
+    objs = []
+    for src in srcFiles[testName]:
+        objName = os.sep.join(objFolder + (os.path.basename(src).split('.')[0]+'_%s' % device,))
+        obj = env.Object(objName, src)
+        objs.append(obj)
+    env.Library(lib+"_%s" % device, objs)
+    libName = libName[0]+"_%s" % device
+    print("Add libname %s" % (libName))
+    return libName
 
 for testFName in glob.glob(tuple2Path(testFolder, True)+testFNamePat):
     genFiles = genTestFile + (testFName,)
@@ -92,23 +108,11 @@ for testFName in glob.glob(tuple2Path(testFolder, True)+testFNamePat):
         #print(obj)
         #env.Library(target=cutLib+"_%s" % device,  object = obj)
         allLinkLibs = [cppuTestLibName, ]
-        objs = []
-        for src in cutFiles[testName]:
-            objName = os.sep.join(objFolder + (os.path.basename(src).split('.')[0]+'_%s' % device,))
-            obj = env.Object(objName, src)
-            objs.append(obj)
-        libName = cutLibName[0]+"_%s" % device
-        env.Library(cutLib+"_%s" % device, objs)
-        allLinkLibs.append(libName)
-        #+"_%s" % device+"_%s" % device
-        libName = mockLibName[0]+"_%s" % device
-        objs = []
-        for src in mockFiles[testName]:
-            objName = os.sep.join(objFolder + (os.path.basename(src).split('.')[0]+'_%s' % device,))
-            obj = env.Object(objName, src)
-            objs.append(obj)
-        env.Library(mockLib+"_%s" % device, objs)
-        allLinkLibs.append(libName)
+        
+        allLinkLibs.append(add_objects(env, cutFiles,  testName, cutLib,  cutLibName))
+        allLinkLibs.append(add_objects(env, mockFiles, testName, mockLib, mockLibName))
+        allLinkLibs.append(add_objects(env, helpFiles, testName, helpLib, helpLibName))
+        
         objs = []
         for src in genFiles:
             objName = os.sep.join(objFolder + (os.path.basename(src).split('.')[0]+'_%s' % device,))

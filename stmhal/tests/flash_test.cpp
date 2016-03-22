@@ -6,12 +6,15 @@
  */
 #include <stdint.h>
 #include <stdio.h>
-#include "helper.h"
+
 extern "C"
 {
     #include STM32_HAL_H
     #include "flash.h"
+    #include "helper.h"
+    #include "hal_flash_mock.h"
 }
+
 typedef struct {
     uint32_t base_address;
     uint32_t sector_size;
@@ -164,4 +167,173 @@ TEST(FlashAddressMappingTestGroup, CheckUpperFlashBoundary)
             CHECK_EQUAL(flashDesc[flashDesc_size-1].sector_size, size);
         }
     }
+}
+/*
+ *
+ * Test group to check proper write to flash
+ */
+TEST_GROUP(FlashWriteTestGroup)
+{
+    uint16_t eBuf[12];
+    static const uint16_t eBufSize=12;
+    uint16_t oBuf[10];
+    static const uint16_t oBufSize=10;
+    uint16_t flash[16];
+    static const uint16_t flashSize = 16;
+    static const uint8_t EMPTYVALUE = 0xFF;
+
+    void setup()
+    {
+        uint16_t i;
+        for (i=0;i<eBufSize;i++)
+        {
+            eBuf[i] = i*(0x1111);
+            if (i<oBufSize)
+            {
+                oBuf[i] = eBuf[i];
+            }
+        }
+
+        for (i=0;i<flashSize;i++)
+        {
+            flash[i] = EMPTYVALUE;
+        }
+        hal_flash_mock_erase(EMPTYVALUE);
+
+    }
+};
+
+TEST(FlashWriteTestGroup, CheckWriteLittleEndian64)
+{
+    uint64_t val = 0x7766554433221100;
+    uint8_t  buf[8];
+
+    write_le_64(val, buf, sizeof(val));
+
+    for (uint16_t i=0; i< sizeof(val); i++)
+    {
+        uint8_t val8 = i+16*i;
+        /*printf("Exp 0x%02x, Obt: 0x%02x\n", val8, buf[i]);*/
+        CHECK_EQUAL(buf[i], val8);
+    }
+}
+
+TEST(FlashWriteTestGroup, CheckWriteLittleEndian32)
+{
+    uint32_t val = 0x33221100;
+    uint8_t  buf[8];
+
+    write_le_32(val, buf, sizeof(val));
+
+    for (uint16_t i=0; i< sizeof(val); i++)
+    {
+        uint8_t val8 = i+16*i;
+        /*printf("Exp 0x%02x, Obt: 0x%02x\n", val8, buf[i]);*/
+        CHECK_EQUAL(buf[i], val8);
+    }
+}
+
+TEST(FlashWriteTestGroup, CheckWriteLittleEndian16)
+{
+    uint16_t val = 0x1100;
+    uint8_t  buf[8];
+
+    write_le_16(val, buf, sizeof(val));
+
+    for (uint16_t i=0; i< sizeof(val); i++)
+    {
+        uint8_t val8 = i+16*i;
+        /*printf("Exp 0x%02x, Obt: 0x%02x\n", val8, buf[i]);*/
+        CHECK_EQUAL(buf[i], val8);
+    }
+}
+
+
+TEST(FlashWriteTestGroup, CheckWriteBigEndian64)
+{
+    uint64_t val = 0x0011223344556677;
+    uint8_t  buf[8];
+
+    write_be_64(val, buf, sizeof(val));
+
+    for (uint16_t i=0; i< sizeof(val); i++)
+    {
+        uint8_t val8 = i+16*i;
+        /*printf("Exp 0x%02x, Obt: 0x%02x\n", val8, buf[i]);*/
+        CHECK_EQUAL(buf[i], val8);
+    }
+}
+
+
+TEST(FlashWriteTestGroup, CheckWriteBigEndian32)
+{
+    uint32_t val = 0x00112233;
+    uint8_t  buf[8];
+
+    write_be_32(val, buf, sizeof(val));
+
+    for (uint16_t i=0; i< sizeof(val); i++)
+    {
+        uint8_t val8 = i+16*i;
+        /*printf("Exp 0x%02x, Obt: 0x%02x\n", val8, buf[i]);*/
+        CHECK_EQUAL(buf[i], val8);
+    }
+}
+
+
+TEST(FlashWriteTestGroup, CheckWriteBigEndian16)
+{
+    uint16_t val = 0x0011;
+    uint8_t  buf[8];
+
+    write_be_16(val, buf, sizeof(val));
+
+    for (uint16_t i=0; i< sizeof(val); i++)
+    {
+        uint8_t val8 = i+16*i;
+        /*printf("Exp 0x%02x, Obt: 0x%02x\n", val8, buf[i]);*/
+        CHECK_EQUAL(buf[i], val8);
+    }
+}
+
+TEST(FlashWriteTestGroup, CheckFlashEmpty)
+{
+    uint32_t fSize = hal_flash_mock_buffersize();
+    for (uint16_t i=0; i< fSize; i++)
+    {
+        uint8_t val8 = hal_flash_mock_get8(i);
+        /*printf("Exp 0x%02x, Obt: 0x%02x\n", val8, buf[i]);*/
+        CHECK_EQUAL(EMPTYVALUE, val8);
+    }
+
+
+}
+
+
+TEST(FlashWriteTestGroup, CheckWriteEvenWordCount)
+{
+    flash_write(0, (const uint32_t*)eBuf, eBufSize/2);
+    for (uint16_t i=0; i< eBufSize; i++)
+    {
+        uint16_t val16 = hal_flash_mock_get16(2*i);
+        printf("Exp 0x%04x, Obt: 0x%04x\n", eBuf[i], val16);
+        CHECK_EQUAL(eBuf[i], val16);
+    }
+
+
+}
+
+
+TEST(FlashWriteTestGroup, CheckWriteOddWordCount)
+{
+    flash_write(0, (const uint32_t*)oBuf, oBufSize/2);
+
+    for (uint16_t i=0; i< oBufSize; i++)
+    {
+        uint16_t val16 = hal_flash_mock_get16(2*i);
+        printf("Exp 0x%04x, Obt: 0x%04x\n", oBuf[i], val16);
+        CHECK_EQUAL(oBuf[i], val16);
+    }
+
+
 }
