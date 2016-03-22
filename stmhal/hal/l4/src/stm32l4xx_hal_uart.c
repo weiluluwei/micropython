@@ -2111,7 +2111,8 @@ static HAL_StatusTypeDef UART_Receive_IT(UART_HandleTypeDef *huart)
   */
 uint32_t HAL_UART_CalcBrr(uint32_t fck, uint32_t baud)
 {
-    struct {
+    const struct
+    {
         uint32_t limit;
         uint32_t div;
     } comDiv[]= {
@@ -2124,7 +2125,7 @@ uint32_t HAL_UART_CalcBrr(uint32_t fck, uint32_t baud)
         {1<<25,   5 }, /* must by >= 4 */
         {1<<24,   2 }  /* must by >= 2 */
     };
-    uint32_t comDivCnt = sizeof(comDiv)/sizeof(comDiv[0]);
+    const uint32_t comDivCnt = sizeof(comDiv)/sizeof(comDiv[0]);
     uint8_t i;
     for (i=0; i<comDivCnt ;i++)
     {
@@ -2135,7 +2136,8 @@ uint32_t HAL_UART_CalcBrr(uint32_t fck, uint32_t baud)
             break;
         }
     }
-    return (fck<<8)/baud;
+
+    return ((fck<<8)+(baud>>1))/baud;
 }
 
 /**
