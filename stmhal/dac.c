@@ -382,6 +382,7 @@ mp_obj_t pyb_dac_write_timed(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
     __DMA1_CLK_ENABLE();
 
     DMA_HandleTypeDef DMA_Handle;
+    /* Get currently configured dma */
     dma_init_handle(&DMA_Handle, &self->tx_dma_descr, (void*)NULL);
     /*
     DMA_Cmd(DMA_Handle->Instance, DISABLE);
@@ -405,13 +406,6 @@ mp_obj_t pyb_dac_write_timed(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
     DMA_Handle.State = HAL_DMA_STATE_READY;
     HAL_DMA_DeInit(&DMA_Handle);
 
-    dma_descr_t tx_dma_descr;
-
-    // DMA1_Stream[67] channel7 configuration
-    tx_dma_descr.transfer_direction = DMA_MEMORY_TO_PERIPH;
-    tx_dma_descr.periphery_type = dma_DAC;
-    tx_dma_descr.periphery_inst_nr = 1;
-    dma_init_handle(&DMA_Handle, &tx_dma_descr, (void*)NULL);
     DMA_Handle.Init.PeriphInc = DMA_PINC_DISABLE;
     DMA_Handle.Init.MemInc = DMA_MINC_ENABLE;
     if (self->bits == 8) {
