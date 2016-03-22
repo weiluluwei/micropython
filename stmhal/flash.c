@@ -74,7 +74,7 @@ static const flash_organization_t flash_organisation[]= {
   * @param  Addr: Address of the FLASH Memory
   * @retval The bank of a given address
   */
-static uint32_t GetBank(uint32_t Addr) {
+static uint32_t get_bank(uint32_t Addr) {
     uint32_t bank = 0;
 
     if (READ_BIT(SYSCFG->MEMRMP, SYSCFG_MEMRMP_FB_MODE) == 0) {
@@ -100,7 +100,7 @@ static uint32_t GetBank(uint32_t Addr) {
   * @param  Addr: Address of the FLASH Memory
   * @retval The page of a given address
   */
-static uint32_t GetPage(uint32_t Addr) {
+static uint32_t get_page(uint32_t Addr) {
     uint32_t page = 0;
 
     if (Addr < (FLASH_BASE + FLASH_BANK_SIZE)) {
@@ -143,20 +143,20 @@ void flash_erase(uint32_t flash_dest, const uint32_t *src, uint32_t num_word32) 
     if (num_word32 == 0) {
         return;
     }
+
     // unlock
     HAL_FLASH_Unlock();
 
 #if defined(MCU_SERIES_L4)
-    /* Clear OPTVERR bit set on virgin samples */
-    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_OPTVERR);
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_ALL_ERRORS);
 
     // erase the sector(s)
     // The sector returned by flash_get_sector_info can not be used
-    // as the flash has on bank 0 page 0..255 and on Bank 1, page 0..255
+    // as the flash has on each bank 0/1 pages 0..255
     EraseInitStruct.TypeErase   = FLASH_TYPEERASE_PAGES;
-    EraseInitStruct.Banks       = GetBank(flash_dest);
-    EraseInitStruct.Page        = GetPage(flash_dest);
-    EraseInitStruct.NbPages     = GetPage(flash_dest + 4 * num_word32 - 1) - EraseInitStruct.Page + 1;;
+    EraseInitStruct.Banks       = get_bank(flash_dest);
+    EraseInitStruct.Page        = get_page(flash_dest);
+    EraseInitStruct.NbPages     = get_page(flash_dest + 4 * num_word32 - 1) - EraseInitStruct.Page + 1;;
 #else
     // Clear pending flags (if any)
     __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR |
@@ -207,7 +207,7 @@ void flash_erase_it(uint32_t flash_dest, const uint32_t *src, uint32_t num_word3
 
 void flash_write(uint32_t flash_dest, const uint32_t *src, uint32_t num_word32) {
 #if defined(MCU_SERIES_L4)
-    // program the flash word by word
+    // program the flash uint64 by uint64
     for (int i = 0; i < (num_word32/2); i++) {
         uint64_t val = *(uint64_t *)src;
         if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, flash_dest, val) != HAL_OK) {
@@ -218,9 +218,9 @@ void flash_write(uint32_t flash_dest, const uint32_t *src, uint32_t num_word32) 
         flash_dest += 8;
         src += 2;
     }
-    if ((num_word32%2) == 1) {
-        uint64_t val = *(uint64_t *)src;
-        val = (val & 0xFFFFFFFF00000000uL) || (*src);
+    if ((num_word32 & 0x01) == 1) {
+        uint64_t val = *(uint64_t *)flash_dest;
+        val = (val & 0xFFFFFFFF00000000uL) | (*src);
         if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, flash_dest, val) != HAL_OK) {
             // error occurred during flash write
             HAL_FLASH_Lock(); // lock the flash
