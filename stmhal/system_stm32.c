@@ -246,15 +246,15 @@ void SystemInit(void)
   *            Flash Latency(WS)              = 5
   *
   *         The system Clock is configured for L4 as follow :
-  *            System Clock source            = PLL (HSE)
+  *            System Clock source            = PLL (MSI)
   *            SYSCLK(Hz)                     = 80000000
   *            HCLK(Hz)                       = 80000000
   *            AHB Prescaler                  = 1
   *            APB1 Prescaler                 = 1
   *            APB2 Prescaler                 = 1
-  *            HSE Frequency(Hz)              = 8000000
+  *            MSI Frequency(Hz)              = MSI_VALUE (4000000)
   *            LSE Frequency(Hz)              = 32768
-  *            PLL_M                          = 2
+  *            PLL_M                          = 1
   *            PLL_N                          = 40
   *            PLL_P                          = 7
   *            PLL_Q                          = 2
@@ -265,14 +265,18 @@ void SystemInit(void)
   *
   * PLL is configured as follows:
   *
-  *     VCO_IN  = HSE / M
-  *     VCO_OUT = HSE / M * N
+  *     VCO_IN
+  *         F4/F7 = HSE / M
+  *         L4    = MSI / M
+  *     VCO_OUT
+  *         F4/F7 = HSE / M * N
+  *         L4    = MSI / M * N
   *     PLLCLK  =
   *         F4/F7 = HSE / M * N / P
-  *         L4    = HSE / M * N / R
+  *         L4    = MSI / M * N / R
   *     PLL48CK = HSE / M * N / Q
   *         F4/F7 = HSE / M * N / Q
-  *         L4    = HSE / M * N / R
+  *         L4    = MSI / M * N / Q  USB Clock is obtained over PLLSAI1
   *
   *     SYSCLK = PLLCLK
   *     HCLK   = SYSCLK / AHB_PRESC
@@ -319,15 +323,15 @@ void SystemClock_Config(void)
     /* Enable HSE Oscillator and activate PLL with HSE as source */
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-#elif defined(MCU_SERIES_L4)
-    RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
-#endif
     RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-#if defined(MCU_SERIES_L4)
+    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+#elif defined(MCU_SERIES_L4)
+    RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
+    RCC_OscInitStruct.MSIState = RCC_MSI_ON;
     RCC_OscInitStruct.LSEState = RCC_LSE_ON;
+    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
 #endif
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
     /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2
      clocks dividers */
     RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
@@ -336,6 +340,8 @@ void SystemClock_Config(void)
 #if defined(MICROPY_HW_CLK_LAST_FREQ) && MICROPY_HW_CLK_LAST_FREQ
     #if defined(MCU_SERIES_F7)
     #define FREQ_BKP BKP31R
+    #elif defined(MCU_SERIES_L4)
+    #error Unsupported Processor
     #else
     #define FREQ_BKP BKP19R
     #endif
@@ -355,11 +361,7 @@ void SystemClock_Config(void)
     if ((q < 2) || (q > 15) || (p > 8) || (p < 2) || (n < 192) || (n >= 433) || (m < 2)) {
         m = MICROPY_HW_CLK_PLLM;
         n = MICROPY_HW_CLK_PLLN;
-#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
         p = MICROPY_HW_CLK_PLLP;
-#elif defined(MCU_SERIES_L4)
-        p = MICROPY_HW_CLK_PLLR; // R output of l4 PLL is source for SysClk
-#endif
         q = MICROPY_HW_CLK_PLLQ;
         h = RCC_SYSCLK_DIV1;
         b1 = RCC_HCLK_DIV4;
@@ -371,12 +373,7 @@ void SystemClock_Config(void)
     }
     RCC_OscInitStruct.PLL.PLLM = m; //MICROPY_HW_CLK_PLLM;
     RCC_OscInitStruct.PLL.PLLN = n; //MICROPY_HW_CLK_PLLN;
-#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     RCC_OscInitStruct.PLL.PLLP = p; //MICROPY_HW_CLK_PLLP;
-#elif defined(MCU_SERIES_L4)
-    RCC_OscInitStruct.PLL.PLLR = p; //MICROPY_HW_CLK_PLLP;
-    RCC_OscInitStruct.PLL.PLLP = MICROPY_HW_CLK_PLLP; 
-#endif 
     RCC_OscInitStruct.PLL.PLLQ = q; //MICROPY_HW_CLK_PLLQ;
 
     RCC_ClkInitStruct.AHBCLKDivider = h;  //RCC_SYSCLK_DIV1;
@@ -432,6 +429,9 @@ void SystemClock_Config(void)
   RCC->DCKCFGR2 = 0;
 #endif
 #if defined(MCU_SERIES_L4)
+    // Enable MSI-Hardware auto calibration mode with LSE
+    HAL_RCCEx_EnableMSIPLLMode();
+
     RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SAI1|RCC_PERIPHCLK_I2C1
                                               |RCC_PERIPHCLK_I2C2|RCC_PERIPHCLK_USB
