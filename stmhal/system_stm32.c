@@ -225,7 +225,6 @@ void SystemInit(void)
   SCB->CCR |= SCB_CCR_STKALIGN_Msk;
 }
 
-
 /**
   * @brief  System Clock Configuration
   *
@@ -318,6 +317,15 @@ void SystemClock_Config(void)
      clocked below the maximum system frequency, to update the voltage scaling value
      regarding system frequency refer to product datasheet.  */
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+#elif defined(MCU_SERIES_L4)
+    /* Enable the LSE Oscillator */
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSE;
+    RCC_OscInitStruct.LSEState = RCC_LSE_ON;
+    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+    {
+        __fatal_error("HAL_RCC_OscConfig");
+    }
+
 #endif
   
     /* Enable HSE Oscillator and activate PLL with HSE as source */
@@ -329,8 +337,8 @@ void SystemClock_Config(void)
     RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
     RCC_OscInitStruct.LSEState = RCC_LSE_ON;
     RCC_OscInitStruct.MSIState = RCC_MSI_ON;
-    RCC_OscInitStruct.MSICalibrationValue = 0;
-    RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_7;
+    RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
+    RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
     RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
 #endif
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
@@ -436,13 +444,13 @@ void SystemClock_Config(void)
 
     RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SAI1|RCC_PERIPHCLK_I2C1
-                                              |RCC_PERIPHCLK_I2C2|RCC_PERIPHCLK_USB
-					      |RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_RNG;
+                                              |RCC_PERIPHCLK_USB |RCC_PERIPHCLK_ADC
+                                              |RCC_PERIPHCLK_RNG |RCC_PERIPHCLK_RTC;
     PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
-    PeriphClkInitStruct.I2c2ClockSelection = RCC_I2C2CLKSOURCE_PCLK1;
-    /* PLLSAI is used to clock USB, ADC and RNG. The frequency is
-       HSE(8MHz)/PLLM(2)*PLLSAI1N(24)/PLLSAIQ(2) = 48MHz. See the STM32CubeMx 
+    /* PLLSAI is used to clock USB, ADC, I2C1 and RNG. The frequency is
+       HSE(8MHz)/PLLM(2)*PLLSAI1N(24)/PLLSAIQ(2) = 48MHz. See the STM32CubeMx
        application or the reference manual. */
+    PeriphClkInitStruct.Sai1ClockSelection = RCC_SAI1CLKSOURCE_PLLSAI1;
     PeriphClkInitStruct.AdcClockSelection = RCC_ADCCLKSOURCE_PLLSAI1;
     PeriphClkInitStruct.UsbClockSelection = RCC_USBCLKSOURCE_PLLSAI1;
     PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
