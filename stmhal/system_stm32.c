@@ -107,6 +107,7 @@ void __fatal_error(const char *msg);
 /** @addtogroup STM32Fxxx_System_Private_Defines
   * @{
   */
+
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
         /* Set HSION bit */
 #define CONFIG_RCC_CR_1ST  RCC_CR_HSION
@@ -194,6 +195,7 @@ void SystemInit(void)
   #endif
   /* Reset the RCC clock configuration to the default reset state ------------*/
 
+  /* Set HSION bit */
   RCC->CR |= CONFIG_RCC_CR_1ST;
 
   /* Reset CFGR register */
@@ -329,7 +331,6 @@ void SystemClock_Config(void)
     }
 
 #endif
-  
     /* Enable HSE Oscillator and activate PLL with HSE as source */
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
@@ -394,12 +395,12 @@ void SystemClock_Config(void)
 #else // defined(MICROPY_HW_CLK_LAST_FREQ) && MICROPY_HW_CLK_LAST_FREQ
     RCC_OscInitStruct.PLL.PLLM = MICROPY_HW_CLK_PLLM;
     RCC_OscInitStruct.PLL.PLLN = MICROPY_HW_CLK_PLLN;
-    RCC_OscInitStruct.PLL.PLLP = MICROPY_HW_CLK_PLLP; 
+    RCC_OscInitStruct.PLL.PLLP = MICROPY_HW_CLK_PLLP;
     RCC_OscInitStruct.PLL.PLLQ = MICROPY_HW_CLK_PLLQ;
 #if defined(MCU_SERIES_L4)
     RCC_OscInitStruct.PLL.PLLR = MICROPY_HW_CLK_PLLR;
 #endif 
-    
+
     RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
