@@ -317,6 +317,7 @@ g_pfnVectors:
   .word     HASH_RNG_IRQHandler               /* Hash and Rng                 */
 #endif
   .word     FPU_IRQHandler                    /* FPU                          */
+
 #if defined(MCU_SERIES_F7)
   .word     UART7_IRQHandler                  /* UART7                        */
   .word     UART8_IRQHandler                  /* UART8                        */
