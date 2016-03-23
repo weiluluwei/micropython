@@ -389,19 +389,19 @@ void SystemClock_Config(void)
   * @brief  System Clock Configuration
   *         The system Clock is configured as follow :
   *
-  *            System Clock source            = PLL (MSI)
+  *            System Clock source            = PLL (HSE)
   *            SYSCLK(Hz)                     = 80000000
   *            HCLK(Hz)                       = 80000000
   *            AHB Prescaler                  = 1
   *            APB1 Prescaler                 = 1
   *            APB2 Prescaler                 = 1
-  *            MSI Frequency(Hz)              = 4000000 (Range 6)
+  *            HSE Frequency(Hz)              = 8000000 
   *            LSE Frequency(Hz)              = 32768
-  *            PLL_M                          = 1
+  *            PLL_M                          = 2
   *            PLL_N                          = 40
   *            PLL_P                          = 7
-  *            PLL_Q                          = 4
-  *            PLL_R                          = 4
+  *            PLL_Q                          = 2
+  *            PLL_R                          = 2
   *            Flash Latency(WS)              = 4
   *
   * @param  None
@@ -448,17 +448,24 @@ void SystemClock_Config(void)
     HAL_RCC_ClockConfig(&RCC_ClkInitStruct, MICROPY_HW_FLASH_LATENCY);
 
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SAI1|RCC_PERIPHCLK_I2C1
-                              |RCC_PERIPHCLK_USB|RCC_PERIPHCLK_ADC;
+                                              |RCC_PERIPHCLK_I2C2|RCC_PERIPHCLK_USB
+					      |RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_RNG;
     PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
-    PeriphClkInitStruct.Sai1ClockSelection = RCC_SAI1CLKSOURCE_PLLSAI1;
+    PeriphClkInitStruct.I2c2ClockSelection = RCC_I2C2CLKSOURCE_PCLK1;
+    /* PLLSAI is used to clock USB, ADC and RNG. The frequency is
+       HSE(8MHz)/PLLM(2)*PLLSAI1N(24)/PLLSAIQ(2) = 48MHz. See the STM32CubeMx 
+       application or the reference manual. */
     PeriphClkInitStruct.AdcClockSelection = RCC_ADCCLKSOURCE_PLLSAI1;
     PeriphClkInitStruct.UsbClockSelection = RCC_USBCLKSOURCE_PLLSAI1;
+    PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+    PeriphClkInitStruct.RngClockSelection = RCC_RNGCLKSOURCE_PLLSAI1;
     PeriphClkInitStruct.PLLSAI1.PLLSAI1N = 24;
     PeriphClkInitStruct.PLLSAI1.PLLSAI1P = RCC_PLLP_DIV7;
     PeriphClkInitStruct.PLLSAI1.PLLSAI1Q = RCC_PLLQ_DIV2;
     PeriphClkInitStruct.PLLSAI1.PLLSAI1R = RCC_PLLR_DIV2;
-    PeriphClkInitStruct.PLLSAI1.PLLSAI1ClockOut = RCC_PLLSAI1_SAI1CLK|RCC_PLLSAI1_48M2CLK
-                              |RCC_PLLSAI1_ADC1CLK;
+    PeriphClkInitStruct.PLLSAI1.PLLSAI1ClockOut = RCC_PLLSAI1_SAI1CLK
+                                                 |RCC_PLLSAI1_48M2CLK
+                                                 |RCC_PLLSAI1_ADC1CLK;
     HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
 
 
