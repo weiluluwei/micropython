@@ -104,15 +104,15 @@ void mp_hal_gpio_clock_enable(GPIO_TypeDef *gpio) {
     } else if (gpio == GPIOH) {
         __GPIOH_CLK_ENABLE();
     #endif
-    #ifdef GPIOI
+    #if defined(GPIOI) && defined(__GPIOI_CLK_ENABLE)
     } else if (gpio == GPIOI) {
         __GPIOI_CLK_ENABLE();
     #endif
-    #ifdef GPIOJ
+    #if defined(GPIOJ) && defined(__GPIOJ_CLK_ENABLE)
     } else if (gpio == GPIOJ) {
         __GPIOJ_CLK_ENABLE();
     #endif
-    #ifdef GPIOK
+    #if defined(GPIOK) && defined(__GPIOK_CLK_ENABLE)
     } else if (gpio == GPIOK) {
         __GPIOK_CLK_ENABLE();
     #endif

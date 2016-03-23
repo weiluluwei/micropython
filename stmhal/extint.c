@@ -91,9 +91,10 @@
 #define EXTI_MODE_BB(mode, line) (*(__IO uint32_t *)(PERIPH_BB_BASE + ((EXTI_OFFSET + (mode)) * 32) + ((line) * 4)))
 
 #if defined(MCU_SERIES_L4)
-// FIXME: L4 support 40 Events/IRQs. We only support configurable which are already supported by
-// micropython. Details see page 330 of RM0351, Rev 1. As USB_FS_WAKUP event is a direct type
-// there is no support for it
+// L4 support 40 Events/IRQs lines of the type configurable and direct.
+// The L4 port only supports configurable line types which are already supported by
+// micropython. Details see page 330 of RM0351, Rev 1.
+// The USB_FS_WAKUP event is a direct type and there is no support for it.
 #define EXTI_Mode_Interrupt offsetof(EXTI_TypeDef, IMR1)
 #define EXTI_Mode_Event     offsetof(EXTI_TypeDef, EMR1)
 #else

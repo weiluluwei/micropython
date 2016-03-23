@@ -371,13 +371,9 @@ int main(void) {
     // The STM32F746 doesn't really have CCM memory, but it does have DTCM,
     // which behaves more or less like normal SRAM.
     __HAL_RCC_DTCMRAMEN_CLK_ENABLE();
-    #else
-        #if defined(__HAL_RCC_CCMDATARAMEN_CLK_ENABLE)
-        // enable the CCM RAM
-        __CCMDATARAMEN_CLK_ENABLE();
-        #else
-        // FIXME ADD Clock on for SRAM2 on STM32L476
-        #endif
+    #elif defined(__HAL_RCC_CCMDATARAMEN_CLK_ENABLE)
+    // enable the CCM RAM
+    __CCMDATARAMEN_CLK_ENABLE();
     #endif
 
     #if defined(MICROPY_BOARD_EARLY_INIT)
