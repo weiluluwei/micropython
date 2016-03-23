@@ -225,10 +225,11 @@ void SystemInit(void)
   SCB->CCR |= SCB_CCR_STKALIGN_Msk;
 }
 
-#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
+
 /**
   * @brief  System Clock Configuration
-  *         The system Clock is configured as follow :
+  *
+  *         The system Clock is configured for F4/F7 as follow :
   *            System Clock source            = PLL (HSE)
   *            SYSCLK(Hz)                     = 168000000
   *            HCLK(Hz)                       = 168000000
@@ -243,6 +244,22 @@ void SystemInit(void)
   *            VDD(V)                         = 3.3
   *            Main regulator output voltage  = Scale1 mode
   *            Flash Latency(WS)              = 5
+  *
+  *         The system Clock is configured for L4 as follow :
+  *            System Clock source            = PLL (HSE)
+  *            SYSCLK(Hz)                     = 80000000
+  *            HCLK(Hz)                       = 80000000
+  *            AHB Prescaler                  = 1
+  *            APB1 Prescaler                 = 1
+  *            APB2 Prescaler                 = 1
+  *            HSE Frequency(Hz)              = 8000000
+  *            LSE Frequency(Hz)              = 32768
+  *            PLL_M                          = 2
+  *            PLL_N                          = 40
+  *            PLL_P                          = 7
+  *            PLL_Q                          = 2
+  *            PLL_R                          = 2 <= This is the source for SysClk, not as on F4/7 PLL_P
+  *            Flash Latency(WS)              = 4
   * @param  None
   * @retval None
   *
@@ -250,8 +267,12 @@ void SystemInit(void)
   *
   *     VCO_IN  = HSE / M
   *     VCO_OUT = HSE / M * N
-  *     PLLCLK  = HSE / M * N / P
+  *     PLLCLK  =
+  *         F4/F7 = HSE / M * N / P
+  *         L4    = HSE / M * N / R
   *     PLL48CK = HSE / M * N / Q
+  *         F4/F7 = HSE / M * N / Q
+  *         L4    = HSE / M * N / R
   *
   *     SYSCLK = PLLCLK
   *     HCLK   = SYSCLK / AHB_PRESC
@@ -285,6 +306,7 @@ void SystemClock_Config(void)
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
   RCC_OscInitTypeDef RCC_OscInitStruct;
 
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
   /* Enable Power Control clock */
   __PWR_CLK_ENABLE();
 
@@ -292,10 +314,18 @@ void SystemClock_Config(void)
      clocked below the maximum system frequency, to update the voltage scaling value
      regarding system frequency refer to product datasheet.  */
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-
+#endif
+  
     /* Enable HSE Oscillator and activate PLL with HSE as source */
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+#elif defined(MCU_SERIES_L4)
+    RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
+#endif
     RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+#if defined(MCU_SERIES_L4)
+    RCC_OscInitStruct.LSEState = RCC_LSE_ON;
+#endif
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
     RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
     /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2
@@ -325,7 +355,11 @@ void SystemClock_Config(void)
     if ((q < 2) || (q > 15) || (p > 8) || (p < 2) || (n < 192) || (n >= 433) || (m < 2)) {
         m = MICROPY_HW_CLK_PLLM;
         n = MICROPY_HW_CLK_PLLN;
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
         p = MICROPY_HW_CLK_PLLP;
+#elif defined(MCU_SERIES_L4)
+        p = MICROPY_HW_CLK_PLLR; // R output of l4 PLL is source for SysClk
+#endif
         q = MICROPY_HW_CLK_PLLQ;
         h = RCC_SYSCLK_DIV1;
         b1 = RCC_HCLK_DIV4;
@@ -337,21 +371,36 @@ void SystemClock_Config(void)
     }
     RCC_OscInitStruct.PLL.PLLM = m; //MICROPY_HW_CLK_PLLM;
     RCC_OscInitStruct.PLL.PLLN = n; //MICROPY_HW_CLK_PLLN;
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     RCC_OscInitStruct.PLL.PLLP = p; //MICROPY_HW_CLK_PLLP;
+#elif defined(MCU_SERIES_L4)
+    RCC_OscInitStruct.PLL.PLLR = p; //MICROPY_HW_CLK_PLLP;
+    RCC_OscInitStruct.PLL.PLLP = MICROPY_HW_CLK_PLLP; 
+#endif 
     RCC_OscInitStruct.PLL.PLLQ = q; //MICROPY_HW_CLK_PLLQ;
 
     RCC_ClkInitStruct.AHBCLKDivider = h;  //RCC_SYSCLK_DIV1;
     RCC_ClkInitStruct.APB1CLKDivider = b1; //RCC_HCLK_DIV4;
     RCC_ClkInitStruct.APB2CLKDivider = b2; //RCC_HCLK_DIV2;
-#else
+#else // defined(MICROPY_HW_CLK_LAST_FREQ) && MICROPY_HW_CLK_LAST_FREQ
     RCC_OscInitStruct.PLL.PLLM = MICROPY_HW_CLK_PLLM;
     RCC_OscInitStruct.PLL.PLLN = MICROPY_HW_CLK_PLLN;
-    RCC_OscInitStruct.PLL.PLLP = MICROPY_HW_CLK_PLLP;
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
+    RCC_OscInitStruct.PLL.PLLP = MICROPY_HW_CLK_PLLP; 
+#elif defined(MCU_SERIES_L4)
+    RCC_OscInitStruct.PLL.PLLR = MICROPY_HW_CLK_PLLR;
+    RCC_OscInitStruct.PLL.PLLP = MICROPY_HW_CLK_PLLP; 
+#endif 
     RCC_OscInitStruct.PLL.PLLQ = MICROPY_HW_CLK_PLLQ;
-
+    
     RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
     RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+#elif defined(MCU_SERIES_L4)
+    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+#endif
 #endif
   if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -382,71 +431,8 @@ void SystemClock_Config(void)
 
   RCC->DCKCFGR2 = 0;
 #endif
-}
-
-#elif defined(MCU_SERIES_L4)
-/**
-  * @brief  System Clock Configuration
-  *         The system Clock is configured as follow :
-  *
-  *            System Clock source            = PLL (HSE)
-  *            SYSCLK(Hz)                     = 80000000
-  *            HCLK(Hz)                       = 80000000
-  *            AHB Prescaler                  = 1
-  *            APB1 Prescaler                 = 1
-  *            APB2 Prescaler                 = 1
-  *            HSE Frequency(Hz)              = 8000000 
-  *            LSE Frequency(Hz)              = 32768
-  *            PLL_M                          = 2
-  *            PLL_N                          = 40
-  *            PLL_P                          = 7
-  *            PLL_Q                          = 2
-  *            PLL_R                          = 2
-  *            Flash Latency(WS)              = 4
-  *
-  * @param  None
-  * @retval None
-  */
-void SystemClock_Config(void)
-{
-    RCC_ClkInitTypeDef RCC_ClkInitStruct;
-    RCC_OscInitTypeDef RCC_OscInitStruct;
+#if defined(MCU_SERIES_L4)
     RCC_PeriphCLKInitTypeDef PeriphClkInitStruct;
-
-    /* Enable the LSE Oscillator */
-    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSE;
-    RCC_OscInitStruct.LSEState = RCC_LSE_ON;
-    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-    {
-        __fatal_error("HAL_RCC_ClockConfig");
-    }
-
-    /* Enable the CSS interrupt in case LSE signal is corrupted or not present */
-    HAL_RCCEx_DisableLSECSS();
-
-    /* Enable MSI Oscillator and activate PLL with HSE as source */
-    RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
-    RCC_OscInitStruct.HSEState            = RCC_HSE_ON;
-    RCC_OscInitStruct.LSEState            = RCC_LSE_ON;
-    RCC_OscInitStruct.PLL.PLLState        = RCC_PLL_ON;
-    RCC_OscInitStruct.PLL.PLLSource       = RCC_PLLSOURCE_HSE;
-    RCC_OscInitStruct.PLL.PLLM            = MICROPY_HW_CLK_PLLM;
-    RCC_OscInitStruct.PLL.PLLN            = MICROPY_HW_CLK_PLLN;
-    RCC_OscInitStruct.PLL.PLLP            = MICROPY_HW_CLK_PLLP;
-    RCC_OscInitStruct.PLL.PLLQ            = MICROPY_HW_CLK_PLLQ;
-    RCC_OscInitStruct.PLL.PLLR            = RCC_PLLR_DIV2;
-    HAL_RCC_OscConfig(&RCC_OscInitStruct);
-
-    /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2
-    clocks dividers */
-    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                                 |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-    RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
-    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
-    HAL_RCC_ClockConfig(&RCC_ClkInitStruct, MICROPY_HW_FLASH_LATENCY);
-
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SAI1|RCC_PERIPHCLK_I2C1
                                               |RCC_PERIPHCLK_I2C2|RCC_PERIPHCLK_USB
 					      |RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_RNG;
@@ -467,8 +453,7 @@ void SystemClock_Config(void)
                                                  |RCC_PLLSAI1_48M2CLK
                                                  |RCC_PLLSAI1_ADC1CLK;
     HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
-
-
+    
     __PWR_CLK_ENABLE();
 
     HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1);
@@ -476,19 +461,8 @@ void SystemClock_Config(void)
     HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
 
     HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
-
-    HAL_RCCEx_EnableMSIPLLMode();
-
-    /* SysTick_IRQn interrupt configuration */
-    HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
-
-}
-
 #endif
-
-
-
-
+}
 
 void HAL_MspInit(void) {
 #if defined(MCU_SERIES_F7)
