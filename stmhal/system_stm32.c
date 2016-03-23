@@ -327,8 +327,10 @@ void SystemClock_Config(void)
     RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
 #elif defined(MCU_SERIES_L4)
     RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
-    RCC_OscInitStruct.MSIState = RCC_MSI_ON;
     RCC_OscInitStruct.LSEState = RCC_LSE_ON;
+    RCC_OscInitStruct.MSIState = RCC_MSI_ON;
+    RCC_OscInitStruct.MSICalibrationValue = 0;
+    RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_7;
     RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
 #endif
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
@@ -452,7 +454,11 @@ void SystemClock_Config(void)
     PeriphClkInitStruct.PLLSAI1.PLLSAI1ClockOut = RCC_PLLSAI1_SAI1CLK
                                                  |RCC_PLLSAI1_48M2CLK
                                                  |RCC_PLLSAI1_ADC1CLK;
-    HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
+
+    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+    {
+        __fatal_error("HAL_RCCEx_PeriphCLKConfig");
+    }
     
     __PWR_CLK_ENABLE();
 
