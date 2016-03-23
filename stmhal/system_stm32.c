@@ -214,6 +214,7 @@ void SystemInit(void)
 #elif defined(MCU_SERIES_L4)
   RCC->CIER = 0x00000000;
 #endif
+
   /* Configure the Vector Table location add offset address ------------------*/
 #ifdef VECT_TAB_SRAM
   SCB->VTOR = SRAM1_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM */
@@ -224,6 +225,7 @@ void SystemInit(void)
   /* dpgeorge: enable 8-byte stack alignment for IRQ handlers, in accord with EABI */
   SCB->CCR |= SCB_CCR_STKALIGN_Msk;
 }
+
 
 /**
   * @brief  System Clock Configuration
@@ -392,13 +394,11 @@ void SystemClock_Config(void)
 #else // defined(MICROPY_HW_CLK_LAST_FREQ) && MICROPY_HW_CLK_LAST_FREQ
     RCC_OscInitStruct.PLL.PLLM = MICROPY_HW_CLK_PLLM;
     RCC_OscInitStruct.PLL.PLLN = MICROPY_HW_CLK_PLLN;
-#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     RCC_OscInitStruct.PLL.PLLP = MICROPY_HW_CLK_PLLP; 
-#elif defined(MCU_SERIES_L4)
-    RCC_OscInitStruct.PLL.PLLR = MICROPY_HW_CLK_PLLR;
-    RCC_OscInitStruct.PLL.PLLP = MICROPY_HW_CLK_PLLP; 
-#endif 
     RCC_OscInitStruct.PLL.PLLQ = MICROPY_HW_CLK_PLLQ;
+#if defined(MCU_SERIES_L4)
+    RCC_OscInitStruct.PLL.PLLR = MICROPY_HW_CLK_PLLR;
+#endif 
     
     RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
