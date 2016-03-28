@@ -190,7 +190,6 @@ STATIC mp_obj_t machine_freq(mp_uint_t n_args, const mp_obj_t *args) {
 #if defined(MCU_SERIES_L4)
         nlr_raise(mp_obj_new_exception_msg(&mp_type_NotImplementedError, "machine.freq set not supported yet"));
 #endif
-
         mp_int_t wanted_sysclk = mp_obj_get_int(args[0]) / 1000000;
 
         // default PLL parameters that give 48MHz on PLL48CK
@@ -314,7 +313,7 @@ STATIC mp_obj_t machine_freq(mp_uint_t n_args, const mp_obj_t *args) {
         // set PLL as system clock source if wanted
         if (sysclk_source == RCC_SYSCLKSOURCE_PLLCLK) {
             #if defined(MCU_SERIES_L4)
-            uint32_t flash_latency = FLASH_LATENCY_4;
+            uint32_t flash_latency = MICROPY_HW_FLASH_LATENCY;
             #else
             uint32_t flash_latency = FLASH_LATENCY_5;
             #endif
@@ -400,6 +399,7 @@ STATIC mp_obj_t machine_sleep(void) {
     while (__HAL_RCC_GET_SYSCLK_SOURCE() != RCC_CFGR_SWS_PLL) {
     }
 #endif
+
     return mp_const_none;
 }
 MP_DEFINE_CONST_FUN_OBJ_0(machine_sleep_obj, machine_sleep);
