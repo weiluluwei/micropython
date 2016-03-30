@@ -48,6 +48,11 @@
 #define MICROPY_HW_SPI1_MISO    (pin_A6)
 #define MICROPY_HW_SPI1_MOSI    (pin_A7)
 
+#define MICROPY_HW_SPI3_NSS     (pin_A15)
+#define MICROPY_HW_SPI3_SCK     (pin_B3)
+#define MICROPY_HW_SPI3_MISO    (pin_B4)
+#define MICROPY_HW_SPI3_MOSI    (pin_B5)
+
 #define MICROPY_HW_USRSW_PIN        (pin_A15)
 #define MICROPY_HW_USRSW_PULL       (GPIO_NOPULL)
 #define MICROPY_HW_USRSW_EXTI_MODE  (GPIO_MODE_IT_RISING)
