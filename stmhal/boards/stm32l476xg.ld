@@ -1,5 +1,5 @@
 /*
-    GNU linker script for STM32L476-Discovery kit
+    GNU linker script for STM32L476XG
 */
 
 /* Specify the memory areas */
@@ -106,8 +106,8 @@ SECTIONS
     .heap :
     {
         . = ALIGN(4);
-	PROVIDE ( end = . );
-	PROVIDE ( _end = . );
+        PROVIDE ( end = . );
+        PROVIDE ( _end = . );
         _heap_start = .;    /* define a global symbol at heap start */
         . = . + _minimum_heap_size;
     } >RAM

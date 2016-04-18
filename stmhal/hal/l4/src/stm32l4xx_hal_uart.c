@@ -2116,14 +2116,14 @@ uint32_t HAL_UART_CalcBrr(uint32_t fck, uint32_t baud)
         uint32_t limit;
         uint32_t div;
     } comDiv[]= {
-        {1<<31, 300 }, /* must by >= 256 */
-        {1<<30, 150 }, /* must by >= 128 */
-        {1<<29,  75 }, /* must by >= 64 */
-        {1<<28,  50 }, /* must by >= 32 */
-        {1<<27,  20 }, /* must by >= 16 */
-        {1<<26,  10 }, /* must by >= 8 */
-        {1<<25,   5 }, /* must by >= 4 */
-        {1<<24,   2 }  /* must by >= 2 */
+        {1<<31, 300 }, /* must be >= 256 */
+        {1<<30, 150 }, /* must be >= 128 */
+        {1<<29,  75 }, /* must be >= 64 */
+        {1<<28,  50 }, /* must be >= 32 */
+        {1<<27,  20 }, /* must be >= 16 */
+        {1<<26,  10 }, /* must be >= 8 */
+        {1<<25,   5 }, /* must be >= 4 */
+        {1<<24,   2 }  /* must be >= 2 */
     };
     const uint32_t comDivCnt = sizeof(comDiv)/sizeof(comDiv[0]);
     uint8_t i;
@@ -2136,8 +2136,7 @@ uint32_t HAL_UART_CalcBrr(uint32_t fck, uint32_t baud)
             break;
         }
     }
-
-    return ((fck<<8)+(baud>>1))/baud;
+    return (fck<<8)/baud;
 }
 
 /**

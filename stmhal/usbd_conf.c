@@ -415,7 +415,7 @@ if (pdev->id ==  USB_PHY_FS_ID)
   pcd_fs_handle.Init.phy_itface = PCD_PHY_EMBEDDED;
   pcd_fs_handle.Init.Sof_enable = 1;
   pcd_fs_handle.Init.speed = PCD_SPEED_FULL;
-#if defined (MCU_SERIES_L4)
+#if defined(MCU_SERIES_L4)
   pcd_fs_handle.Init.lpm_enable = DISABLE;
   pcd_fs_handle.Init.battery_charging_enable = DISABLE;
 #endif
@@ -449,7 +449,7 @@ if (pdev->id == USB_PHY_HS_ID)
   pcd_hs_handle.Init.dma_enable = 0;
   pcd_hs_handle.Init.low_power_enable = 0;
   pcd_hs_handle.Init.phy_itface = PCD_PHY_EMBEDDED;
-  pcd_hs_handle.Init.Sof_enable = 0;
+  pcd_hs_handle.Init.Sof_enable = 1;
   pcd_hs_handle.Init.speed = PCD_SPEED_HIGH_IN_FULL;
 #if !defined(MICROPY_HW_USB_VBUS_DETECT_PIN)
   pcd_hs_handle.Init.vbus_sensing_enable = 0; // No VBUS Sensing on USB0
@@ -483,7 +483,7 @@ if (pdev->id == USB_PHY_HS_ID)
   
   pcd_hs_handle.Init.low_power_enable = 0;
   pcd_hs_handle.Init.phy_itface = PCD_PHY_ULPI;
-  pcd_hs_handle.Init.Sof_enable = 0;
+  pcd_hs_handle.Init.Sof_enable = 1;
   pcd_hs_handle.Init.speed = PCD_SPEED_HIGH;
   pcd_hs_handle.Init.vbus_sensing_enable = 1;
   /* Link The driver to the stack */
