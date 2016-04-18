@@ -28,32 +28,31 @@
 typedef struct _dma_descr_t dma_descr_t;
 
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
-extern dma_descr_t dma_I2C_1_RX;
-extern dma_descr_t dma_SPI_3_RX;
-extern dma_descr_t dma_I2C_3_RX;
-extern dma_descr_t dma_I2C_2_RX;
-extern dma_descr_t dma_SPI_2_RX;
-extern dma_descr_t dma_SPI_2_TX;
-extern dma_descr_t dma_I2C_3_TX;
-extern dma_descr_t dma_DAC_1_TX;
-extern dma_descr_t dma_DAC_2_TX;
-extern dma_descr_t dma_SPI_3_TX;
-extern dma_descr_t dma_I2C_1_TX;
-extern dma_descr_t dma_I2C_2_TX;
-extern dma_descr_t dma_SPI_1_RX;
-extern dma_descr_t dma_SPI_5_RX;
-extern dma_descr_t dma_SPI_1_TX;
+extern const dma_descr_t dma_I2C_1_RX;
+extern const dma_descr_t dma_SPI_3_RX;
+extern const dma_descr_t dma_I2C_3_RX;
+extern const dma_descr_t dma_I2C_2_RX;
+extern const dma_descr_t dma_SPI_2_RX;
+extern const dma_descr_t dma_SPI_2_TX;
+extern const dma_descr_t dma_I2C_3_TX;
+extern const dma_descr_t dma_DAC_1_TX;
+extern const dma_descr_t dma_DAC_2_TX;
+extern const dma_descr_t dma_SPI_3_TX;
+extern const dma_descr_t dma_I2C_1_TX;
+extern const dma_descr_t dma_I2C_2_TX;
+extern const dma_descr_t dma_SPI_1_RX;
+extern const dma_descr_t dma_SPI_5_RX;
 #if defined(MICROPY_HW_HAS_SDCARD) && MICROPY_HW_HAS_SDCARD
-extern dma_descr_t dma_SDOI_0_RX;
+extern dma_descr_t dma_SDIO_0_RX;
 #endif
-extern dma_descr_t dma_SPI_4_RX;
-extern dma_descr_t dma_SPI_5_TX;
-extern dma_descr_t dma_SPI_4_TX;
-extern dma_descr_t dma_SPI_6_TX;
-extern dma_descr_t dma_SPI_1_TX;
-extern dma_descr_t dma_SPI_6_RX;
+extern const dma_descr_t dma_SPI_4_RX;
+extern const dma_descr_t dma_SPI_5_TX;
+extern const dma_descr_t dma_SPI_4_TX;
+extern const dma_descr_t dma_SPI_6_TX;
+extern const dma_descr_t dma_SPI_1_TX;
+extern const dma_descr_t dma_SPI_6_RX;
 #if defined(MICROPY_HW_HAS_SDCARD) && MICROPY_HW_HAS_SDCARD
-extern dma_descr_t dma_SDIO_0_TX;
+extern const dma_descr_t dma_SDIO_0_TX;
 #endif
 #elif defined(MCU_SERIES_L4)
 extern const dma_descr_t dma_ADC_1_RX;

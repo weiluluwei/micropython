@@ -155,7 +155,6 @@ const dma_descr_t dma_I2C_1_TX = { DMA1_Stream6, DMA_CHANNEL_1, DMA_TX_TRANSFER,
     // DMA2 streams                                                                                      ;
 const dma_descr_t dma_SPI_1_RX = { DMA2_Stream2, DMA_CHANNEL_3, DMA_RX_TRANSFER, dma_id_10 , &dma_init_struct_spi_i2c};
 const dma_descr_t dma_SPI_5_RX = { DMA2_Stream3, DMA_CHANNEL_2, DMA_RX_TRANSFER, dma_id_11 , &dma_init_struct_spi_i2c};
-const dma_descr_t dma_SPI_1_TX = { DMA2_Stream3, DMA_CHANNEL_3, DMA_TX_TRANSFER, dma_id_11 , &dma_init_struct_spi_i2c};
 #if defined(MICROPY_HW_HAS_SDCARD) && MICROPY_HW_HAS_SDCARD
 const dma_descr_t dma_SDIO_0_RX= { DMA2_Stream3, DMA_CHANNEL_4, DMA_RX_TRANSFER, dma_id_11 , &dma_init_struct_sdio};
 #endif
@@ -169,6 +168,7 @@ const dma_descr_t dma_SPI_6_RX = { DMA2_Stream6, DMA_CHANNEL_1, DMA_RX_TRANSFER,
 const dma_descr_t dma_SDIO_0_TX= { DMA2_Stream6, DMA_CHANNEL_4, DMA_TX_TRANSFER, dma_id_14 , &dma_init_struct_sdio};
 #endif
     /* Not prefered streams on DMA2
+const dma_descr_t dma_SPI_1_TX = { DMA2_Stream3, DMA_CHANNEL_3, DMA_TX_TRANSFER, dma_id_11 , &dma_init_struct_spi_i2c};
 const dma_descr_t dma_SPI_1_RX = { DMA2_Stream0, DMA_CHANNEL_3, DMA_RX_TRANSFER, dma_id_8  , &dma_init_struct_spi_i2c};
 const dma_descr_t dma_SPI_4_RX = { DMA2_Stream0, DMA_CHANNEL_4, DMA_RX_TRANSFER, dma_id_8  , &dma_init_struct_spi_i2c};
 const dma_descr_t dma_SPI_4_TX = { DMA2_Stream1, DMA_CHANNEL_4, DMA_TX_TRANSFER, dma_id_9  , &dma_init_struct_spi_i2c};
