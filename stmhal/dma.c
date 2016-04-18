@@ -56,7 +56,6 @@ typedef enum {
 
 typedef struct
 {
-    dma_descr_t     dma_descr;
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     DMA_Stream_TypeDef  *instance;
 #elif defined(MCU_SERIES_L4)
@@ -66,12 +65,15 @@ typedef struct
 #endif
     uint32_t        sub_instance;
     dma_id_t        id;
+    uint32_t        transfer_direction; /* Transfer direction Periphery to memory or vis-versa */
     const DMA_InitTypeDef *init;
 } dma_p2dma_t;
 
 #define NSTREAMS_PER_CONTROLLER_LOG2 (3)
 #define NCONTROLLERS            (2)
 
+#define DMA_TX_TRANSFER      DMA_MEMORY_TO_PERIPH
+#define DMA_RX_TRANSFER      DMA_PERIPH_TO_MEMORY
 
 // Default parameters to dma_init() shared by spi and i2c; Channel and Direction
 // vary depending on the peripheral instance so they get passed separately
@@ -124,7 +126,6 @@ static const DMA_InitTypeDef dma_init_struct_sdio = {
 };
 #endif
 
-
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
 /*
  * Configuration for STM32F4xx series
@@ -136,46 +137,45 @@ static const DMA_InitTypeDef dma_init_struct_sdio = {
 //
 // Currently I2C and SPI are synchronous and they call dma_init/dma_deinit
 // around each transfer.
-static const dma_p2dma_t dma_transfer_info[]= {
     // DMA1 streams
-    { { dma_I2C,  1, DMA_RX_TRANSFER}, DMA1_Stream0, DMA_CHANNEL_1, dma_id_0  , &dma_init_struct_spi_i2c},
-    { { dma_SPI,  3, DMA_RX_TRANSFER}, DMA1_Stream2, DMA_CHANNEL_0, dma_id_2  , &dma_init_struct_spi_i2c},
-    { { dma_I2C,  3, DMA_RX_TRANSFER}, DMA1_Stream2, DMA_CHANNEL_3, dma_id_2  , &dma_init_struct_spi_i2c},
-    { { dma_I2C,  2, DMA_RX_TRANSFER}, DMA1_Stream2, DMA_CHANNEL_7, dma_id_2  , &dma_init_struct_spi_i2c},
-    { { dma_SPI,  2, DMA_RX_TRANSFER}, DMA1_Stream3, DMA_CHANNEL_0, dma_id_3  , &dma_init_struct_spi_i2c},
-    { { dma_SPI,  2, DMA_TX_TRANSFER}, DMA1_Stream4, DMA_CHANNEL_0, dma_id_4  , &dma_init_struct_spi_i2c},
-    { { dma_I2C,  3, DMA_TX_TRANSFER}, DMA1_Stream4, DMA_CHANNEL_3, dma_id_4  , &dma_init_struct_spi_i2c},
-    { { dma_DAC,  1, DMA_TX_TRANSFER}, DMA1_Stream5, DMA_CHANNEL_7, dma_id_5  , NULL},
-    { { dma_DAC,  2, DMA_TX_TRANSFER}, DMA1_Stream6, DMA_CHANNEL_7, dma_id_6  , NULL},
-    { { dma_SPI,  3, DMA_TX_TRANSFER}, DMA1_Stream7, DMA_CHANNEL_0, dma_id_7  , &dma_init_struct_spi_i2c},
-    { { dma_I2C,  1, DMA_TX_TRANSFER}, DMA1_Stream7, DMA_CHANNEL_1, dma_id_7  , &dma_init_struct_spi_i2c},
-    { { dma_I2C,  2, DMA_TX_TRANSFER}, DMA1_Stream7, DMA_CHANNEL_7, dma_id_7  , &dma_init_struct_spi_i2c},
-    /* Not prefered streams on DMA1
-    { { dma_SPI,  3, DMA_RX_TRANSFER}, DMA1_Stream0, DMA_CHANNEL_0, dma_id_0  , &dma_init_struct_spi_i2c},
-    { { dma_I2C,  1, DMA_TX_TRANSFER}, DMA1_Stream6, DMA_CHANNEL_1, dma_id_6  , &dma_init_struct_spi_i2c}, */
-    // DMA2 streams
-    { { dma_SPI,  1, DMA_RX_TRANSFER}, DMA2_Stream2, DMA_CHANNEL_3, dma_id_10 , &dma_init_struct_spi_i2c},
-    { { dma_SPI,  5, DMA_RX_TRANSFER}, DMA2_Stream3, DMA_CHANNEL_2, dma_id_11 , &dma_init_struct_spi_i2c},
-    { { dma_SPI,  1, DMA_TX_TRANSFER}, DMA2_Stream3, DMA_CHANNEL_3, dma_id_11 , &dma_init_struct_spi_i2c},
+const dma_p2dma_t dma_I2C_1_RX = { DMA1_Stream0, DMA_CHANNEL_1, DMA_RX_TRANSFER, dma_id_0  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_SPI_3_RX = { DMA1_Stream2, DMA_CHANNEL_0, DMA_RX_TRANSFER, dma_id_2  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_I2C_3_RX = { DMA1_Stream2, DMA_CHANNEL_3, DMA_RX_TRANSFER, dma_id_2  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_I2C_2_RX = { DMA1_Stream2, DMA_CHANNEL_7, DMA_RX_TRANSFER, dma_id_2  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_SPI_2_RX = { DMA1_Stream3, DMA_CHANNEL_0, DMA_RX_TRANSFER, dma_id_3  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_SPI_2_TX = { DMA1_Stream4, DMA_CHANNEL_0, DMA_TX_TRANSFER, dma_id_4  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_I2C_3_TX = { DMA1_Stream4, DMA_CHANNEL_3, DMA_TX_TRANSFER, dma_id_4  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_DAC_1_TX = { DMA1_Stream5, DMA_CHANNEL_7, DMA_TX_TRANSFER, dma_id_5  , NULL};
+const dma_p2dma_t dma_DAC_2_TX = { DMA1_Stream6, DMA_CHANNEL_7, DMA_TX_TRANSFER, dma_id_6  , NULL};
+const dma_p2dma_t dma_SPI_3_TX = { DMA1_Stream7, DMA_CHANNEL_0, DMA_TX_TRANSFER, dma_id_7  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_I2C_1_TX = { DMA1_Stream7, DMA_CHANNEL_1, DMA_TX_TRANSFER, dma_id_7  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_I2C_2_TX = { DMA1_Stream7, DMA_CHANNEL_7, DMA_TX_TRANSFER, dma_id_7  , &dma_init_struct_spi_i2c};
+    /* Not prefered streams on DMA1                                                                      ;
+const dma_p2dma_t dma_SPI_3_RX = { DMA1_Stream0, DMA_CHANNEL_0, DMA_RX_TRANSFER, dma_id_0  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_I2C_1_TX = { DMA1_Stream6, DMA_CHANNEL_1, DMA_TX_TRANSFER, dma_id_6  , &dma_init_struct_spi_i2c}; */
+    // DMA2 streams                                                                                      ;
+const dma_p2dma_t dma_SPI_1_RX = { DMA2_Stream2, DMA_CHANNEL_3, DMA_RX_TRANSFER, dma_id_10 , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_SPI_5_RX = { DMA2_Stream3, DMA_CHANNEL_2, DMA_RX_TRANSFER, dma_id_11 , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_SPI_1_TX = { DMA2_Stream3, DMA_CHANNEL_3, DMA_TX_TRANSFER, dma_id_11 , &dma_init_struct_spi_i2c};
 #if defined(MICROPY_HW_HAS_SDCARD) && MICROPY_HW_HAS_SDCARD
-    { { dma_SDIO, 0, DMA_RX_TRANSFER}, DMA2_Stream3, DMA_CHANNEL_4, dma_id_11 , &dma_init_struct_sdio},
+const dma_p2dma_t dma_SDOI_0_RX= { DMA2_Stream3, DMA_CHANNEL_4, DMA_RX_TRANSFER, dma_id_11 , &dma_init_struct_sdio};
 #endif
-    { { dma_SPI,  4, DMA_RX_TRANSFER}, DMA2_Stream3, DMA_CHANNEL_5, dma_id_11 , &dma_init_struct_spi_i2c},
-    { { dma_SPI,  5, DMA_TX_TRANSFER}, DMA2_Stream4, DMA_CHANNEL_2, dma_id_12 , &dma_init_struct_spi_i2c},
-    { { dma_SPI,  4, DMA_TX_TRANSFER}, DMA2_Stream4, DMA_CHANNEL_5, dma_id_12 , &dma_init_struct_spi_i2c},
-    { { dma_SPI,  6, DMA_TX_TRANSFER}, DMA2_Stream5, DMA_CHANNEL_1, dma_id_13 , &dma_init_struct_spi_i2c},
-    { { dma_SPI,  1, DMA_TX_TRANSFER}, DMA2_Stream5, DMA_CHANNEL_3, dma_id_13 , &dma_init_struct_spi_i2c},
-    { { dma_SPI,  6, DMA_RX_TRANSFER}, DMA2_Stream6, DMA_CHANNEL_1, dma_id_14 , &dma_init_struct_spi_i2c},
+const dma_p2dma_t dma_SPI_4_RX = { DMA2_Stream3, DMA_CHANNEL_5, DMA_RX_TRANSFER, dma_id_11 , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_SPI_5_TX = { DMA2_Stream4, DMA_CHANNEL_2, DMA_TX_TRANSFER, dma_id_12 , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_SPI_4_TX = { DMA2_Stream4, DMA_CHANNEL_5, DMA_TX_TRANSFER, dma_id_12 , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_SPI_6_TX = { DMA2_Stream5, DMA_CHANNEL_1, DMA_TX_TRANSFER, dma_id_13 , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_SPI_1_TX = { DMA2_Stream5, DMA_CHANNEL_3, DMA_TX_TRANSFER, dma_id_13 , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_SPI_6_RX = { DMA2_Stream6, DMA_CHANNEL_1, DMA_RX_TRANSFER, dma_id_14 , &dma_init_struct_spi_i2c};
 #if defined(MICROPY_HW_HAS_SDCARD) && MICROPY_HW_HAS_SDCARD
-    { { dma_SDIO, 0, DMA_TX_TRANSFER}, DMA2_Stream6, DMA_CHANNEL_4, dma_id_14 , &dma_init_struct_sdio}
+const dma_p2dma_t dma_SDIO_0_TX= { DMA2_Stream6, DMA_CHANNEL_4, DMA_TX_TRANSFER, dma_id_14 , &dma_init_struct_sdio};
 #endif
     /* Not prefered streams on DMA2
-    { { dma_SPI,  1, DMA_RX_TRANSFER}, DMA2_Stream0, DMA_CHANNEL_3, dma_id_8  , &dma_init_struct_spi_i2c},
-    { { dma_SPI,  4, DMA_RX_TRANSFER}, DMA2_Stream0, DMA_CHANNEL_4, dma_id_8  , &dma_init_struct_spi_i2c},
-    { { dma_SPI,  4, DMA_TX_TRANSFER}, DMA2_Stream1, DMA_CHANNEL_4, dma_id_9  , &dma_init_struct_spi_i2c},
-    { { dma_SPI,  5, DMA_RX_TRANSFER}, DMA2_Stream5, DMA_CHANNEL_7, dma_id_13 , &dma_init_struct_spi_i2c},
-    { { dma_SPI,  5, DMA_TX_TRANSFER}, DMA2_Stream6, DMA_CHANNEL_7, dma_id_14 , &dma_init_struct_spi_i2c}, */
-};
+const dma_p2dma_t dma_SPI_1_RX = { DMA2_Stream0, DMA_CHANNEL_3, DMA_RX_TRANSFER, dma_id_8  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_SPI_4_RX = { DMA2_Stream0, DMA_CHANNEL_4, DMA_RX_TRANSFER, dma_id_8  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_SPI_4_TX = { DMA2_Stream1, DMA_CHANNEL_4, DMA_TX_TRANSFER, dma_id_9  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_SPI_5_RX = { DMA2_Stream5, DMA_CHANNEL_7, DMA_RX_TRANSFER, dma_id_13 , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_SPI_5_TX = { DMA2_Stream6, DMA_CHANNEL_7, DMA_TX_TRANSFER, dma_id_14 , &dma_init_struct_spi_i2c}; */
+
 
 #define NSTREAMS_PER_CONTROLLER (1 << NSTREAMS_PER_CONTROLLER_LOG2)
 #define NSTREAM                 (NCONTROLLERS * NSTREAMS_PER_CONTROLLER)
@@ -202,42 +202,41 @@ static const uint8_t dma_irqn[NSTREAM] = {
 // These are ordered by DMAx_Channel number, and within a channel by request
 // number. The duplicate streams are ok as long as they aren't used at the
 // same time.
-static const dma_p2dma_t dma_transfer_info[]= {
     // DMA1 streams
-    { { dma_ADC,  1, DMA_RX_TRANSFER}, DMA1_Channel1, DMA_REQUEST_0, dma_id_0  , NULL},
-    { { dma_ADC,  2, DMA_RX_TRANSFER}, DMA1_Channel2, DMA_REQUEST_0, dma_id_1  , NULL},
-    { { dma_SPI,  1, DMA_RX_TRANSFER}, DMA1_Channel2, DMA_REQUEST_1, dma_id_1  , &dma_init_struct_spi_i2c},
-    { { dma_I2C,  3, DMA_TX_TRANSFER}, DMA1_Channel2, DMA_REQUEST_3, dma_id_1  , &dma_init_struct_spi_i2c},
-    { { dma_ADC,  3, DMA_RX_TRANSFER}, DMA1_Channel3, DMA_REQUEST_0, dma_id_2  , NULL},
-    { { dma_SPI,  1, DMA_TX_TRANSFER}, DMA1_Channel3, DMA_REQUEST_1, dma_id_2  , &dma_init_struct_spi_i2c},
-    { { dma_I2C,  3, DMA_RX_TRANSFER}, DMA1_Channel3, DMA_REQUEST_3, dma_id_2  , &dma_init_struct_spi_i2c},
-    { { dma_DAC,  1, DMA_TX_TRANSFER}, DMA1_Channel3, DMA_REQUEST_6, dma_id_2  , NULL},
-    { { dma_SPI,  2, DMA_RX_TRANSFER}, DMA1_Channel4, DMA_REQUEST_1, dma_id_3  , &dma_init_struct_spi_i2c},
-    { { dma_I2C,  2, DMA_TX_TRANSFER}, DMA1_Channel4, DMA_REQUEST_3, dma_id_3  , &dma_init_struct_spi_i2c},
-    { { dma_DAC,  2, DMA_TX_TRANSFER}, DMA1_Channel4, DMA_REQUEST_5, dma_id_3  , NULL},
-    { { dma_SPI,  2, DMA_TX_TRANSFER}, DMA1_Channel5, DMA_REQUEST_1, dma_id_4  , &dma_init_struct_spi_i2c},
-    { { dma_I2C,  2, DMA_RX_TRANSFER}, DMA1_Channel5, DMA_REQUEST_3, dma_id_4  , &dma_init_struct_spi_i2c},
-    { { dma_I2C,  1, DMA_TX_TRANSFER}, DMA1_Channel6, DMA_REQUEST_3, dma_id_5  , &dma_init_struct_spi_i2c},
-    { { dma_I2C,  1, DMA_RX_TRANSFER}, DMA1_Channel7, DMA_REQUEST_3, dma_id_6  , &dma_init_struct_spi_i2c},
-    // DMA2 streams
-    { { dma_SPI,  3, DMA_RX_TRANSFER}, DMA2_Channel1, DMA_REQUEST_3, dma_id_7  , &dma_init_struct_spi_i2c},
-    { { dma_SPI,  3, DMA_TX_TRANSFER}, DMA2_Channel2, DMA_REQUEST_3, dma_id_8  , &dma_init_struct_spi_i2c},
-    { { dma_ADC,  1, DMA_RX_TRANSFER}, DMA2_Channel3, DMA_REQUEST_0, dma_id_9  , NULL},
-    { { dma_SPI,  1, DMA_RX_TRANSFER}, DMA2_Channel3, DMA_REQUEST_4, dma_id_9  , &dma_init_struct_spi_i2c},
-    { { dma_ADC,  2, DMA_RX_TRANSFER}, DMA2_Channel4, DMA_REQUEST_0, dma_id_10 , NULL},
-    { { dma_DAC,  1, DMA_TX_TRANSFER}, DMA2_Channel4, DMA_REQUEST_3, dma_id_10 , NULL},
-    { { dma_SPI,  1, DMA_TX_TRANSFER}, DMA2_Channel4, DMA_REQUEST_4, dma_id_10 , &dma_init_struct_spi_i2c},
+const dma_p2dma_t dma_ADC_1_RX = { DMA1_Channel1, DMA_REQUEST_0, DMA_RX_TRANSFER, dma_id_0  , NULL};
+const dma_p2dma_t dma_ADC_2_RX = { DMA1_Channel2, DMA_REQUEST_0, DMA_RX_TRANSFER, dma_id_1  , NULL};
+const dma_p2dma_t dma_SPI_1_RX = { DMA1_Channel2, DMA_REQUEST_1, DMA_RX_TRANSFER, dma_id_1  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_I2C_3_TX = { DMA1_Channel2, DMA_REQUEST_3, DMA_TX_TRANSFER, dma_id_1  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_ADC_3_RX = { DMA1_Channel3, DMA_REQUEST_0, DMA_RX_TRANSFER, dma_id_2  , NULL};
+const dma_p2dma_t dma_SPI_1_TX = { DMA1_Channel3, DMA_REQUEST_1, DMA_TX_TRANSFER, dma_id_2  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_I2C_3_RX = { DMA1_Channel3, DMA_REQUEST_3, DMA_RX_TRANSFER, dma_id_2  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_DAC_1_TX = { DMA1_Channel3, DMA_REQUEST_6, DMA_TX_TRANSFER, dma_id_2  , NULL};
+const dma_p2dma_t dma_SPI_2_RX = { DMA1_Channel4, DMA_REQUEST_1, DMA_RX_TRANSFER, dma_id_3  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_I2C_2_TX = { DMA1_Channel4, DMA_REQUEST_3, DMA_TX_TRANSFER, dma_id_3  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_DAC_2_TX = { DMA1_Channel4, DMA_REQUEST_5, DMA_TX_TRANSFER, dma_id_3  , NULL};
+const dma_p2dma_t dma_SPI_2_TX = { DMA1_Channel5, DMA_REQUEST_1, DMA_TX_TRANSFER, dma_id_4  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_I2C_2_RX = { DMA1_Channel5, DMA_REQUEST_3, DMA_RX_TRANSFER, dma_id_4  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_I2C_1_TX = { DMA1_Channel6, DMA_REQUEST_3, DMA_TX_TRANSFER, dma_id_5  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_I2C_1_RX = { DMA1_Channel7, DMA_REQUEST_3, DMA_RX_TRANSFER, dma_id_6  , &dma_init_struct_spi_i2c};
+    // DMA2 streams                                                                                                    ;
+const dma_p2dma_t dma_SPI_3_RX = { DMA2_Channel1, DMA_REQUEST_3, DMA_RX_TRANSFER, dma_id_7  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_SPI_3_TX = { DMA2_Channel2, DMA_REQUEST_3, DMA_TX_TRANSFER, dma_id_8  , &dma_init_struct_spi_i2c};
+const dma_p2dma_t dma_ADC_1_RX = { DMA2_Channel3, DMA_REQUEST_0, DMA_RX_TRANSFER, dma_id_9  , NULL};
+ // Not prefered
+// const dma_p2dma_t dma_SPI_1_RX = { DMA2_Channel3, DMA_REQUEST_4, DMA_RX_TRANSFER, dma_id_9  , &dma_init_struct_spi_i2c};
+// const dma_p2dma_t dma_ADC_2_RX = { DMA2_Channel4, DMA_REQUEST_0, DMA_RX_TRANSFER, dma_id_10 , NULL};
+// const dma_p2dma_t dma_DAC_1_TX = { DMA2_Channel4, DMA_REQUEST_3, DMA_TX_TRANSFER, dma_id_10 , NULL};
+// const dma_p2dma_t dma_SPI_1_TX = { DMA2_Channel4, DMA_REQUEST_4, DMA_TX_TRANSFER, dma_id_10 , &dma_init_struct_spi_i2c};
 #if MICROPY_HW_HAS_SDCARD
-    { { dma_SDIO, 1, DMA_TX_TRANSFER}, DMA2_Channel4, DMA_REQUEST_7, dma_id_10 , &dma_init_struct_sdio}
+const dma_p2dma_t dma_SDIO_1_TX= { DMA2_Channel4, DMA_REQUEST_7, DMA_TX_TRANSFER, dma_id_10 , &dma_init_struct_sdio};
 #endif
-    { { dma_ADC,  3, DMA_RX_TRANSFER}, DMA2_Channel5, DMA_REQUEST_0, dma_id_11 , NULL},
-    { { dma_DAC,  2, DMA_TX_TRANSFER}, DMA2_Channel5, DMA_REQUEST_3, dma_id_11 , NULL},
-#if MICROPY_HW_HAS_SDCARD
-    { { dma_SDIO, 1, DMA_TX_TRANSFER}, DMA2_Channel5, DMA_REQUEST_7, dma_id_11 , &dma_init_struct_sdio}
-#endif
-    { { dma_I2C,  1, DMA_RX_TRANSFER}, DMA2_Channel6, DMA_REQUEST_5, dma_id_12 , &dma_init_struct_spi_i2c},
-    { { dma_I2C,  1, DMA_TX_TRANSFER}, DMA2_Channel7, DMA_REQUEST_5, dma_id_13 , &dma_init_struct_spi_i2c}
-};
+ // Not prefered
+// const dma_p2dma_t dma_ADC_3_RX = { DMA2_Channel5, DMA_REQUEST_0, DMA_RX_TRANSFER, dma_id_11 , NULL};
+// const dma_p2dma_t dma_DAC_2_TX = { DMA2_Channel5, DMA_REQUEST_3, DMA_TX_TRANSFER, dma_id_11 , NULL};
+// const dma_p2dma_t dma_SDIO_1_TX= { DMA2_Channel5, DMA_REQUEST_7, DMA_TX_TRANSFER, dma_id_11 , &dma_init_struct_sdio};
+// const dma_p2dma_t dma_I2C_1_RX = { DMA2_Channel6, DMA_REQUEST_5, DMA_RX_TRANSFER, dma_id_12 , &dma_init_struct_spi_i2c};
+// const dma_p2dma_t dma_I2C_1_TX = { DMA2_Channel7, DMA_REQUEST_5, DMA_TX_TRANSFER, dma_id_13 , &dma_init_struct_spi_i2c};
+
 
 #define NSTREAMS_PER_CONTROLLER ((1 << NSTREAMS_PER_CONTROLLER_LOG2)-1)
 #define NSTREAM                 (NCONTROLLERS * NSTREAMS_PER_CONTROLLER)
@@ -311,36 +310,6 @@ volatile dma_idle_count_t dma_idle;
 #define DMA1_IS_CLK_ENABLED()   ((RCC->AHB1ENR & RCC_AHB1ENR_DMA1EN) != 0)
 #define DMA2_IS_CLK_ENABLED()   ((RCC->AHB1ENR & RCC_AHB1ENR_DMA2EN) != 0)
 
-static dma_id_t dma_get_id(void *instance) {
-    dma_id_t dma_id=dma_id_not_defined;
-    int idx=0;
-    for (idx = 0; idx<MP_ARRAY_SIZE(dma_transfer_info);idx++)
-    {
-        if (dma_transfer_info[idx].instance == instance)
-        {
-            dma_id = dma_transfer_info[idx].id;
-            break;
-        }
-    }
-    return dma_id;
-}
-
-static int dma_get_entry(const dma_descr_t *dma_descr) {
-    int dma_entry=-1;
-    int idx=0;
-    for (idx = 0; idx<MP_ARRAY_SIZE(dma_transfer_info);idx++)
-    {
-        if ((dma_transfer_info[idx].dma_descr.periphery_type == dma_descr->periphery_type) &&
-            (dma_transfer_info[idx].dma_descr.periphery_inst_nr == dma_descr->periphery_inst_nr) &&
-            (dma_transfer_info[idx].dma_descr.transfer_direction == dma_descr->transfer_direction) )
-        {
-            dma_entry = idx;
-            break;
-        }
-    }
-    return dma_entry;
-}
-
 // Resets the idle counter for the DMA controller associated with dma_id.
 static void dma_tickle(dma_id_t dma_id) {
     dma_idle.counter[(dma_id >> NSTREAMS_PER_CONTROLLER_LOG2) & 1] = 1;
@@ -387,18 +356,17 @@ static void dma_disable_clock(dma_id_t dma_id) {
     dma_enable_mask &= ~(1 << dma_id);
 }
 
-int32_t dma_init_handle(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *data)
+void dma_init_handle(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *data)
 {
-    int32_t dma_idx =  dma_get_entry(dma_descr);
-    if (dma_idx >= 0) {
+    if (dma_descr != NULL) {
         // initialise parameters
-        dma->Instance = dma_transfer_info[dma_idx].instance;
-        dma->Init = *dma_transfer_info[dma_idx].init;
-        dma->Init.Direction = dma_transfer_info[dma_idx].dma_descr.transfer_direction;
+        dma->Instance = dma_descr->instance;
+        dma->Init = *dma_descr->init;
+        dma->Init.Direction = dma_descr->transfer_direction;
 #if defined(MCU_SERIES_L4)
-        dma->Init.Request = dma_transfer_info[dma_idx].sub_instance;
+        dma->Init.Request = dma_descr->sub_instance;
 #else
-        dma->Init.Channel = dma_transfer_info[dma_idx].sub_instance;
+        dma->Init.Channel = dma_descr->sub_instance;
 #endif
         // half of __HAL_LINKDMA(data, xxx, *dma)
         // caller must implement other half by doing: data->xxx = dma
@@ -407,13 +375,12 @@ int32_t dma_init_handle(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *d
         printf("No DMA with periphery_type %u, periphery_inst_nr %u, transfer_direction %u\n", (uint)dma_descr->periphery_type, (uint)dma_descr->periphery_inst_nr, (uint)dma_descr->transfer_direction );
     }*/
 
-    return dma_idx;
+    return;
 }
 
 
 
 void dma_init(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *data){
-    int32_t dma_idx;
     //printf("dma_init( periphery_type=%u, periphery_inst_nr=%u, transfer_direction=%u)\n", (uint)dma_descr->periphery_type, (uint)dma_descr->periphery_inst_nr, (uint)dma_descr->transfer_direction );
 
     // Some drivers allocate the DMA_HandleTypeDef from the stack
@@ -421,11 +388,12 @@ void dma_init(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *data){
     // structure so we don't get random values from the stack)
     memset(dma, 0, sizeof(*dma));
 
-    dma_idx = dma_init_handle(dma, dma_descr, data);
-    if (dma_idx >= 0)
-    {
-        dma_id_t dma_id  = dma_transfer_info[dma_idx].id;
 
+    if (dma_descr != NULL)
+    {
+        dma_id_t dma_id  = dma_descr->id;
+
+        dma_init_handle(dma, dma_descr, data);
         // set global pointer for IRQ handler
         dma_handle[dma_id] = dma;
 
@@ -462,9 +430,9 @@ void dma_deinit(DMA_HandleTypeDef *dma) {
 
 void dma_invalidate_channel(const dma_descr_t * dma_descr) {
     int dma_idx = dma_get_entry(dma_descr);
-    if (dma_idx >= 0)
+    if (dma_descr != NULL)
     {
-        dma_id_t dma_id = dma_transfer_info[dma_idx].id;
+        dma_id_t dma_id = dma_descr->id;
         if (dma_last_subidx[dma_id] == DMA_CHANNEL_AS_UINT8(dma_id) ) {
             dma_last_subidx[dma_id] = DMA_INVALID_CHANNEL;
         }

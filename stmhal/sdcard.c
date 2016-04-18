@@ -203,13 +203,8 @@ mp_uint_t sdcard_read_blocks(uint8_t *dest, uint32_t block_num, uint32_t num_blo
     if (query_irq() == IRQ_STATE_ENABLED) {
         // we must disable USB irqs to prevent MSC contention with SD card
         uint32_t basepri = raise_irq_pri(IRQ_PRI_OTG_FS);
-        dma_descr_t rx_dma_descr;
 
-        rx_dma_descr.periphery_type = dma_SDIO;
-        rx_dma_descr.transfer_direction = DMA_RX_TRANSFER;
-        rx_dma_descr.periphery_inst_nr = 0;
-
-        dma_init(&sd_rx_dma, &rx_dma_descr, &sd_handle);
+        dma_init(&sd_rx_dma, &dma_SDIO_0_RX, &sd_handle);
         sd_handle.hdmarx = &sd_rx_dma;
 
         err = HAL_SD_ReadBlocks_BlockNumber_DMA(&sd_handle, (uint32_t*)dest, block_num, SDCARD_BLOCK_SIZE, num_blocks);
