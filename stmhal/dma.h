@@ -25,7 +25,7 @@
  */
 #ifndef __DMA_H__
 #define __DMA_H__
-typedef struct dma_descr_t;
+typedef struct _dma_descr_t dma_descr_t;
 
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
 extern dma_descr_t dma_I2C_1_RX;
@@ -56,27 +56,26 @@ extern dma_descr_t dma_SPI_6_RX;
 extern dma_descr_t dma_SDIO_0_TX;
 #endif
 #elif defined(MCU_SERIES_L4)
-extern dma_descr_t dma_ADC_1_RX;
-extern dma_descr_t dma_ADC_2_RX;
-extern dma_descr_t dma_SPI_1_RX;
-extern dma_descr_t dma_I2C_3_TX;
-extern dma_descr_t dma_ADC_3_RX;
-extern dma_descr_t dma_SPI_1_TX;
-extern dma_descr_t dma_I2C_3_RX;
-extern dma_descr_t dma_DAC_1_TX;
-extern dma_descr_t dma_SPI_2_RX;
-extern dma_descr_t dma_I2C_2_TX;
-extern dma_descr_t dma_DAC_2_TX;
-extern dma_descr_t dma_SPI_2_TX;
-extern dma_descr_t dma_I2C_2_RX;
-extern dma_descr_t dma_I2C_1_TX;
-extern dma_descr_t dma_I2C_1_RX;
-extern // DMA2 streams         ;
-extern dma_descr_t dma_SPI_3_RX;
-extern dma_descr_t dma_SPI_3_TX;
-extern dma_descr_t dma_ADC_1_RX;
+extern const dma_descr_t dma_ADC_1_RX;
+extern const dma_descr_t dma_ADC_2_RX;
+extern const dma_descr_t dma_SPI_1_RX;
+extern const dma_descr_t dma_I2C_3_TX;
+extern const dma_descr_t dma_ADC_3_RX;
+extern const dma_descr_t dma_SPI_1_TX;
+extern const dma_descr_t dma_I2C_3_RX;
+extern const dma_descr_t dma_DAC_1_TX;
+extern const dma_descr_t dma_SPI_2_RX;
+extern const dma_descr_t dma_I2C_2_TX;
+extern const dma_descr_t dma_DAC_2_TX;
+extern const dma_descr_t dma_SPI_2_TX;
+extern const dma_descr_t dma_I2C_2_RX;
+extern const dma_descr_t dma_I2C_1_TX;
+extern const dma_descr_t dma_I2C_1_RX;
+// DMA2 streams
+extern const dma_descr_t dma_SPI_3_RX;
+extern const dma_descr_t dma_SPI_3_TX;
 #if MICROPY_HW_HAS_SDCARD
-extern dma_descr_t dma_SDIO_1_TX;
+extern const dma_descr_t dma_SDIO_1_TX;
 #endif
 #endif
 
@@ -94,9 +93,9 @@ extern volatile dma_idle_count_t dma_idle;
 #define DMA_IDLE_TICK(tick)         (((tick) & DMA_SYSTICK_MASK) == 0)
 
 
-void dma_init(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *data);
-int32_t  dma_init_handle(DMA_HandleTypeDef *dma, dma_descr_t * dma_descr, void *data);
-void dma_deinit(DMA_HandleTypeDef *dma);
+void dma_init(DMA_HandleTypeDef *dma, const dma_descr_t * dma_descr, void *data);
+void dma_init_handle(DMA_HandleTypeDef *dma, const dma_descr_t * dma_descr, void *data);
+void dma_deinit(const dma_descr_t * dma_descr);
 void dma_invalidate_channel(const dma_descr_t * dma_descr);
 void dma_idle_handler(int controller);
 #endif //__DMA_H__

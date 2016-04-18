@@ -78,8 +78,8 @@
 typedef struct _pyb_spi_obj_t {
     mp_obj_base_t base;
     SPI_HandleTypeDef *spi;
-    dma_descr_t tx_dma_descr;
-    dma_descr_t rx_dma_descr;
+    const dma_descr_t *tx_dma_descr;
+    const dma_descr_t *rx_dma_descr;
 } pyb_spi_obj_t;
 
 #if defined(MICROPY_HW_SPI1_SCK)
@@ -103,32 +103,32 @@ SPI_HandleTypeDef SPIHandle6 = {.Instance = NULL};
 
 STATIC const pyb_spi_obj_t pyb_spi_obj[] = {
     #if defined(MICROPY_HW_SPI1_SCK)
-    {{&pyb_spi_type}, &SPIHandle1, {dma_SPI_1_TX, dma_SPI_1_RX},
+    {{&pyb_spi_type}, &SPIHandle1, &dma_SPI_1_TX, &dma_SPI_1_RX},
     #else
     {{&pyb_spi_type}, NULL, NULL, NULL},
     #endif
     #if defined(MICROPY_HW_SPI2_SCK)
-    {{&pyb_spi_type}, &SPIHandle2, {dma_SPI_2_TX, dma_SPI_2_RX},
+    {{&pyb_spi_type}, &SPIHandle2, &dma_SPI_2_TX, &dma_SPI_2_RX},
     #else
     {{&pyb_spi_type}, NULL, NULL, NULL},
     #endif
     #if defined(MICROPY_HW_SPI3_SCK)
-    {{&pyb_spi_type}, &SPIHandle3, {dma_SPI_3_TX, dma_SPI_3_RX},
+    {{&pyb_spi_type}, &SPIHandle3, &dma_SPI_3_TX, &dma_SPI_3_RX},
     #else
     {{&pyb_spi_type}, NULL, NULL, NULL},
     #endif
     #if defined(MICROPY_HW_SPI4_SCK)
-    {{&pyb_spi_type}, &SPIHandle4, {dma_SPI_4_TX, dma_SPI_4_RX},
+    {{&pyb_spi_type}, &SPIHandle4, &dma_SPI_4_TX, &dma_SPI_4_RX},
     #else
     {{&pyb_spi_type}, NULL, NULL, NULL},
     #endif
     #if defined(MICROPY_HW_SPI5_SCK)
-    {{&pyb_spi_type}, &SPIHandle5, {dma_SPI_5_TX, dma_SPI_5_RX},
+    {{&pyb_spi_type}, &SPIHandle5, &dma_SPI_5_TX, &dma_SPI_5_RX},
     #else
     {{&pyb_spi_type}, NULL, NULL, NULL},
     #endif
     #if defined(MICROPY_HW_SPI6_SCK)
-    {{&pyb_spi_type}, &SPIHandle6, {dma_SPI_6_TX, dma_SPI_6_RX},
+    {{&pyb_spi_type}, &SPIHandle6, &dma_SPI_6_TX, &dma_SPI_6_RX},
     #else
     {{&pyb_spi_type}, NULL, NULL, NULL},
     #endif
@@ -558,7 +558,7 @@ STATIC mp_obj_t pyb_spi_send(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
         if (status == HAL_OK) {
             status = spi_wait_dma_finished(self->spi, args[1].u_int);
         }
-        dma_deinit(&tx_dma);
+        dma_deinit(self->tx_dma_descr);
     }
 
     if (status != HAL_OK) {
@@ -617,9 +617,9 @@ STATIC mp_obj_t pyb_spi_recv(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
             status = spi_wait_dma_finished(self->spi, args[1].u_int);
         }
         if (self->spi->hdmatx != NULL) {
-            dma_deinit(&tx_dma);
+            dma_deinit(self->tx_dma_descr);
         }
-        dma_deinit(&rx_dma);
+        dma_deinit(self->rx_dma_descr);
     }
 
     if (status != HAL_OK) {
@@ -707,8 +707,8 @@ STATIC mp_obj_t pyb_spi_send_recv(mp_uint_t n_args, const mp_obj_t *pos_args, mp
         if (status == HAL_OK) {
             status = spi_wait_dma_finished(self->spi, args[2].u_int);
         }
-        dma_deinit(&tx_dma);
-        dma_deinit(&rx_dma);
+        dma_deinit(self->tx_dma_descr);
+        dma_deinit(self->rx_dma_descr);
     }
 
     if (status != HAL_OK) {

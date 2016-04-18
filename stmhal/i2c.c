@@ -116,8 +116,8 @@
 typedef struct _pyb_i2c_obj_t {
     mp_obj_base_t base;
     I2C_HandleTypeDef *i2c;
-    dma_descr_t tx_dma_descr;
-    dma_descr_t rx_dma_descr;
+    const dma_descr_t *tx_dma_descr;
+    const dma_descr_t *rx_dma_descr;
 } pyb_i2c_obj_t;
 
 #if defined(MICROPY_HW_I2C1_SCL)
@@ -536,7 +536,7 @@ STATIC mp_obj_t pyb_i2c_send(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
     if (in_master_mode(self)) {
         if (args[1].u_int == PYB_I2C_MASTER_ADDRESS) {
             if (query_irq() == IRQ_STATE_ENABLED) {
-                dma_deinit(&tx_dma);
+                dma_deinit(self->tx_dma_descr);
             }
             nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, "addr argument required"));
         }
@@ -559,7 +559,7 @@ STATIC mp_obj_t pyb_i2c_send(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
         if (status == HAL_OK) {
             status = i2c_wait_dma_finished(self->i2c, args[2].u_int);
         }
-        dma_deinit(&tx_dma);
+        dma_deinit(self->tx_dma_descr);
     }
 
     if (status != HAL_OK) {
@@ -630,7 +630,7 @@ STATIC mp_obj_t pyb_i2c_recv(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
         if (status == HAL_OK) {
             status = i2c_wait_dma_finished(self->i2c, args[2].u_int);
         }
-        dma_deinit(&rx_dma);
+        dma_deinit(self->rx_dma_descr);
     }
 
     if (status != HAL_OK) {
@@ -701,7 +701,7 @@ STATIC mp_obj_t pyb_i2c_mem_read(mp_uint_t n_args, const mp_obj_t *pos_args, mp_
         if (status == HAL_OK) {
             status = i2c_wait_dma_finished(self->i2c, args[3].u_int);
         }
-        dma_deinit(&rx_dma);
+        dma_deinit(self->rx_dma_descr);
     }
 
     if (status != HAL_OK) {
@@ -765,7 +765,7 @@ STATIC mp_obj_t pyb_i2c_mem_write(mp_uint_t n_args, const mp_obj_t *pos_args, mp
         if (status == HAL_OK) {
             status = i2c_wait_dma_finished(self->i2c, args[3].u_int);
         }
-        dma_deinit(&tx_dma);
+        dma_deinit(self->tx_dma_descr);
     }
 
     if (status != HAL_OK) {
