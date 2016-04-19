@@ -455,13 +455,13 @@ STATIC void pyb_timer_print(const mp_print_t *print, mp_obj_t self_in, mp_print_
             self->tim.Init.ClockDivision == TIM_CLOCKDIVISION_DIV4 ? 4 :
             self->tim.Init.ClockDivision == TIM_CLOCKDIVISION_DIV2 ? 2 : 1);
 
-#if defined(IS_TIM_ADVANCED_INSTANCE)
+        #if defined(IS_TIM_ADVANCED_INSTANCE)
         if (IS_TIM_ADVANCED_INSTANCE(self->tim.Instance))
-#elif defined(IS_TIM_BREAK_INSTANCE)
+        #elif defined(IS_TIM_BREAK_INSTANCE)
         if (IS_TIM_BREAK_INSTANCE(self->tim.Instance))
-#else
+        #else
         if (0)
-#endif
+        #endif
         {
             mp_printf(print, ", deadtime=%u",
                 compute_ticks_from_dtg(self->tim.Instance->BDTR & TIM_BDTR_DTG));
@@ -607,13 +607,13 @@ STATIC mp_obj_t pyb_timer_init_helper(pyb_timer_obj_t *self, mp_uint_t n_args, c
 
     // init TIM
     HAL_TIM_Base_Init(&self->tim);
-#if defined(IS_TIM_ADVANCED_INSTANCE)
+    #if defined(IS_TIM_ADVANCED_INSTANCE)
     if (IS_TIM_ADVANCED_INSTANCE(self->tim.Instance)) {
-#elif defined(IS_TIM_BREAK_INSTANCE)
+    #elif defined(IS_TIM_BREAK_INSTANCE)
     if (IS_TIM_BREAK_INSTANCE(self->tim.Instance)) {
-#else
+    #else
     if (0) {
-#endif
+    #endif
         config_deadtime(self, args[6].u_int);
     }
     if (args[5].u_obj == mp_const_none) {
@@ -646,11 +646,11 @@ STATIC mp_obj_t pyb_timer_make_new(const mp_obj_type_t *type, mp_uint_t n_args, 
     tim->is_32bit = false;
 
     switch (tim->tim_id) {
-#if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
+        #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
         case 1: tim->tim.Instance = TIM1; tim->irqn = TIM1_UP_TIM10_IRQn; break;
-#elif defined(MCU_SERIES_L4)
+        #elif defined(MCU_SERIES_L4)
         case 1: tim->tim.Instance = TIM1; tim->irqn = TIM1_UP_TIM16_IRQn; break;
-#endif
+        #endif
         case 2: tim->tim.Instance = TIM2; tim->irqn = TIM2_IRQn; tim->is_32bit = true; break;
         case 3: tim->tim.Instance = TIM3; tim->irqn = TIM3_IRQn; break;
         case 4: tim->tim.Instance = TIM4; tim->irqn = TIM4_IRQn; break;

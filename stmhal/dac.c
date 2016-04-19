@@ -139,7 +139,7 @@ typedef enum {
 typedef struct _pyb_dac_obj_t {
     mp_obj_base_t base;
     uint32_t dac_channel; // DAC_CHANNEL_1 or DAC_CHANNEL_2
-    dma_descr_t tx_dma_descr;
+    const dma_descr_t *tx_dma_descr;
     uint16_t pin; // GPIO_PIN_4 or GPIO_PIN_5
     uint8_t bits; // 8 or 12
     uint8_t state;
@@ -223,15 +223,11 @@ STATIC mp_obj_t pyb_dac_make_new(const mp_obj_type_t *type, mp_uint_t n_args, mp
     if (dac_id == 1) {
         dac->pin = GPIO_PIN_4;
         dac->dac_channel = DAC_CHANNEL_1;
-        dac->tx_dma_descr.periphery_type = dma_DAC;
-        dac->tx_dma_descr.periphery_inst_nr = 1;
-        dac->tx_dma_descr.transfer_direction = DMA_TX_TRANSFER;
+        dac->tx_dma_descr = &dma_DAC_1_TX;
     } else if (dac_id == 2) {
         dac->pin = GPIO_PIN_5;
         dac->dac_channel = DAC_CHANNEL_2;
-        dac->tx_dma_descr.periphery_type = dma_DAC;
-        dac->tx_dma_descr.periphery_inst_nr = 2;
-        dac->tx_dma_descr.transfer_direction = DMA_TX_TRANSFER;
+        dac->tx_dma_descr = &dma_DAC_2_TX;
     } else {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "DAC %d does not exist", dac_id));
     }
@@ -383,7 +379,7 @@ mp_obj_t pyb_dac_write_timed(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
 
     DMA_HandleTypeDef DMA_Handle;
     /* Get currently configured dma */
-    dma_init_handle(&DMA_Handle, &self->tx_dma_descr, (void*)NULL);
+    dma_init_handle(&DMA_Handle, self->tx_dma_descr, (void*)NULL);
     /*
     DMA_Cmd(DMA_Handle->Instance, DISABLE);
     while (DMA_GetCmdStatus(DMA_Handle->Instance) != DISABLE) {

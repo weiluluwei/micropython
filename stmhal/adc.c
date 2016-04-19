@@ -82,8 +82,7 @@ typedef struct _pyb_obj_adc_t {
     ADC_HandleTypeDef handle;
 } pyb_obj_adc_t;
 
-STATIC bool is_adcx_channel(int channel)
-{
+STATIC bool is_adcx_channel(int channel) {
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     return IS_ADC_CHANNEL(channel);
 #elif defined(MCU_SERIES_L4)
@@ -91,39 +90,34 @@ STATIC bool is_adcx_channel(int channel)
     handle.Instance = ADCx;
     return IS_ADC_CHANNEL(&handle, channel);
 #else
-    return 0;
+    #error Unsupported processor
 #endif
 }
 
-
-STATIC void adc_wait_for_eoc_or_timeout(int32_t timeout)
-{
+STATIC void adc_wait_for_eoc_or_timeout(int32_t timeout) {
     uint32_t tickstart = HAL_GetTick();
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     while ((ADCx->SR & ADC_FLAG_EOC) != ADC_FLAG_EOC) {
-        if (((HAL_GetTick() - tickstart ) > timeout)) {
-            break; // timeout
-        }
-    }
 #elif defined(MCU_SERIES_L4)
     while (READ_BIT(ADCx->ISR, ADC_FLAG_EOC) != ADC_FLAG_EOC) {
+#else
+    #error Unsupported processor
+#endif
         if (((HAL_GetTick() - tickstart ) > timeout)) {
             break; // timeout
         }
     }
-#endif
 }
 
-STATIC void adcx_clock_enable(void)
-{
+STATIC void adcx_clock_enable(void) {
 #if defined(MCU_SERIES_F4) || defined(MCU_SERIES_F7)
     ADCx_CLK_ENABLE();
 #elif defined(MCU_SERIES_L4)
     __HAL_RCC_ADC_CLK_ENABLE();
+#else
+    #error Unsupported processor
 #endif
 }
-
-
 
 STATIC void adc_init_single(pyb_obj_adc_t *adc_obj) {
     if (!is_adcx_channel(adc_obj->channel)) {
@@ -166,6 +160,8 @@ STATIC void adc_init_single(pyb_obj_adc_t *adc_obj) {
     adcHandle->Init.LowPowerAutoWait      = DISABLE;
     adcHandle->Init.Overrun               = ADC_OVR_DATA_PRESERVED;
     adcHandle->Init.OversamplingMode      = DISABLE;
+#else
+    #error Unsupported processor
 #endif
 
     HAL_ADC_Init(adcHandle);
@@ -180,6 +176,8 @@ STATIC void adc_config_channel(pyb_obj_adc_t *adc_obj) {
     sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
 #elif defined(MCU_SERIES_L4)
     sConfig.SamplingTime = ADC_SAMPLETIME_12CYCLES_5;
+#else
+    #error Unsupported processor
 #endif
     sConfig.Offset = 0;
 
@@ -336,6 +334,8 @@ STATIC mp_obj_t adc_read_timed(mp_obj_t self_in, mp_obj_t buf_in, mp_obj_t freq_
             ADCx->CR2 |= (uint32_t)ADC_CR2_SWSTART;
 #elif defined(MCU_SERIES_L4)
             SET_BIT(ADCx->CR, ADC_CR_ADSTART);
+#else
+            #error Unsupported processor
 #endif
         }
 
@@ -438,6 +438,8 @@ void adc_init_all(pyb_adc_all_obj_t *adc_all, uint32_t resolution) {
     adcHandle->Init.LowPowerAutoWait      = DISABLE;
     adcHandle->Init.Overrun               = ADC_OVR_DATA_PRESERVED;
     adcHandle->Init.OversamplingMode      = DISABLE;
+#else
+    #error Unsupported processor
 #endif
 
     HAL_ADC_Init(adcHandle);
@@ -451,6 +453,8 @@ uint32_t adc_config_and_read_channel(ADC_HandleTypeDef *adcHandle, uint32_t chan
     sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
 #elif defined(MCU_SERIES_L4)
     sConfig.SamplingTime = ADC_SAMPLETIME_12CYCLES_5;
+#else
+    #error Unsupported processor
 #endif
     sConfig.Offset = 0;
     HAL_ADC_ConfigChannel(adcHandle, &sConfig);

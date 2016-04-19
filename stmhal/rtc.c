@@ -190,11 +190,11 @@ void rtc_init_finalise() {
 
     // fresh reset; configure RTC Calendar
     RTC_CalendarConfig();
-#if defined(MCU_SERIES_L4)
+    #if defined(MCU_SERIES_L4)
     if(__HAL_RCC_GET_FLAG(RCC_FLAG_BORRST) != RESET) {
-#else
+    #else
     if(__HAL_RCC_GET_FLAG(RCC_FLAG_PORRST) != RESET) {
-#endif
+    #endif
         // power on reset occurred
         rtc_info |= 0x10000;
     }
@@ -296,7 +296,6 @@ STATIC HAL_StatusTypeDef PYB_RTC_Init(RTC_HandleTypeDef *hrtc) {
 
         // Exit Initialization mode
         hrtc->Instance->ISR &= (uint32_t)~RTC_ISR_INIT;
-
 
         #if defined(MCU_SERIES_L4)
         hrtc->Instance->OR &= (uint32_t)~RTC_OR_ALARMOUTTYPE;
@@ -627,20 +626,21 @@ mp_obj_t pyb_rtc_wakeup(mp_uint_t n_args, const mp_obj_t *args) {
         RTC->WPR = 0xff;
 
         // enable external interrupts on line 22
-#if defined(MCU_SERIES_L4)
+        #if defined(MCU_SERIES_L4)
         EXTI->IMR1 |= 1 << 22;
         EXTI->RTSR1 |= 1 << 22;
-#else
+        #else
         EXTI->IMR |= 1 << 22;
         EXTI->RTSR |= 1 << 22;
-#endif
+        #endif
+
         // clear interrupt flags
         RTC->ISR &= ~(1 << 10);
-#if defined(MCU_SERIES_L4)
+        #if defined(MCU_SERIES_L4)
         EXTI->PR1 = 1 << 22;
-#else
+        #else
         EXTI->PR = 1 << 22;
-#endif
+        #endif
 
         HAL_NVIC_SetPriority(RTC_WKUP_IRQn, IRQ_PRI_RTC_WKUP, IRQ_SUBPRI_RTC_WKUP);
         HAL_NVIC_EnableIRQ(RTC_WKUP_IRQn);
@@ -654,11 +654,11 @@ mp_obj_t pyb_rtc_wakeup(mp_uint_t n_args, const mp_obj_t *args) {
         RTC->WPR = 0xff;
 
         // disable external interrupts on line 22
-#if defined(MCU_SERIES_L4)
+        #if defined(MCU_SERIES_L4)
         EXTI->IMR1 &= ~(1 << 22);
-#else
+        #else
         EXTI->IMR &= ~(1 << 22);
-#endif
+        #endif
     }
 
     return mp_const_none;
