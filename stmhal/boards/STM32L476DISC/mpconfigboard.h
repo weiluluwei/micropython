@@ -32,6 +32,8 @@
 // I2C busses
 #define MICROPY_HW_I2C1_SCL (pin_B6)
 #define MICROPY_HW_I2C1_SDA (pin_B7)
+#define MICROPY_HW_I2C2_SCL (pin_B10)
+#define MICROPY_HW_I2C2_SDA (pin_B11)
 // We use an array of baudrates and corresponding TIMINGR values.
 //
 // The value 0x90112626 was obtained from the DISCOVERY_I2C1_TIMING constant
