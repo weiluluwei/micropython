@@ -101,15 +101,6 @@
 ///     i2c.mem_read(3, 0x42, 2)     # read 3 bytes from memory of slave 0x42,
 ///                                  #   starting at address 2 in the slave
 ///     i2c.mem_write('abc', 0x42, 2, timeout=1000)
-
-// Possible DMA configurations for I2C busses:
-// I2C1_TX: DMA1_Stream6.CHANNEL_1 or DMA1_Stream7.CHANNEL_1
-// I2C1_RX: DMA1_Stream0.CHANNEL_1 or DMA1_Stream5.CHANNEL_1
-// I2C2_TX: DMA1_Stream7.CHANNEL_7
-// I2C2_RX: DMA1_Stream2.CHANNEL_7 or DMA1_Stream3.CHANNEL_7
-// I2C3_TX: DMA1_Stream4.CHANNEL_3
-// I2C3_RX: DMA1_Stream2.CHANNEL_3
-
 #define PYB_I2C_MASTER (0)
 #define PYB_I2C_SLAVE  (1)
 
