@@ -63,8 +63,8 @@ typedef struct _dma_descr_t {
 #error "Unsupported Processor"
 #endif
     uint32_t        sub_instance;
-    dma_id_t        id;
     uint32_t        transfer_direction; /* Transfer direction Periphery to memory or vis-versa */
+    dma_id_t        id;
     const DMA_InitTypeDef *init;
 } dma_descr_t;
 
