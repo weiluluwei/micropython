@@ -23,6 +23,7 @@ HAL_DIR=hal/$(MCU_SERIES)
 USBDEV_DIR=usbdev
 #USBHOST_DIR=usbhost
 FATFS_DIR=lib/fatfs
+UGUI_DIR=lib/ugui
 DFU=../tools/dfu.py
 # may need to prefix dfu-util with sudo
 USE_PYDFU ?= 1
@@ -38,6 +39,9 @@ CROSS_COMPILE = arm-none-eabi-
 INC += -I.
 INC += -I..
 INC += -I$(BUILD)
+INC += -Iboards/$(BOARD)
+INC += -Isdram/inc
+INC += -Ilcdctrl/inc
 INC += -I$(CMSIS_DIR)/inc
 INC += -I$(CMSIS_DIR)/devinc
 INC += -I$(HAL_DIR)/inc
@@ -112,6 +116,7 @@ SRC_LIB = $(addprefix lib/,\
 	utils/pyexec.c \
 	utils/pyhelp.c \
 	utils/printf.c \
+	ugui/ugui.c \
 	)
 
 SRC_C = \
@@ -140,6 +145,7 @@ SRC_C = \
 	usb.c \
 	gccollect.c \
 	pybstdio.c \
+	pybugui.c \
 	help.c \
 	input.c \
 	modmachine.c \
@@ -166,6 +172,7 @@ SRC_C = \
 	servo.c \
 	dac.c \
 	adc.c \
+	sdram/src/*.c \
 	$(wildcard boards/$(BOARD)/*.c)
 
 SRC_O = \
@@ -246,6 +253,13 @@ SRC_MOD += $(addprefix $(CC3000_DIR)/src/,\
 	inet_pton.c \
 	patch.c \
 	patch_prog.c \
+	)
+endif
+
+# Software modules
+ifeq ($(MICROPY_SW_ENABLE_UGUI),1)
+SRC_LIB += $(addprefix lib/,\
+	ugui/ugui.c \
 	)
 endif
 

@@ -16,6 +16,10 @@
 #define MICROPY_HW_ENABLE_DAC       (0)
 #define MICROPY_HW_ENABLE_CAN       (1)
 
+// Allow Micropython software modules
+#define MICROPY_SW_ENABLE_UGUI 		(1)
+
+
 // HSE is 8MHz
 #define MICROPY_HW_CLK_PLLM (8)
 #define MICROPY_HW_CLK_PLLN (336)
