@@ -356,8 +356,7 @@ static void dma_disable_clock(dma_id_t dma_id) {
     dma_enable_mask &= ~(1 << dma_id);
 }
 
-void dma_init_handle(DMA_HandleTypeDef *dma, const dma_descr_t * dma_descr, void *data)
-{
+void dma_init_handle(DMA_HandleTypeDef *dma, const dma_descr_t * dma_descr, void *data) {
     if (dma_descr != NULL) {
         // initialise parameters
         dma->Instance = dma_descr->instance;
@@ -376,7 +375,6 @@ void dma_init_handle(DMA_HandleTypeDef *dma, const dma_descr_t * dma_descr, void
     return;
 }
 
-
 void dma_init(DMA_HandleTypeDef *dma, const dma_descr_t * dma_descr, void *data){
     // Some drivers allocate the DMA_HandleTypeDef from the stack
     // (i.e. dac, i2c, spi) and for those cases we need to clear the
@@ -384,8 +382,7 @@ void dma_init(DMA_HandleTypeDef *dma, const dma_descr_t * dma_descr, void *data)
     memset(dma, 0, sizeof(*dma));
 
 
-    if (dma_descr != NULL)
-    {
+    if (dma_descr != NULL) {
         dma_id_t dma_id  = dma_descr->id;
 
         dma_init_handle(dma, dma_descr, data);
@@ -413,8 +410,7 @@ void dma_init(DMA_HandleTypeDef *dma, const dma_descr_t * dma_descr, void *data)
 }
 
 void dma_deinit(const dma_descr_t * dma_descr) {
-    if (dma_descr != NULL)
-    {
+    if (dma_descr != NULL) {
         HAL_NVIC_DisableIRQ(dma_irqn[dma_descr->id]);
         dma_handle[dma_descr->id] = NULL;
 
@@ -423,8 +419,7 @@ void dma_deinit(const dma_descr_t * dma_descr) {
 }
 
 void dma_invalidate_channel(const dma_descr_t * dma_descr) {
-    if (dma_descr != NULL)
-    {
+    if (dma_descr != NULL) {
         dma_id_t dma_id = dma_descr->id;
         if (dma_last_sub_instance[dma_id] == DMA_SUB_INSTANCE_AS_UINT8(dma_descr->sub_instance) ) {
             dma_last_sub_instance[dma_id] = DMA_INVALID_CHANNEL;
