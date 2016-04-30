@@ -299,7 +299,7 @@ void DMA2_Channel6_IRQHandler(void) { IRQ_ENTER(DMA2_Channel6_IRQn); if (dma_han
 void DMA2_Channel7_IRQHandler(void) { IRQ_ENTER(DMA2_Channel7_IRQn); if (dma_handle[dma_id_13] != NULL) { HAL_DMA_IRQHandler(dma_handle[dma_id_13]);} IRQ_EXIT(DMA2_Channel7_IRQn); }
 
 #define DMA1_ENABLE_MASK    0x007f  // Bits in dma_enable_mask corresponfing to DMA1
-#define DMA2_ENABLE_MASK    0x7f80  // Bits in dma_enable_mask corresponding to DMA2
+#define DMA2_ENABLE_MASK    0x3f80  // Bits in dma_enable_mask corresponding to DMA2
 
 #endif
 
@@ -312,7 +312,7 @@ volatile dma_idle_count_t dma_idle;
 
 // Resets the idle counter for the DMA controller associated with dma_id.
 static void dma_tickle(dma_id_t dma_id) {
-    dma_idle.counter[(dma_id<NSTREAMS_PER_CONTROLLER)?0:1] = 1;
+    dma_idle.counter[(dma_id < NSTREAMS_PER_CONTROLLER) ? 0 : 1] = 1;
 }
 
 static void dma_enable_clock(dma_id_t dma_id) {
