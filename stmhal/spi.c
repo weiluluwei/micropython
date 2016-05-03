@@ -241,26 +241,6 @@ void spi_init(SPI_HandleTypeDef *spi, bool enable_nss_pin) {
     }
 
     for (uint i = (enable_nss_pin ? 0 : 1); i < SPI_WIRE_CNT; i++) {
-        if ((spi->Init.Mode == SPI_MODE_MASTER) &&
-            (spi->Init.Direction & SPI_DIRECTION_2LINES_RXONLY) &&
-            (i==SPI_MOSI)) {
-            continue;
-        }
-        if ((spi->Init.Mode == SPI_MODE_SLAVE) &&
-            (spi->Init.Direction & SPI_DIRECTION_2LINES_RXONLY) &&
-            (i==SPI_MISO)) {
-            continue;
-        }
-        if ((spi->Init.Mode == SPI_MODE_MASTER) &&
-            (spi->Init.Direction & SPI_DIRECTION_1LINE) &&
-            (i==SPI_MISO)) {
-            continue;
-        }
-        if ((spi->Init.Mode == SPI_MODE_SLAVE) &&
-            (spi->Init.Direction & SPI_DIRECTION_1LINE) &&
-            (i==SPI_MOSI)) {
-            continue;
-        }
         mp_hal_gpio_set_af(pins[i], &GPIO_InitStructure, AF_FN_SPI, (self - &pyb_spi_obj[0]) + 1);
     }
 
@@ -582,7 +562,7 @@ STATIC mp_obj_t pyb_spi_send(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
         }
         dma_deinit(self->tx_dma_descr);
     }
-
+    __HAL_SPI_DISABLE(self->spi);
     if (status != HAL_OK) {
         mp_hal_raise(status);
     }
@@ -633,6 +613,7 @@ STATIC mp_obj_t pyb_spi_recv(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
         }
         dma_init(&rx_dma, self->rx_dma_descr, self->spi);
         self->spi->hdmarx = &rx_dma;
+
 
         status = HAL_SPI_Receive_DMA(self->spi, (uint8_t*)vstr.buf, vstr.len);
         if (status == HAL_OK) {
@@ -754,20 +735,17 @@ STATIC mp_obj_t pyb_spi_dir(mp_uint_t n_args, const mp_obj_t *args) {
     pyb_spi_obj_t *self = args[0];
     if (n_args == 1) {
         // Get current dir configuration
-        return MP_OBJ_NEW_SMALL_INT(self->spi->Instance->CR1 & (SPI_CR1_RXONLY | SPI_CR1_BIDIMODE | SPI_CR1_BIDIOE));
+        return MP_OBJ_NEW_SMALL_INT(self->spi->Init.Direction );
     } else {
-        uint32_t mask = SPI_CR1_RXONLY | SPI_CR1_BIDIMODE | SPI_CR1_BIDIOE;
-        uint32_t conf = self->spi->Instance->CR1;
         uint32_t new_value = mp_obj_get_int(args[1]);
 
-        if ((new_value & ~mask) != 0)
-        {
+        if ( (new_value != SPI_DIRECTION_2LINES) &&
+             (new_value != SPI_DIRECTION_1LINE) ) {
             nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "Invalid direction %d", new_value));
         }
 
-        new_value = (conf & ~mask)|new_value;
-        self->spi->Instance->CR1 = new_value;
-
+        self->spi->Init.Direction = new_value;
+        HAL_SPI_Init(self->spi); /* To write BiDi mode to control register */
     }
 
     return mp_const_none;
@@ -790,16 +768,13 @@ STATIC const mp_map_elem_t pyb_spi_locals_dict_table[] = {
     /// \constant MSB - set the first bit to MSB
     /// \constant LSB - set the first bit to LSB
     /// \constant DIRECTION_2LINES - Normal 4 wire interface with MOSI/MISO
-    /// \constant DIRECTION_2LINES_RXONLY - If set MOSI (Master mode) or MISO (Slave mode) pin is not used.
     /// \constant DIRECTION_1LINE - set use MOSI (Master mode) or MISO (Slave mode) as bidirectional pin.
     { MP_OBJ_NEW_QSTR(MP_QSTR_MASTER), MP_OBJ_NEW_SMALL_INT(SPI_MODE_MASTER) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_SLAVE),  MP_OBJ_NEW_SMALL_INT(SPI_MODE_SLAVE) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_MSB),    MP_OBJ_NEW_SMALL_INT(SPI_FIRSTBIT_MSB) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_LSB),    MP_OBJ_NEW_SMALL_INT(SPI_FIRSTBIT_LSB) },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_DIRECTION_TWO_LINES), MP_OBJ_NEW_SMALL_INT(0) },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_DIRECTION_TWO_LINES_RXONLY),MP_OBJ_NEW_SMALL_INT(SPI_CR1_RXONLY) },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_DIRECTION_ONE_LINE_TX), MP_OBJ_NEW_SMALL_INT(SPI_CR1_BIDIMODE | SPI_CR1_BIDIOE) },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_DIRECTION_ONE_LINE_RX), MP_OBJ_NEW_SMALL_INT(SPI_CR1_BIDIMODE) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_DIRECTION_TWO_LINES), MP_OBJ_NEW_SMALL_INT(SPI_DIRECTION_2LINES) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_DIRECTION_ONE_LINE), MP_OBJ_NEW_SMALL_INT(SPI_DIRECTION_1LINE) },
     /* TODO
     { MP_OBJ_NEW_QSTR(MP_QSTR_DIRECTION_2LINES             ((uint32_t)0x00000000)
     { MP_OBJ_NEW_QSTR(MP_QSTR_DIRECTION_2LINES_RXONLY      SPI_CR1_RXONLY
