@@ -61,7 +61,6 @@ const mp_obj_module_t mp_module___main__ = {
 
 void mp_init(void) {
     qstr_init();
-    mp_stack_ctrl_init();
 
     // no pending exceptions to start with
     MP_STATE_VM(mp_pending_exception) = MP_OBJ_NULL;
@@ -789,7 +788,7 @@ too_short:
             "wrong number of values to unpack"));
     } else {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError,
-            "need more than %d values to unpack", seq_len));
+            "need more than %d values to unpack", (int)seq_len));
     }
 too_long:
     if (MICROPY_ERROR_REPORTING == MICROPY_ERROR_REPORTING_TERSE) {
@@ -797,7 +796,7 @@ too_long:
             "wrong number of values to unpack"));
     } else {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError,
-            "too many values to unpack (expected %d)", num));
+            "too many values to unpack (expected %d)", (int)num));
     }
 }
 
@@ -864,7 +863,7 @@ too_short:
             "wrong number of values to unpack"));
     } else {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError,
-            "need more than %d values to unpack", seq_len));
+            "need more than %d values to unpack", (int)seq_len));
     }
 }
 
@@ -894,7 +893,7 @@ typedef struct _mp_obj_checked_fun_t {
     mp_obj_t fun;
 } mp_obj_checked_fun_t;
 
-STATIC mp_obj_t checked_fun_call(mp_obj_t self_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t checked_fun_call(mp_obj_t self_in, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     mp_obj_checked_fun_t *self = MP_OBJ_TO_PTR(self_in);
     if (n_args > 0) {
         const mp_obj_type_t *arg0_type = mp_obj_get_type(args[0]);
@@ -947,7 +946,11 @@ void mp_convert_member_lookup(mp_obj_t self, const mp_obj_type_t *type, mp_obj_t
     } else if (MP_OBJ_IS_TYPE(member, &mp_type_type)) {
         // Don't try to bind types (even though they're callable)
         dest[0] = member;
-    } else if (mp_obj_is_callable(member)) {
+    } else if (MP_OBJ_IS_FUN(member)
+        || (MP_OBJ_IS_OBJ(member)
+            && (((mp_obj_base_t*)MP_OBJ_TO_PTR(member))->type->name == MP_QSTR_closure
+                || ((mp_obj_base_t*)MP_OBJ_TO_PTR(member))->type->name == MP_QSTR_generator))) {
+        // only functions, closures and generators objects can be bound to self
         #if MICROPY_BUILTIN_METHOD_CHECK_SELF_ARG
         if (self == MP_OBJ_NULL && mp_obj_get_type(member) == &mp_type_fun_builtin) {
             // we extracted a builtin method without a first argument, so we must
@@ -1304,6 +1307,8 @@ void mp_import_all(mp_obj_t module) {
     }
 }
 
+#if MICROPY_ENABLE_COMPILER
+
 // this is implemented in this file so it can optimise access to locals/globals
 mp_obj_t mp_parse_compile_execute(mp_lexer_t *lex, mp_parse_input_kind_t parse_input_kind, mp_obj_dict_t *globals, mp_obj_dict_t *locals) {
     // save context
@@ -1342,8 +1347,10 @@ mp_obj_t mp_parse_compile_execute(mp_lexer_t *lex, mp_parse_input_kind_t parse_i
     }
 }
 
+#endif // MICROPY_ENABLE_COMPILER
+
 void *m_malloc_fail(size_t num_bytes) {
-    DEBUG_printf("memory allocation failed, allocating " UINT_FMT " bytes\n", num_bytes);
+    DEBUG_printf("memory allocation failed, allocating %u bytes\n", (uint)num_bytes);
     if (0) {
         // dummy
     #if MICROPY_ENABLE_GC
@@ -1353,7 +1360,7 @@ void *m_malloc_fail(size_t num_bytes) {
     #endif
     } else {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_MemoryError,
-                                                "memory allocation failed, allocating " UINT_FMT " bytes", num_bytes));
+            "memory allocation failed, allocating %u bytes", (uint)num_bytes));
     }
 }
 

@@ -4,6 +4,7 @@
 #define MICROPY_HW_MCU_NAME         "STM32F429"
 
 #define MICROPY_HW_HAS_SWITCH       (1)
+#define MICROPY_HW_HAS_FLASH        (1)
 #define MICROPY_HW_HAS_SDCARD       (0)
 #define MICROPY_HW_HAS_MMA7660      (0)
 #define MICROPY_HW_HAS_LIS3DSH      (0)
@@ -28,8 +29,8 @@
 #define MICROPY_HW_UART2_PINS (GPIO_PIN_8 | GPIO_PIN_9)
 
 // I2C busses
-#define MICROPY_HW_I2C1_SCL (pin_A8)
-#define MICROPY_HW_I2C1_SDA (pin_C9)
+#define MICROPY_HW_I2C3_SCL (pin_A8)
+#define MICROPY_HW_I2C3_SDA (pin_C9)
 
 // SPI busses
 //#define MICROPY_HW_SPI1_NSS     (pin_A4)

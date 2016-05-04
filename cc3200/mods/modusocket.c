@@ -106,8 +106,10 @@ void modusocket_enter_sleep (void) {
         }
     }
 
-    // wait for any of the sockets to become ready...
-    sl_Select(maxfd + 1, &socketset, NULL, NULL, NULL);
+    if (maxfd > 0) {
+        // wait for any of the sockets to become ready...
+        sl_Select(maxfd + 1, &socketset, NULL, NULL, NULL);
+    }
 }
 
 void modusocket_close_all_user_sockets (void) {
@@ -125,7 +127,7 @@ void modusocket_close_all_user_sockets (void) {
 // socket class
 
 // constructor socket(family=AF_INET, type=SOCK_STREAM, proto=IPPROTO_TCP, fileno=None)
-STATIC mp_obj_t socket_make_new(mp_obj_t type_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t socket_make_new(const mp_obj_type_t *type, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     mp_arg_check_num(n_args, n_kw, 0, 4, false);
 
     // create socket object

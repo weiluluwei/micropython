@@ -91,7 +91,7 @@ STATIC const mp_arg_t network_server_args[] = {
     { MP_QSTR_login,        MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
     { MP_QSTR_timeout,      MP_ARG_KW_ONLY | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
 };
-STATIC mp_obj_t network_server_make_new(mp_obj_t type_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *all_args) {
+STATIC mp_obj_t network_server_make_new(const mp_obj_type_t *type, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *all_args) {
     // parse args
     mp_map_t kw_args;
     mp_map_init_fixed_table(&kw_args, n_kw, all_args + n_args);
@@ -153,7 +153,7 @@ STATIC const mp_map_elem_t mp_module_network_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_WLAN),                (mp_obj_t)&mod_network_nic_type_wlan },
 
 #if (MICROPY_PORT_HAS_TELNET || MICROPY_PORT_HAS_FTP)
-    { MP_OBJ_NEW_QSTR(MP_QSTR_server),              (mp_obj_t)&network_server_type },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_Server),              (mp_obj_t)&network_server_type },
 #endif
 };
 
@@ -177,7 +177,7 @@ STATIC MP_DEFINE_CONST_DICT(network_server_locals_dict, network_server_locals_di
 
 STATIC const mp_obj_type_t network_server_type = {
     { &mp_type_type },
-    .name = MP_QSTR_server,
+    .name = MP_QSTR_Server,
     .make_new = network_server_make_new,
     .locals_dict = (mp_obj_t)&network_server_locals_dict,
 };

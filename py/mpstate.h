@@ -39,6 +39,16 @@
 // memory system, runtime and virtual machine.  The state is a global
 // variable, but in the future it is hoped that the state can become local.
 
+// This structure contains dynamic configuration for the compiler.
+#if MICROPY_DYNAMIC_COMPILER
+typedef struct mp_dynamic_compiler_t {
+    uint8_t small_int_bits; // must be <= host small_int_bits
+    bool opt_cache_map_lookup_in_bytecode;
+    bool py_builtins_str_unicode;
+} mp_dynamic_compiler_t;
+extern mp_dynamic_compiler_t mp_dynamic_compiler;
+#endif
+
 // This structure hold information about the memory allocation system.
 typedef struct _mp_state_mem_t {
     #if MICROPY_MEM_STATS
@@ -48,7 +58,7 @@ typedef struct _mp_state_mem_t {
     #endif
 
     byte *gc_alloc_table_start;
-    mp_uint_t gc_alloc_table_byte_len;
+    size_t gc_alloc_table_byte_len;
     #if MICROPY_ENABLE_FINALISER
     byte *gc_finaliser_table_start;
     #endif
@@ -56,8 +66,8 @@ typedef struct _mp_state_mem_t {
     byte *gc_pool_end;
 
     int gc_stack_overflow;
-    mp_uint_t gc_stack[MICROPY_ALLOC_GC_STACK_SIZE];
-    mp_uint_t *gc_sp;
+    size_t gc_stack[MICROPY_ALLOC_GC_STACK_SIZE];
+    size_t *gc_sp;
     uint16_t gc_lock_depth;
 
     // This variable controls auto garbage collection.  If set to 0 then the
@@ -65,10 +75,10 @@ typedef struct _mp_state_mem_t {
     // you can still allocate/free memory and also explicitly call gc_collect.
     uint16_t gc_auto_collect_enabled;
 
-    mp_uint_t gc_last_free_atb_index;
+    size_t gc_last_free_atb_index;
 
     #if MICROPY_PY_GC_COLLECT_RETVAL
-    mp_uint_t gc_collected;
+    size_t gc_collected;
     #endif
 } mp_state_mem_t;
 
@@ -127,8 +137,18 @@ typedef struct _mp_state_vm_t {
     MICROPY_PORT_ROOT_POINTERS
 
     // root pointers for extmod
+
+    #if MICROPY_PY_OS_DUPTERM
+    mp_obj_t term_obj;
+    #endif
+
     #if MICROPY_PY_LWIP_SLIP
     mp_obj_t lwip_slip_stream;
+    #endif
+
+    #if MICROPY_FSUSERMOUNT
+    // for user-mountable block device (max fixed at compile time)
+    struct _fs_user_mount_t *fs_user_mount[MICROPY_FATFS_VOLUMES];
     #endif
 
     //
@@ -138,8 +158,8 @@ typedef struct _mp_state_vm_t {
     // pointer and sizes to store interned string data
     // (qstr_last_chunk can be root pointer but is also stored in qstr pool)
     byte *qstr_last_chunk;
-    mp_uint_t qstr_last_alloc;
-    mp_uint_t qstr_last_used;
+    size_t qstr_last_alloc;
+    size_t qstr_last_used;
 
     // Stack top at the start of program
     // Note: this entry is used to locate the end of the root pointer section.

@@ -35,6 +35,7 @@
 #include "py/runtime.h"
 #include "py/stream.h"
 #include "py/builtin.h"
+#include "py/mphal.h"
 
 #if MICROPY_PY_IO
 
@@ -80,6 +81,12 @@ STATIC mp_uint_t fdfile_read(mp_obj_t o_in, void *buf, mp_uint_t size, int *errc
 STATIC mp_uint_t fdfile_write(mp_obj_t o_in, const void *buf, mp_uint_t size, int *errcode) {
     mp_obj_fdfile_t *o = MP_OBJ_TO_PTR(o_in);
     check_fd_is_open(o);
+    #if MICROPY_PY_OS_DUPTERM
+    if (o->fd <= STDERR_FILENO) {
+        mp_hal_stdout_tx_strn(buf, size);
+        return size;
+    }
+    #endif
     mp_int_t r = write(o->fd, buf, size);
     if (r == -1) {
         *errcode = errno;
@@ -123,7 +130,7 @@ STATIC mp_obj_t fdfile_close(mp_obj_t self_in) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(fdfile_close_obj, fdfile_close);
 
-STATIC mp_obj_t fdfile___exit__(mp_uint_t n_args, const mp_obj_t *args) {
+STATIC mp_obj_t fdfile___exit__(size_t n_args, const mp_obj_t *args) {
     (void)n_args;
     return fdfile_close(args[0]);
 }
@@ -141,7 +148,8 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_1(fdfile_fileno_obj, fdfile_fileno);
 STATIC const mp_arg_t file_open_args[] = {
     { MP_QSTR_file, MP_ARG_OBJ | MP_ARG_REQUIRED, {.u_rom_obj = MP_ROM_PTR(&mp_const_none_obj)} },
     { MP_QSTR_mode, MP_ARG_OBJ, {.u_obj = MP_OBJ_NEW_QSTR(MP_QSTR_r)} },
-    { MP_QSTR_encoding, MP_ARG_OBJ | MP_ARG_KW_ONLY, {.u_rom_obj = MP_ROM_PTR(&mp_const_none_obj)} },
+    { MP_QSTR_buffering, MP_ARG_OBJ, {.u_rom_obj = MP_ROM_PTR(&mp_const_none_obj)} },
+    { MP_QSTR_encoding, MP_ARG_OBJ, {.u_rom_obj = MP_ROM_PTR(&mp_const_none_obj)} },
 };
 #define FILE_OPEN_NUM_ARGS MP_ARRAY_SIZE(file_open_args)
 
@@ -149,21 +157,22 @@ STATIC mp_obj_t fdfile_open(const mp_obj_type_t *type, mp_arg_val_t *args) {
     mp_obj_fdfile_t *o = m_new_obj(mp_obj_fdfile_t);
     const char *mode_s = mp_obj_str_get_str(args[1].u_obj);
 
-    int mode = 0;
+    int mode_rw = 0, mode_x = 0;
     while (*mode_s) {
         switch (*mode_s++) {
-            // Note: these assume O_RDWR = O_RDONLY | O_WRONLY
             case 'r':
-                mode |= O_RDONLY;
+                mode_rw = O_RDONLY;
                 break;
             case 'w':
-                mode |= O_WRONLY | O_CREAT | O_TRUNC;
+                mode_rw = O_WRONLY;
+                mode_x = O_CREAT | O_TRUNC;
                 break;
             case 'a':
-                mode |= O_WRONLY | O_CREAT | O_APPEND;
+                mode_rw = O_WRONLY;
+                mode_x = O_CREAT | O_APPEND;
                 break;
             case '+':
-                mode |= O_RDWR;
+                mode_rw = O_RDWR;
                 break;
             #if MICROPY_PY_IO_FILEIO
             // If we don't have io.FileIO, then files are in text mode implicitly
@@ -187,7 +196,7 @@ STATIC mp_obj_t fdfile_open(const mp_obj_type_t *type, mp_arg_val_t *args) {
     }
 
     const char *fname = mp_obj_str_get_str(fid);
-    int fd = open(fname, mode, 0644);
+    int fd = open(fname, mode_x | mode_rw, 0644);
     if (fd == -1) {
         nlr_raise(mp_obj_new_exception_arg1(&mp_type_OSError, MP_OBJ_NEW_SMALL_INT(errno)));
     }
@@ -195,10 +204,10 @@ STATIC mp_obj_t fdfile_open(const mp_obj_type_t *type, mp_arg_val_t *args) {
     return MP_OBJ_FROM_PTR(o);
 }
 
-STATIC mp_obj_t fdfile_make_new(mp_obj_t type_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t fdfile_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     mp_arg_val_t arg_vals[FILE_OPEN_NUM_ARGS];
     mp_arg_parse_all_kw_array(n_args, n_kw, args, FILE_OPEN_NUM_ARGS, file_open_args, arg_vals);
-    return fdfile_open(MP_OBJ_TO_PTR(type_in), arg_vals);
+    return fdfile_open(type, arg_vals);
 }
 
 STATIC const mp_rom_map_elem_t rawfile_locals_dict_table[] = {
@@ -257,7 +266,7 @@ const mp_obj_type_t mp_type_textio = {
 };
 
 // Factory function for I/O stream classes
-mp_obj_t mp_builtin_open(mp_uint_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
+mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
     // TODO: analyze buffering args and instantiate appropriate type
     mp_arg_val_t arg_vals[FILE_OPEN_NUM_ARGS];
     mp_arg_parse_all(n_args, args, kwargs, FILE_OPEN_NUM_ARGS, file_open_args, arg_vals);

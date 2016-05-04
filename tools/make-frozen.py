@@ -14,7 +14,7 @@
 #
 # ./make-frozen.py frozen > frozen.c
 #
-# Include frozen.c in your build, having defined MICROPY_MODULE_FROZEN in
+# Include frozen.c in your build, having defined MICROPY_MODULE_FROZEN_STR in
 # config.
 #
 from __future__ import print_function
@@ -37,17 +37,21 @@ for dirpath, dirnames, filenames in os.walk(root):
         modules.append((fullpath[root_len + 1:], st))
 
 print("#include <stdint.h>")
-print("const uint16_t mp_frozen_sizes[] = {")
+print("const char mp_frozen_str_names[] = {")
+for f, st in modules:
+    m = module_name(f)
+    print('"%s\\0"' % m)
+print('"\\0"};')
+
+print("const uint32_t mp_frozen_str_sizes[] = {")
 
 for f, st in modules:
     print("%d," % st.st_size)
 
-print("0};")
+print("};")
 
-print("const char mp_frozen_content[] = {")
+print("const char mp_frozen_str_content[] = {")
 for f, st in modules:
-    m = module_name(f)
-    print('"%s\\0"' % m)
     data = open(sys.argv[1] + "/" + f, "rb").read()
     # Python2 vs Python3 tricks
     data = repr(data)
@@ -55,5 +59,5 @@ for f, st in modules:
         data = data[1:]
     data = data[1:-1]
     data = data.replace('"', '\\"')
-    print('"%s"' % data)
+    print('"%s\\0"' % data)
 print("};")

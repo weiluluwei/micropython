@@ -106,7 +106,7 @@ typedef struct _emit_method_table_t {
     void (*break_loop)(emit_t *emit, mp_uint_t label, mp_uint_t except_depth);
     void (*continue_loop)(emit_t *emit, mp_uint_t label, mp_uint_t except_depth);
     void (*setup_with)(emit_t *emit, mp_uint_t label);
-    void (*with_cleanup)(emit_t *emit);
+    void (*with_cleanup)(emit_t *emit, mp_uint_t label);
     void (*setup_except)(emit_t *emit, mp_uint_t label);
     void (*setup_finally)(emit_t *emit, mp_uint_t label);
     void (*end_finally)(emit_t *emit);
@@ -227,7 +227,7 @@ void mp_emit_bc_unwind_jump(emit_t *emit, mp_uint_t label, mp_uint_t except_dept
 #define mp_emit_bc_break_loop mp_emit_bc_unwind_jump
 #define mp_emit_bc_continue_loop mp_emit_bc_unwind_jump
 void mp_emit_bc_setup_with(emit_t *emit, mp_uint_t label);
-void mp_emit_bc_with_cleanup(emit_t *emit);
+void mp_emit_bc_with_cleanup(emit_t *emit, mp_uint_t label);
 void mp_emit_bc_setup_except(emit_t *emit, mp_uint_t label);
 void mp_emit_bc_setup_finally(emit_t *emit, mp_uint_t label);
 void mp_emit_bc_end_finally(emit_t *emit);
@@ -268,7 +268,7 @@ typedef struct _emit_inline_asm_t emit_inline_asm_t;
 
 typedef struct _emit_inline_asm_method_table_t {
     void (*start_pass)(emit_inline_asm_t *emit, pass_kind_t pass, scope_t *scope, mp_obj_t *error_slot);
-    void (*end_pass)(emit_inline_asm_t *emit);
+    void (*end_pass)(emit_inline_asm_t *emit, mp_uint_t type_sig);
     mp_uint_t (*count_params)(emit_inline_asm_t *emit, mp_uint_t n_params, mp_parse_node_t *pn_params);
     bool (*label)(emit_inline_asm_t *emit, mp_uint_t label_num, qstr label_id);
     void (*align)(emit_inline_asm_t *emit, mp_uint_t align);

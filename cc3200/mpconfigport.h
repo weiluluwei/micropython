@@ -70,10 +70,12 @@
 #define MICROPY_FATFS_REENTRANT                     (1)
 #define MICROPY_FATFS_TIMEOUT                       (2500)
 #define MICROPY_FATFS_SYNC_T                        SemaphoreHandle_t
+#define MICROPY_FSUSERMOUNT_ADHOC                   (1)
 
 #define MICROPY_STREAMS_NON_BLOCK                   (1)
 #define MICROPY_MODULE_WEAK_LINKS                   (1)
 #define MICROPY_CAN_OVERRIDE_BUILTINS               (1)
+#define MICROPY_PY_ASYNC_AWAIT (0)
 #define MICROPY_PY_BUILTINS_TIMEOUTERROR            (1)
 #define MICROPY_PY_ALL_SPECIAL_METHODS              (1)
 #ifndef DEBUG
@@ -112,9 +114,6 @@
 #define MICROPY_EMERGENCY_EXCEPTION_BUF_SIZE        (0)
 
 // extra built in names to add to the global namespace
-extern const struct _mp_obj_fun_builtin_t mp_builtin_help_obj;
-extern const struct _mp_obj_fun_builtin_t mp_builtin_input_obj;
-extern const struct _mp_obj_fun_builtin_t mp_builtin_open_obj;
 #define MICROPY_PORT_BUILTINS \
     { MP_OBJ_NEW_QSTR(MP_QSTR_help),  (mp_obj_t)&mp_builtin_help_obj },   \
     { MP_OBJ_NEW_QSTR(MP_QSTR_input), (mp_obj_t)&mp_builtin_input_obj },  \
@@ -134,7 +133,7 @@ extern const struct _mp_obj_module_t mp_module_ubinascii;
 extern const struct _mp_obj_module_t mp_module_ussl;
 
 #define MICROPY_PORT_BUILTIN_MODULES \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_machine),     (mp_obj_t)&machine_module },      \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_umachine),     (mp_obj_t)&machine_module },      \
 	{ MP_OBJ_NEW_QSTR(MP_QSTR_wipy),        (mp_obj_t)&wipy_module },         \
     { MP_OBJ_NEW_QSTR(MP_QSTR_uos),         (mp_obj_t)&mp_module_uos },       \
     { MP_OBJ_NEW_QSTR(MP_QSTR_utime),       (mp_obj_t)&mp_module_utime },     \
@@ -154,10 +153,11 @@ extern const struct _mp_obj_module_t mp_module_ussl;
     { MP_OBJ_NEW_QSTR(MP_QSTR_socket),      (mp_obj_t)&mp_module_usocket },   \
     { MP_OBJ_NEW_QSTR(MP_QSTR_binascii),    (mp_obj_t)&mp_module_ubinascii }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_ssl),         (mp_obj_t)&mp_module_ussl },      \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_machine),     (mp_obj_t)&machine_module },      \
 
 // extra constants
 #define MICROPY_PORT_CONSTANTS \
-    { MP_OBJ_NEW_QSTR(MP_QSTR_machine),     (mp_obj_t)&machine_module },      \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_umachine),     (mp_obj_t)&machine_module },      \
 
 // vm state and root pointers for the gc
 #define MP_STATE_PORT MP_STATE_VM

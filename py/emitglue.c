@@ -49,28 +49,6 @@
 mp_uint_t mp_verbose_flag = 0;
 #endif
 
-struct _mp_raw_code_t {
-    mp_raw_code_kind_t kind : 3;
-    mp_uint_t scope_flags : 7;
-    mp_uint_t n_pos_args : 11;
-    union {
-        struct {
-            const byte *bytecode;
-            const mp_uint_t *const_table;
-            #if MICROPY_PERSISTENT_CODE_SAVE
-            mp_uint_t bc_len;
-            uint16_t n_obj;
-            uint16_t n_raw_code;
-            #endif
-        } u_byte;
-        struct {
-            void *fun_data;
-            const mp_uint_t *const_table;
-            mp_uint_t type_sig; // for viper, compressed as 2-bit types; ret is MSB, then arg0, arg1, etc
-        } u_native;
-    } data;
-};
-
 mp_raw_code_t *mp_emit_glue_new_raw_code(void) {
     mp_raw_code_t *rc = m_new0(mp_raw_code_t, 1);
     rc->kind = MP_CODE_RESERVED;
@@ -135,7 +113,7 @@ void mp_emit_glue_assign_native(mp_raw_code_t *rc, mp_raw_code_kind_t kind, void
 }
 #endif
 
-mp_obj_t mp_make_function_from_raw_code(mp_raw_code_t *rc, mp_obj_t def_args, mp_obj_t def_kw_args) {
+mp_obj_t mp_make_function_from_raw_code(const mp_raw_code_t *rc, mp_obj_t def_args, mp_obj_t def_kw_args) {
     DEBUG_OP_printf("make_function_from_raw_code %p\n", rc);
     assert(rc != NULL);
 
@@ -162,7 +140,7 @@ mp_obj_t mp_make_function_from_raw_code(mp_raw_code_t *rc, mp_obj_t def_args, mp
         #endif
         #if MICROPY_EMIT_INLINE_THUMB
         case MP_CODE_NATIVE_ASM:
-            fun = mp_obj_new_fun_asm(rc->n_pos_args, rc->data.u_native.fun_data);
+            fun = mp_obj_new_fun_asm(rc->n_pos_args, rc->data.u_native.fun_data, rc->data.u_native.type_sig);
             break;
         #endif
         default:
@@ -179,7 +157,7 @@ mp_obj_t mp_make_function_from_raw_code(mp_raw_code_t *rc, mp_obj_t def_args, mp
     return fun;
 }
 
-mp_obj_t mp_make_closure_from_raw_code(mp_raw_code_t *rc, mp_uint_t n_closed_over, const mp_obj_t *args) {
+mp_obj_t mp_make_closure_from_raw_code(const mp_raw_code_t *rc, mp_uint_t n_closed_over, const mp_obj_t *args) {
     DEBUG_OP_printf("make_closure_from_raw_code %p " UINT_FMT " %p\n", rc, n_closed_over, args);
     // make function object
     mp_obj_t ffun;
@@ -194,7 +172,36 @@ mp_obj_t mp_make_closure_from_raw_code(mp_raw_code_t *rc, mp_uint_t n_closed_ove
     return mp_obj_new_closure(ffun, n_closed_over & 0xff, args + ((n_closed_over >> 7) & 2));
 }
 
-#if MICROPY_PERSISTENT_CODE
+#if MICROPY_PERSISTENT_CODE_LOAD || MICROPY_PERSISTENT_CODE_SAVE
+
+#include "py/smallint.h"
+
+// The feature flags byte encodes the compile-time config options that
+// affect the generate bytecode.
+#define MPY_FEATURE_FLAGS ( \
+    ((MICROPY_OPT_CACHE_MAP_LOOKUP_IN_BYTECODE) << 0) \
+    | ((MICROPY_PY_BUILTINS_STR_UNICODE) << 1) \
+    )
+// This is a version of the flags that can be configured at runtime.
+#define MPY_FEATURE_FLAGS_DYNAMIC ( \
+    ((MICROPY_OPT_CACHE_MAP_LOOKUP_IN_BYTECODE_DYNAMIC) << 0) \
+    | ((MICROPY_PY_BUILTINS_STR_UNICODE_DYNAMIC) << 1) \
+    )
+
+#if MICROPY_PERSISTENT_CODE_LOAD || (MICROPY_PERSISTENT_CODE_SAVE && !MICROPY_DYNAMIC_COMPILER)
+// The bytecode will depend on the number of bits in a small-int, and
+// this function computes that (could make it a fixed constant, but it
+// would need to be defined in mpconfigport.h).
+STATIC int mp_small_int_bits(void) {
+    mp_int_t i = MP_SMALL_INT_MAX;
+    int n = 1;
+    while (i != 0) {
+        i >>= 1;
+        ++n;
+    }
+    return n;
+}
+#endif
 
 typedef struct _bytecode_prelude_t {
     uint n_state;
@@ -222,7 +229,7 @@ STATIC void extract_prelude(const byte **ip, const byte **ip2, bytecode_prelude_
     }
 }
 
-#endif // MICROPY_PERSISTENT_CODE
+#endif // MICROPY_PERSISTENT_CODE_LOAD || MICROPY_PERSISTENT_CODE_SAVE
 
 #if MICROPY_PERSISTENT_CODE_LOAD
 
@@ -338,13 +345,13 @@ STATIC mp_raw_code_t *load_raw_code(mp_reader_t *reader) {
 }
 
 mp_raw_code_t *mp_raw_code_load(mp_reader_t *reader) {
-    byte header[3];
-    read_bytes(reader, header, 3);
+    byte header[4];
+    read_bytes(reader, header, sizeof(header));
     if (strncmp((char*)header, "M\x00", 2) != 0) {
         nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError,
             "invalid .mpy file"));
     }
-    if (header[2] != MICROPY_OPT_CACHE_MAP_LOOKUP_IN_BYTECODE) {
+    if (header[2] != MPY_FEATURE_FLAGS || header[3] > mp_small_int_bits()) {
         nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError,
             "incompatible .mpy file"));
     }
@@ -374,11 +381,12 @@ mp_raw_code_t *mp_raw_code_load_mem(const byte *buf, size_t len) {
 // here we define mp_raw_code_load_file depending on the port
 // TODO abstract this away properly
 
-#if defined(__i386__) || defined(__x86_64__)
+#if defined(__i386__) || defined(__x86_64__) || (defined(__arm__) && (defined(__unix__)))
 // unix file reader
 
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 typedef struct _mp_lexer_file_buf_t {
     int fd;
@@ -520,7 +528,7 @@ STATIC void save_obj(mp_print_t *print, mp_obj_t o) {
         byte obj_type;
         if (MP_OBJ_IS_TYPE(o, &mp_type_int)) {
             obj_type = 'i';
-        } else if (MP_OBJ_IS_TYPE(o, &mp_type_float)) {
+        } else if (mp_obj_is_float(o)) {
             obj_type = 'f';
         } else {
             assert(MP_OBJ_IS_TYPE(o, &mp_type_complex));
@@ -590,9 +598,16 @@ void mp_raw_code_save(mp_raw_code_t *rc, mp_print_t *print) {
     // header contains:
     //  byte  'M'
     //  byte  version
-    //  byte  feature flags (right now just OPT_CACHE_MAP_LOOKUP_IN_BYTECODE)
-    byte header[3] = {'M', 0, MICROPY_OPT_CACHE_MAP_LOOKUP_IN_BYTECODE};
-    mp_print_bytes(print, header, 3);
+    //  byte  feature flags
+    //  byte  number of bits in a small int
+    byte header[4] = {'M', 0, MPY_FEATURE_FLAGS_DYNAMIC,
+        #if MICROPY_DYNAMIC_COMPILER
+        mp_dynamic_compiler.small_int_bits,
+        #else
+        mp_small_int_bits(),
+        #endif
+    };
+    mp_print_bytes(print, header, sizeof(header));
 
     save_raw_code(print, rc);
 }
@@ -600,7 +615,7 @@ void mp_raw_code_save(mp_raw_code_t *rc, mp_print_t *print) {
 // here we define mp_raw_code_save_file depending on the port
 // TODO abstract this away properly
 
-#if defined(__i386__) || defined(__x86_64__)
+#if defined(__i386__) || defined(__x86_64__) || (defined(__arm__) && (defined(__unix__)))
 
 #include <unistd.h>
 #include <sys/stat.h>

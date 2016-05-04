@@ -60,7 +60,6 @@ DECLARE PRIVATE FUNCTIONS
 STATIC pin_obj_t *pin_find_named_pin(const mp_obj_dict_t *named_pins, mp_obj_t name);
 STATIC pin_obj_t *pin_find_pin_by_port_bit (const mp_obj_dict_t *named_pins, uint port, uint bit);
 STATIC int8_t pin_obj_find_af (const pin_obj_t* pin, uint8_t fn, uint8_t unit, uint8_t type);
-STATIC int8_t pin_find_af_index (const pin_obj_t* pin, uint8_t fn, uint8_t unit, uint8_t type);
 STATIC void pin_free_af_from_pins (uint8_t fn, uint8_t unit, uint8_t type);
 STATIC void pin_deassign (pin_obj_t* pin);
 STATIC void pin_obj_configure (const pin_obj_t *self);
@@ -199,6 +198,14 @@ uint8_t pin_find_peripheral_type (const mp_obj_t pin, uint8_t fn, uint8_t unit) 
     nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, mpexception_value_invalid_arguments));
 }
 
+int8_t pin_find_af_index (const pin_obj_t* pin, uint8_t fn, uint8_t unit, uint8_t type) {
+    int8_t af = pin_obj_find_af(pin, fn, unit, type);
+    if (af < 0) {
+        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, mpexception_value_invalid_arguments));
+    }
+    return af;
+}
+
 /******************************************************************************
 DEFINE PRIVATE FUNCTIONS
  ******************************************************************************/
@@ -231,14 +238,6 @@ STATIC int8_t pin_obj_find_af (const pin_obj_t* pin, uint8_t fn, uint8_t unit, u
     return -1;
 }
 
-STATIC int8_t pin_find_af_index (const pin_obj_t* pin, uint8_t fn, uint8_t unit, uint8_t type) {
-    int8_t af = pin_obj_find_af(pin, fn, unit, type);
-    if (af < 0) {
-        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, mpexception_value_invalid_arguments));
-    }
-    return af;
-}
-
 STATIC void pin_free_af_from_pins (uint8_t fn, uint8_t unit, uint8_t type) {
     mp_map_t *named_map = mp_obj_dict_get_map((mp_obj_t)&pin_board_pins_locals_dict);
     for (uint i = 0; i < named_map->used - 1; i++) {
@@ -248,7 +247,7 @@ STATIC void pin_free_af_from_pins (uint8_t fn, uint8_t unit, uint8_t type) {
             // check if the pin supports the target af
             int af = pin_obj_find_af(pin, fn, unit, type);
             if (af > 0 && af == pin->af) {
-                // the pin is assigned to the target af, de-assign it
+                // the pin supports the target af, de-assign it
                 pin_deassign (pin);
             }
         }
@@ -648,7 +647,7 @@ STATIC void pin_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
     mp_printf(print, ", alt=%d)", alt);
 }
 
-STATIC mp_obj_t pin_make_new(mp_obj_t self_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t pin_make_new(const mp_obj_type_t *type, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     mp_arg_check_num(n_args, n_kw, 1, MP_OBJ_FUN_ARGS_MAX, true);
 
     // Run an argument through the mapper and return the result.

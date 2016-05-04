@@ -37,6 +37,15 @@
 #include "py/nlr.h"
 #include "py/runtime.h"
 #include "py/objtuple.h"
+#include "extmod/misc.h"
+
+// Can't include this, as FATFS structure definition is required,
+// and FatFs header defining it conflicts with POSIX.
+//#include "extmod/fsusermount.h"
+MP_DECLARE_CONST_FUN_OBJ(fsuser_mount_obj);
+MP_DECLARE_CONST_FUN_OBJ(fsuser_umount_obj);
+MP_DECLARE_CONST_FUN_OBJ(fsuser_mkfs_obj);
+extern const mp_obj_type_t mp_fat_vfs_type;
 
 #ifdef __ANDROID__
 #define USE_STATFS 1
@@ -182,13 +191,17 @@ STATIC mp_obj_t listdir_next(mp_obj_t self_in) {
     t->items[1] = MP_OBJ_NEW_SMALL_INT(dirent->d_type);
     #else
     // DT_UNKNOWN should have 0 value on any reasonable system
-    t->items[1] = 0;
+    t->items[1] = MP_OBJ_NEW_SMALL_INT(0);
     #endif
+    #ifdef _DIRENT_HAVE_D_INO
     t->items[2] = MP_OBJ_NEW_SMALL_INT(dirent->d_ino);
+    #else
+    t->items[2] = MP_OBJ_NEW_SMALL_INT(0);
+    #endif
     return MP_OBJ_FROM_PTR(t);
 }
 
-STATIC mp_obj_t mod_os_ilistdir(mp_uint_t n_args, const mp_obj_t *args) {
+STATIC mp_obj_t mod_os_ilistdir(size_t n_args, const mp_obj_t *args) {
     const char *path = ".";
     if (n_args > 0) {
         path = mp_obj_str_get_str(args[0]);
@@ -201,7 +214,7 @@ STATIC mp_obj_t mod_os_ilistdir(mp_uint_t n_args, const mp_obj_t *args) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(mod_os_ilistdir_obj, 0, 1, mod_os_ilistdir);
 
-STATIC mp_obj_t mod_os_errno(mp_uint_t n_args, const mp_obj_t *args) {
+STATIC mp_obj_t mod_os_errno(size_t n_args, const mp_obj_t *args) {
     if (n_args == 0) {
         return MP_OBJ_NEW_SMALL_INT(errno);
     }
@@ -223,6 +236,17 @@ STATIC const mp_rom_map_elem_t mp_module_os_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_getenv), MP_ROM_PTR(&mod_os_getenv_obj) },
     { MP_ROM_QSTR(MP_QSTR_mkdir), MP_ROM_PTR(&mod_os_mkdir_obj) },
     { MP_ROM_QSTR(MP_QSTR_ilistdir), MP_ROM_PTR(&mod_os_ilistdir_obj) },
+    #if MICROPY_FSUSERMOUNT
+    { MP_ROM_QSTR(MP_QSTR_vfs_mount), MP_ROM_PTR(&fsuser_mount_obj) },
+    { MP_ROM_QSTR(MP_QSTR_vfs_umount), MP_ROM_PTR(&fsuser_umount_obj) },
+    { MP_ROM_QSTR(MP_QSTR_vfs_mkfs), MP_ROM_PTR(&fsuser_mkfs_obj) },
+    #endif
+    #if MICROPY_VFS_FAT
+    { MP_ROM_QSTR(MP_QSTR_VfsFat), MP_ROM_PTR(&mp_fat_vfs_type) },
+    #endif
+    #if MICROPY_PY_OS_DUPTERM
+    { MP_ROM_QSTR(MP_QSTR_dupterm), MP_ROM_PTR(&mp_uos_dupterm_obj) },
+    #endif
 };
 
 STATIC MP_DEFINE_CONST_DICT(mp_module_os_globals, mp_module_os_globals_table);

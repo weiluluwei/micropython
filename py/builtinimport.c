@@ -120,6 +120,7 @@ STATIC mp_import_stat_t find_file(const char *file_str, uint file_len, vstr_t *d
 #endif
 }
 
+#if MICROPY_ENABLE_COMPILER
 STATIC void do_load_from_lexer(mp_obj_t module_obj, mp_lexer_t *lex, const char *fname) {
 
     if (lex == NULL) {
@@ -141,8 +142,9 @@ STATIC void do_load_from_lexer(mp_obj_t module_obj, mp_lexer_t *lex, const char 
     mp_obj_dict_t *mod_globals = mp_obj_module_get_globals(module_obj);
     mp_parse_compile_execute(lex, MP_PARSE_FILE_INPUT, mod_globals, mod_globals);
 }
+#endif
 
-#if MICROPY_PERSISTENT_CODE_LOAD
+#if MICROPY_PERSISTENT_CODE_LOAD || MICROPY_MODULE_FROZEN_MPY
 STATIC void do_execute_raw_code(mp_obj_t module_obj, mp_raw_code_t *raw_code) {
     #if MICROPY_PY___FILE__
     // TODO
@@ -180,18 +182,27 @@ STATIC void do_execute_raw_code(mp_obj_t module_obj, mp_raw_code_t *raw_code) {
 #endif
 
 STATIC void do_load(mp_obj_t module_obj, vstr_t *file) {
-    // create the lexer
+    #if MICROPY_PERSISTENT_CODE_LOAD || MICROPY_ENABLE_COMPILER
     char *file_str = vstr_null_terminated_str(file);
+    #endif
+
     #if MICROPY_PERSISTENT_CODE_LOAD
     if (file_str[file->len - 3] == 'm') {
         mp_raw_code_t *raw_code = mp_raw_code_load_file(file_str);
         do_execute_raw_code(module_obj, raw_code);
-    } else
+        return;
+    }
     #endif
+
+    #if MICROPY_ENABLE_COMPILER
     {
         mp_lexer_t *lex = mp_lexer_new_from_file(file_str);
         do_load_from_lexer(module_obj, lex, file_str);
     }
+    #else
+    nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ImportError,
+        "script compilation not supported"));
+    #endif
 }
 
 STATIC void chop_component(const char *start, const char **end) {
@@ -205,7 +216,7 @@ STATIC void chop_component(const char *start, const char **end) {
     *end = p;
 }
 
-mp_obj_t mp_builtin___import__(mp_uint_t n_args, const mp_obj_t *args) {
+mp_obj_t mp_builtin___import__(size_t n_args, const mp_obj_t *args) {
 #if DEBUG_PRINT
     DEBUG_printf("__import__:\n");
     for (mp_uint_t i = 0; i < n_args; i++) {
@@ -330,8 +341,9 @@ mp_obj_t mp_builtin___import__(mp_uint_t n_args, const mp_obj_t *args) {
     DEBUG_printf("Module not yet loaded\n");
 
     #if MICROPY_MODULE_FROZEN
-    mp_lexer_t *lex = mp_find_frozen_module(mod_str, mod_len);
-    if (lex != NULL) {
+    void *frozen_data;
+    int frozen_type = mp_find_frozen_module(mod_str, mod_len, &frozen_data);
+    if (frozen_type != MP_FROZEN_NONE) {
         module_obj = mp_obj_new_module(module_name_qstr);
         // if args[3] (fromtuple) has magic value False, set up
         // this module for command-line "-m" option (set module's
@@ -341,7 +353,16 @@ mp_obj_t mp_builtin___import__(mp_uint_t n_args, const mp_obj_t *args) {
             mp_obj_module_t *o = MP_OBJ_TO_PTR(module_obj);
             mp_obj_dict_store(MP_OBJ_FROM_PTR(o->globals), MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR___main__));
         }
-        do_load_from_lexer(module_obj, lex, mod_str);
+        #if MICROPY_MODULE_FROZEN_STR
+        if (frozen_type == MP_FROZEN_STR) {
+            do_load_from_lexer(module_obj, frozen_data, mod_str);
+        }
+        #endif
+        #if MICROPY_MODULE_FROZEN_MPY
+        if (frozen_type == MP_FROZEN_MPY) {
+            do_execute_raw_code(module_obj, frozen_data);
+        }
+        #endif
         return module_obj;
     }
     #endif

@@ -78,10 +78,8 @@
 typedef struct _pyb_spi_obj_t {
     mp_obj_base_t base;
     SPI_HandleTypeDef *spi;
-    DMA_Stream_TypeDef *tx_dma_stream;
-    uint32_t tx_dma_channel;
-    DMA_Stream_TypeDef *rx_dma_stream;
-    uint32_t rx_dma_channel;
+    const dma_descr_t *tx_dma_descr;
+    const dma_descr_t *rx_dma_descr;
 } pyb_spi_obj_t;
 
 #if defined(MICROPY_HW_SPI1_SCK)
@@ -105,34 +103,34 @@ SPI_HandleTypeDef SPIHandle6 = {.Instance = NULL};
 
 STATIC const pyb_spi_obj_t pyb_spi_obj[] = {
     #if defined(MICROPY_HW_SPI1_SCK)
-    {{&pyb_spi_type}, &SPIHandle1, DMA_STREAM_SPI1_TX, DMA_CHANNEL_SPI1_TX, DMA_STREAM_SPI1_RX, DMA_CHANNEL_SPI1_RX},
+    {{&pyb_spi_type}, &SPIHandle1, &dma_SPI_1_TX, &dma_SPI_1_RX},
     #else
-    {{&pyb_spi_type}, NULL, NULL, 0, NULL, 0},
+    {{&pyb_spi_type}, NULL, NULL, NULL},
     #endif
     #if defined(MICROPY_HW_SPI2_SCK)
-    {{&pyb_spi_type}, &SPIHandle2, DMA_STREAM_SPI2_TX, DMA_CHANNEL_SPI2_TX, DMA_STREAM_SPI2_RX, DMA_CHANNEL_SPI2_RX},
+    {{&pyb_spi_type}, &SPIHandle2, &dma_SPI_2_TX, &dma_SPI_2_RX},
     #else
-    {{&pyb_spi_type}, NULL, NULL, 0, NULL, 0},
+    {{&pyb_spi_type}, NULL, NULL, NULL},
     #endif
     #if defined(MICROPY_HW_SPI3_SCK)
-    {{&pyb_spi_type}, &SPIHandle3, DMA_STREAM_SPI3_TX, DMA_CHANNEL_SPI3_TX, DMA_STREAM_SPI3_RX, DMA_CHANNEL_SPI3_RX},
+    {{&pyb_spi_type}, &SPIHandle3, &dma_SPI_3_TX, &dma_SPI_3_RX},
     #else
-    {{&pyb_spi_type}, NULL, NULL, 0, NULL, 0},
+    {{&pyb_spi_type}, NULL, NULL, NULL},
     #endif
     #if defined(MICROPY_HW_SPI4_SCK)
-    {{&pyb_spi_type}, &SPIHandle4, DMA_STREAM_SPI4_TX, DMA_CHANNEL_SPI4_TX, DMA_STREAM_SPI4_RX, DMA_CHANNEL_SPI4_RX},
+    {{&pyb_spi_type}, &SPIHandle4, &dma_SPI_4_TX, &dma_SPI_4_RX},
     #else
-    {{&pyb_spi_type}, NULL, NULL, 0, NULL, 0},
+    {{&pyb_spi_type}, NULL, NULL, NULL},
     #endif
     #if defined(MICROPY_HW_SPI5_SCK)
-    {{&pyb_spi_type}, &SPIHandle5, DMA_STREAM_SPI5_TX, DMA_CHANNEL_SPI5_TX, DMA_STREAM_SPI5_RX, DMA_CHANNEL_SPI5_RX},
+    {{&pyb_spi_type}, &SPIHandle5, &dma_SPI_5_TX, &dma_SPI_5_RX},
     #else
-    {{&pyb_spi_type}, NULL, NULL, 0, NULL, 0},
+    {{&pyb_spi_type}, NULL, NULL, NULL},
     #endif
     #if defined(MICROPY_HW_SPI6_SCK)
-    {{&pyb_spi_type}, &SPIHandle6, DMA_STREAM_SPI6_TX, DMA_CHANNEL_SPI6_TX, DMA_STREAM_SPI6_RX, DMA_CHANNEL_SPI6_RX},
+    {{&pyb_spi_type}, &SPIHandle6, &dma_SPI_6_TX, &dma_SPI_6_RX},
     #else
-    {{&pyb_spi_type}, NULL, NULL, 0, NULL, 0},
+    {{&pyb_spi_type}, NULL, NULL, NULL},
     #endif
 };
 
@@ -167,78 +165,73 @@ void spi_init0(void) {
 // TODO allow to take a list of pins to use
 void spi_init(SPI_HandleTypeDef *spi, bool enable_nss_pin) {
     // init the GPIO lines
+    enum { SPI_NSS=0, SPI_SCK, SPI_MISO, SPI_MOSI, SPI_WIRE_CNT};
     GPIO_InitTypeDef GPIO_InitStructure;
     GPIO_InitStructure.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStructure.Speed = GPIO_SPEED_FAST;
     GPIO_InitStructure.Pull = spi->Init.CLKPolarity == SPI_POLARITY_LOW ? GPIO_PULLDOWN : GPIO_PULLUP;
 
     const pyb_spi_obj_t *self;
-    const pin_obj_t *pins[4];
+    const pin_obj_t *pins[SPI_WIRE_CNT];
 
     if (0) {
     #if defined(MICROPY_HW_SPI1_SCK)
     } else if (spi->Instance == SPI1) {
         self = &pyb_spi_obj[0];
-        pins[0] = &MICROPY_HW_SPI1_NSS;
-        pins[1] = &MICROPY_HW_SPI1_SCK;
-        pins[2] = &MICROPY_HW_SPI1_MISO;
-        pins[3] = &MICROPY_HW_SPI1_MOSI;
-        GPIO_InitStructure.Alternate = GPIO_AF5_SPI1;
+        pins[SPI_NSS] = &MICROPY_HW_SPI1_NSS;
+        pins[SPI_SCK] = &MICROPY_HW_SPI1_SCK;
+        pins[SPI_MISO] = &MICROPY_HW_SPI1_MISO;
+        pins[SPI_MOSI] = &MICROPY_HW_SPI1_MOSI;
         // enable the SPI clock
         __SPI1_CLK_ENABLE();
     #endif
     #if defined(MICROPY_HW_SPI2_SCK)
     } else if (spi->Instance == SPI2) {
         self = &pyb_spi_obj[1];
-        pins[0] = &MICROPY_HW_SPI2_NSS;
-        pins[1] = &MICROPY_HW_SPI2_SCK;
-        pins[2] = &MICROPY_HW_SPI2_MISO;
-        pins[3] = &MICROPY_HW_SPI2_MOSI;
-        GPIO_InitStructure.Alternate = GPIO_AF5_SPI2;
+        pins[SPI_NSS] = &MICROPY_HW_SPI2_NSS;
+        pins[SPI_SCK] = &MICROPY_HW_SPI2_SCK;
+        pins[SPI_MISO] = &MICROPY_HW_SPI2_MISO;
+        pins[SPI_MOSI] = &MICROPY_HW_SPI2_MOSI;
         // enable the SPI clock
         __SPI2_CLK_ENABLE();
     #endif
     #if defined(MICROPY_HW_SPI3_SCK)
     } else if (spi->Instance == SPI3) {
         self = &pyb_spi_obj[2];
-        pins[0] = &MICROPY_HW_SPI3_NSS;
-        pins[1] = &MICROPY_HW_SPI3_SCK;
-        pins[2] = &MICROPY_HW_SPI3_MISO;
-        pins[3] = &MICROPY_HW_SPI3_MOSI;
-        GPIO_InitStructure.Alternate = GPIO_AF6_SPI3;
+        pins[SPI_NSS] = &MICROPY_HW_SPI3_NSS;
+        pins[SPI_SCK] = &MICROPY_HW_SPI3_SCK;
+        pins[SPI_MISO] = &MICROPY_HW_SPI3_MISO;
+        pins[SPI_MOSI] = &MICROPY_HW_SPI3_MOSI;
         // enable the SPI clock
         __SPI3_CLK_ENABLE();
     #endif
     #if defined(MICROPY_HW_SPI4_SCK)
     } else if (spi->Instance == SPI4) {
         self = &pyb_spi_obj[3];
-        pins[0] = &MICROPY_HW_SPI4_NSS;
-        pins[1] = &MICROPY_HW_SPI4_SCK;
-        pins[2] = &MICROPY_HW_SPI4_MISO;
-        pins[3] = &MICROPY_HW_SPI4_MOSI;
-        GPIO_InitStructure.Alternate = GPIO_AF5_SPI4;
+        pins[SPI_NSS] = &MICROPY_HW_SPI4_NSS;
+        pins[SPI_SCK] = &MICROPY_HW_SPI4_SCK;
+        pins[SPI_MISO] = &MICROPY_HW_SPI4_MISO;
+        pins[SPI_MOSI] = &MICROPY_HW_SPI4_MOSI;
         // enable the SPI clock
         __SPI4_CLK_ENABLE();
     #endif
     #if defined(MICROPY_HW_SPI5_SCK)
     } else if (spi->Instance == SPI5) {
         self = &pyb_spi_obj[4];
-        pins[0] = &MICROPY_HW_SPI5_NSS;
-        pins[1] = &MICROPY_HW_SPI5_SCK;
-        pins[2] = &MICROPY_HW_SPI5_MISO;
-        pins[3] = &MICROPY_HW_SPI5_MOSI;
-        GPIO_InitStructure.Alternate = GPIO_AF5_SPI5;
+        pins[SPI_NSS] = &MICROPY_HW_SPI5_NSS;
+        pins[SPI_SCK] = &MICROPY_HW_SPI5_SCK;
+        pins[SPI_MISO] = &MICROPY_HW_SPI5_MISO;
+        pins[SPI_MOSI] = &MICROPY_HW_SPI5_MOSI;
         // enable the SPI clock
         __SPI5_CLK_ENABLE();
     #endif
     #if defined(MICROPY_HW_SPI6_SCK)
     } else if (spi->Instance == SPI6) {
         self = &pyb_spi_obj[5];
-        pins[0] = &MICROPY_HW_SPI6_NSS;
-        pins[1] = &MICROPY_HW_SPI6_SCK;
-        pins[2] = &MICROPY_HW_SPI6_MISO;
-        pins[3] = &MICROPY_HW_SPI6_MOSI;
-        GPIO_InitStructure.Alternate = GPIO_AF5_SPI6;
+        pins[SPI_NSS] = &MICROPY_HW_SPI6_NSS;
+        pins[SPI_SCK] = &MICROPY_HW_SPI6_SCK;
+        pins[SPI_MISO] = &MICROPY_HW_SPI6_MISO;
+        pins[SPI_MOSI] = &MICROPY_HW_SPI6_MOSI;
         // enable the SPI clock
         __SPI6_CLK_ENABLE();
     #endif
@@ -247,10 +240,8 @@ void spi_init(SPI_HandleTypeDef *spi, bool enable_nss_pin) {
         return;
     }
 
-    for (uint i = (enable_nss_pin ? 0 : 1); i < 4; i++) {
-        mp_hal_gpio_clock_enable(pins[i]->gpio);
-        GPIO_InitStructure.Pin = pins[i]->pin_mask;
-        HAL_GPIO_Init(pins[i]->gpio, &GPIO_InitStructure);
+    for (uint i = (enable_nss_pin ? 0 : 1); i < SPI_WIRE_CNT; i++) {
+        mp_hal_gpio_set_af(pins[i], &GPIO_InitStructure, AF_FN_SPI, (self - &pyb_spi_obj[0]) + 1);
     }
 
     // init the SPI device
@@ -265,8 +256,8 @@ void spi_init(SPI_HandleTypeDef *spi, bool enable_nss_pin) {
     // After calling HAL_SPI_Init() it seems that the DMA gets disconnected if
     // it was previously configured.  So we invalidate the DMA channel to force
     // an initialisation the next time we use it.
-    dma_invalidate_channel(self->tx_dma_stream, self->tx_dma_channel);
-    dma_invalidate_channel(self->rx_dma_stream, self->rx_dma_channel);
+    dma_invalidate_channel(self->tx_dma_descr);
+    dma_invalidate_channel(self->rx_dma_descr);
 }
 
 void spi_deinit(SPI_HandleTypeDef *spi) {
@@ -374,6 +365,7 @@ STATIC void pyb_spi_print(const mp_print_t *print, mp_obj_t self_in, mp_print_ki
         if (self->spi->Init.CRCCalculation == SPI_CRCCALCULATION_ENABLED) {
             mp_printf(print, ", crc=0x%x", self->spi->Init.CRCPolynomial);
         }
+        mp_printf(print, ", dir=%u", self->spi->Init.Direction);
         mp_print_str(print, ")");
     }
 }
@@ -466,7 +458,7 @@ STATIC mp_obj_t pyb_spi_init_helper(const pyb_spi_obj_t *self, mp_uint_t n_args,
 ///
 /// At the moment, the NSS pin is not used by the SPI driver and is free
 /// for other use.
-STATIC mp_obj_t pyb_spi_make_new(mp_obj_t type_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t pyb_spi_make_new(const mp_obj_type_t *type, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
     // check arguments
     mp_arg_check_num(n_args, n_kw, 1, MP_OBJ_FUN_ARGS_MAX, true);
 
@@ -561,16 +553,16 @@ STATIC mp_obj_t pyb_spi_send(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
         status = HAL_SPI_Transmit(self->spi, bufinfo.buf, bufinfo.len, args[1].u_int);
     } else {
         DMA_HandleTypeDef tx_dma;
-        dma_init(&tx_dma, self->tx_dma_stream, &dma_init_struct_spi_i2c, self->tx_dma_channel, DMA_MEMORY_TO_PERIPH, self->spi);
+        dma_init(&tx_dma, self->tx_dma_descr, self->spi);
         self->spi->hdmatx = &tx_dma;
         self->spi->hdmarx = NULL;
         status = HAL_SPI_Transmit_DMA(self->spi, bufinfo.buf, bufinfo.len);
         if (status == HAL_OK) {
             status = spi_wait_dma_finished(self->spi, args[1].u_int);
         }
-        dma_deinit(&tx_dma);
+        dma_deinit(self->tx_dma_descr);
     }
-
+    __HAL_SPI_DISABLE(self->spi);
     if (status != HAL_OK) {
         mp_hal_raise(status);
     }
@@ -614,22 +606,23 @@ STATIC mp_obj_t pyb_spi_recv(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
         DMA_HandleTypeDef tx_dma, rx_dma;
         if (self->spi->Init.Mode == SPI_MODE_MASTER) {
             // in master mode the HAL actually does a TransmitReceive call
-            dma_init(&tx_dma, self->tx_dma_stream, &dma_init_struct_spi_i2c, self->tx_dma_channel, DMA_MEMORY_TO_PERIPH, self->spi);
+            dma_init(&tx_dma, self->tx_dma_descr, self->spi);
             self->spi->hdmatx = &tx_dma;
         } else {
             self->spi->hdmatx = NULL;
         }
-        dma_init(&rx_dma, self->rx_dma_stream, &dma_init_struct_spi_i2c, self->rx_dma_channel, DMA_PERIPH_TO_MEMORY, self->spi);
+        dma_init(&rx_dma, self->rx_dma_descr, self->spi);
         self->spi->hdmarx = &rx_dma;
+
 
         status = HAL_SPI_Receive_DMA(self->spi, (uint8_t*)vstr.buf, vstr.len);
         if (status == HAL_OK) {
             status = spi_wait_dma_finished(self->spi, args[1].u_int);
         }
         if (self->spi->hdmatx != NULL) {
-            dma_deinit(&tx_dma);
+            dma_deinit(self->tx_dma_descr);
         }
-        dma_deinit(&rx_dma);
+        dma_deinit(self->rx_dma_descr);
     }
 
     if (status != HAL_OK) {
@@ -709,16 +702,16 @@ STATIC mp_obj_t pyb_spi_send_recv(mp_uint_t n_args, const mp_obj_t *pos_args, mp
         status = HAL_SPI_TransmitReceive(self->spi, bufinfo_send.buf, bufinfo_recv.buf, bufinfo_send.len, args[2].u_int);
     } else {
         DMA_HandleTypeDef tx_dma, rx_dma;
-        dma_init(&tx_dma, self->tx_dma_stream, &dma_init_struct_spi_i2c, self->tx_dma_channel, DMA_MEMORY_TO_PERIPH, self->spi);
+        dma_init(&tx_dma, self->tx_dma_descr, self->spi);
         self->spi->hdmatx = &tx_dma;
-        dma_init(&rx_dma, self->rx_dma_stream, &dma_init_struct_spi_i2c, self->rx_dma_channel, DMA_PERIPH_TO_MEMORY, self->spi);
+        dma_init(&rx_dma, self->rx_dma_descr, self->spi);
         self->spi->hdmarx = &rx_dma;
         status = HAL_SPI_TransmitReceive_DMA(self->spi, bufinfo_send.buf, bufinfo_recv.buf, bufinfo_send.len);
         if (status == HAL_OK) {
             status = spi_wait_dma_finished(self->spi, args[2].u_int);
         }
-        dma_deinit(&tx_dma);
-        dma_deinit(&rx_dma);
+        dma_deinit(self->tx_dma_descr);
+        dma_deinit(self->rx_dma_descr);
     }
 
     if (status != HAL_OK) {
@@ -734,6 +727,32 @@ STATIC mp_obj_t pyb_spi_send_recv(mp_uint_t n_args, const mp_obj_t *pos_args, mp
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(pyb_spi_send_recv_obj, 1, pyb_spi_send_recv);
 
+/// \method dir()
+///
+/// Set\Get direction configuration
+STATIC mp_obj_t pyb_spi_dir(mp_uint_t n_args, const mp_obj_t *args) {
+
+    pyb_spi_obj_t *self = args[0];
+    if (n_args == 1) {
+        // Get current dir configuration
+        return MP_OBJ_NEW_SMALL_INT(self->spi->Init.Direction );
+    } else {
+        uint32_t new_value = mp_obj_get_int(args[1]);
+
+        if ( (new_value != SPI_DIRECTION_2LINES) &&
+             (new_value != SPI_DIRECTION_1LINE) ) {
+            nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "Invalid direction %d", new_value));
+        }
+
+        self->spi->Init.Direction = new_value;
+        HAL_SPI_Init(self->spi); /* To write BiDi mode to control register */
+    }
+
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(pyb_spi_dir_obj, 1, 2, pyb_spi_dir);
+
+
 STATIC const mp_map_elem_t pyb_spi_locals_dict_table[] = {
     // instance methods
     { MP_OBJ_NEW_QSTR(MP_QSTR_init), (mp_obj_t)&pyb_spi_init_obj },
@@ -741,16 +760,21 @@ STATIC const mp_map_elem_t pyb_spi_locals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_send), (mp_obj_t)&pyb_spi_send_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_recv), (mp_obj_t)&pyb_spi_recv_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_send_recv), (mp_obj_t)&pyb_spi_send_recv_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_dir), (mp_obj_t)&pyb_spi_dir_obj },
 
     // class constants
     /// \constant MASTER - for initialising the bus to master mode
     /// \constant SLAVE - for initialising the bus to slave mode
     /// \constant MSB - set the first bit to MSB
     /// \constant LSB - set the first bit to LSB
+    /// \constant DIRECTION_2LINES - Normal 4 wire interface with MOSI/MISO
+    /// \constant DIRECTION_1LINE - set use MOSI (Master mode) or MISO (Slave mode) as bidirectional pin.
     { MP_OBJ_NEW_QSTR(MP_QSTR_MASTER), MP_OBJ_NEW_SMALL_INT(SPI_MODE_MASTER) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_SLAVE),  MP_OBJ_NEW_SMALL_INT(SPI_MODE_SLAVE) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_MSB),    MP_OBJ_NEW_SMALL_INT(SPI_FIRSTBIT_MSB) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_LSB),    MP_OBJ_NEW_SMALL_INT(SPI_FIRSTBIT_LSB) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_DIRECTION_TWO_LINES), MP_OBJ_NEW_SMALL_INT(SPI_DIRECTION_2LINES) },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_DIRECTION_ONE_LINE), MP_OBJ_NEW_SMALL_INT(SPI_DIRECTION_1LINE) },
     /* TODO
     { MP_OBJ_NEW_QSTR(MP_QSTR_DIRECTION_2LINES             ((uint32_t)0x00000000)
     { MP_OBJ_NEW_QSTR(MP_QSTR_DIRECTION_2LINES_RXONLY      SPI_CR1_RXONLY

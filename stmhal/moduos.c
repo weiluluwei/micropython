@@ -36,7 +36,7 @@
 #include "timeutils.h"
 #include "rng.h"
 #include "uart.h"
-#include "file.h"
+#include "extmod/vfs_fat_file.h"
 #include "sdcard.h"
 #include "extmod/fsusermount.h"
 #include "portmodules.h"
@@ -53,19 +53,6 @@
 ///
 /// On boot up, the current directory is `/flash` if no SD card is inserted,
 /// otherwise it is `/sd`.
-
-#if _USE_LFN
-static char lfn[_MAX_LFN + 1];   /* Buffer to store the LFN */
-#endif
-
-STATIC bool sd_in_root(void) {
-#if MICROPY_HW_HAS_SDCARD
-    // TODO this is not the correct logic to check for /sd
-    return sdcard_is_present();
-#else
-    return false;
-#endif
-}
 
 STATIC const qstr os_uname_info_fields[] = {
     MP_QSTR_sysname, MP_QSTR_nodename,
@@ -144,67 +131,16 @@ STATIC mp_obj_t os_listdir(mp_uint_t n_args, const mp_obj_t *args) {
     // "hack" to list root directory
     if (path[0] == '/' && path[1] == '\0') {
         mp_obj_t dir_list = mp_obj_new_list(0, NULL);
-        mp_obj_list_append(dir_list, MP_OBJ_NEW_QSTR(MP_QSTR_flash));
-        if (sd_in_root()) {
-            mp_obj_list_append(dir_list, MP_OBJ_NEW_QSTR(MP_QSTR_sd));
-        }
-        if (MP_STATE_PORT(fs_user_mount) != NULL) {
-            mp_obj_list_append(dir_list, mp_obj_new_str(MP_STATE_PORT(fs_user_mount)->str + 1, MP_STATE_PORT(fs_user_mount)->len - 1, false));
+        for (size_t i = 0; i < MP_ARRAY_SIZE(MP_STATE_PORT(fs_user_mount)); ++i) {
+            fs_user_mount_t *vfs = MP_STATE_PORT(fs_user_mount)[i];
+            if (vfs != NULL) {
+                mp_obj_list_append(dir_list, mp_obj_new_str(vfs->str + 1, vfs->len - 1, false));
+            }
         }
         return dir_list;
     }
 
-    FRESULT res;
-    FILINFO fno;
-    DIR dir;
-#if _USE_LFN
-    fno.lfname = lfn;
-    fno.lfsize = sizeof lfn;
-#endif
-
-    res = f_opendir(&dir, path);                       /* Open the directory */
-    if (res != FR_OK) {
-        // TODO should be mp_type_FileNotFoundError
-        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_OSError, "No such file or directory: '%s'", path));
-    }
-
-    mp_obj_t dir_list = mp_obj_new_list(0, NULL);
-
-    for (;;) {
-        res = f_readdir(&dir, &fno);                   /* Read a directory item */
-        if (res != FR_OK || fno.fname[0] == 0) break;  /* Break on error or end of dir */
-        if (fno.fname[0] == '.' && fno.fname[1] == 0) continue;             /* Ignore . entry */
-        if (fno.fname[0] == '.' && fno.fname[1] == '.' && fno.fname[2] == 0) continue;             /* Ignore .. entry */
-
-#if _USE_LFN
-        char *fn = *fno.lfname ? fno.lfname : fno.fname;
-#else
-        char *fn = fno.fname;
-#endif
-
-        /*
-        if (fno.fattrib & AM_DIR) {
-            // dir
-        } else {
-            // file
-        }
-        */
-
-        // make a string object for this entry
-        mp_obj_t entry_o;
-        if (is_str_type) {
-            entry_o = mp_obj_new_str(fn, strlen(fn), false);
-        } else {
-            entry_o = mp_obj_new_bytes((const byte*)fn, strlen(fn));
-        }
-
-        // add the entry to the list
-        mp_obj_list_append(dir_list, entry_o);
-    }
-
-    f_closedir(&dir);
-
-    return dir_list;
+    return fat_vfs_listdir(path, is_str_type);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(os_listdir_obj, 0, 1, os_listdir);
 
@@ -298,21 +234,32 @@ STATIC mp_obj_t os_stat(mp_obj_t path_in) {
 #endif
 
     FRESULT res;
-    if (path_equal(path, "/") || path_equal(path, "/flash") || path_equal(path, "/sd")) {
-        // stat built-in directory
-        if (path[1] == 's' && !sd_in_root()) {
-            // no /sd directory
-            res = FR_NO_PATH;
-            goto error;
-        }
+    if (path_equal(path, "/")) {
+        // stat root directory
 	fno.fsize = 0;
 	fno.fdate = 0;
 	fno.ftime = 0;
 	fno.fattrib = AM_DIR;
     } else {
-        res = f_stat(path, &fno);
+        res = FR_NO_PATH;
+        for (size_t i = 0; i < MP_ARRAY_SIZE(MP_STATE_PORT(fs_user_mount)); ++i) {
+            fs_user_mount_t *vfs = MP_STATE_PORT(fs_user_mount)[i];
+            if (vfs != NULL && path_equal(path, vfs->str)) {
+                // stat mounted device directory
+                fno.fsize = 0;
+                fno.fdate = 0;
+                fno.ftime = 0;
+                fno.fattrib = AM_DIR;
+                res = FR_OK;
+            }
+        }
+        if (res == FR_NO_PATH) {
+            // stat normal file
+            res = f_stat(path, &fno);
+        }
         if (res != FR_OK) {
-            goto error;
+            nlr_raise(mp_obj_new_exception_arg1(&mp_type_OSError,
+                MP_OBJ_NEW_SMALL_INT(fresult_to_errno_table[res])));
         }
     }
 
@@ -343,11 +290,38 @@ STATIC mp_obj_t os_stat(mp_obj_t path_in) {
     t->items[9] = MP_OBJ_NEW_SMALL_INT(seconds); // st_ctime
 
     return t;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(os_stat_obj, os_stat);
+
+STATIC mp_obj_t os_statvfs(mp_obj_t path_in) {
+    const char *path = mp_obj_str_get_str(path_in);
+
+    DWORD nclst;
+    FATFS *fatfs;
+    FRESULT res = f_getfree(path, &nclst, &fatfs);
+    if (res != FR_OK) {
+        goto error;
+    }
+
+    mp_obj_tuple_t *t = mp_obj_new_tuple(10, NULL);
+
+    t->items[0] = MP_OBJ_NEW_SMALL_INT(fatfs->csize * 512); // f_bsize - block size
+    t->items[1] = t->items[0];                  // f_frsize - fragment size
+    t->items[2] = MP_OBJ_NEW_SMALL_INT(0);      // f_blocks - total number of blocks
+    t->items[3] = MP_OBJ_NEW_SMALL_INT(nclst);  // f_bfree  - number of free blocks
+    t->items[4] = t->items[3];                  // f_bavail - free blocks avail to unpriviledged users
+    t->items[5] = MP_OBJ_NEW_SMALL_INT(0);      // f_files - # inodes
+    t->items[6] = MP_OBJ_NEW_SMALL_INT(0);      // f_ffree - # free inodes
+    t->items[7] = MP_OBJ_NEW_SMALL_INT(0);      // f_favail - # free inodes avail to unpriviledges users
+    t->items[8] = MP_OBJ_NEW_SMALL_INT(0);      // f_flags
+    t->items[9] = MP_OBJ_NEW_SMALL_INT(_MAX_LFN);   // f_namemax
+
+    return t;
 
 error:
     nlr_raise(mp_obj_new_exception_arg1(&mp_type_OSError, MP_OBJ_NEW_SMALL_INT(fresult_to_errno_table[res])));
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(os_stat_obj, os_stat);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(os_statvfs_obj, os_statvfs);
 
 /// \function sync()
 /// Sync all filesystems.
@@ -410,6 +384,7 @@ STATIC const mp_map_elem_t os_module_globals_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_rename),(mp_obj_t)&os_rename_obj},
     { MP_OBJ_NEW_QSTR(MP_QSTR_rmdir), (mp_obj_t)&os_rmdir_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_stat), (mp_obj_t)&os_stat_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_statvfs), (mp_obj_t)&os_statvfs_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_unlink), (mp_obj_t)&os_remove_obj }, // unlink aliases to remove
 
     { MP_OBJ_NEW_QSTR(MP_QSTR_sync), (mp_obj_t)&mod_os_sync_obj },
@@ -423,6 +398,9 @@ STATIC const mp_map_elem_t os_module_globals_table[] = {
 
     // these are MicroPython extensions
     { MP_OBJ_NEW_QSTR(MP_QSTR_dupterm), (mp_obj_t)&mod_os_dupterm_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_mount), (mp_obj_t)&fsuser_mount_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_umount), (mp_obj_t)&fsuser_umount_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_mkfs), (mp_obj_t)&fsuser_mkfs_obj },
 };
 
 STATIC MP_DEFINE_CONST_DICT(os_module_globals, os_module_globals_table);

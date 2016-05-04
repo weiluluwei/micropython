@@ -11,7 +11,7 @@ Reset related functions
 
 .. function:: reset()
 
-   Resets the WiPy in a manner similar to pushing the external RESET
+   Resets the device in a manner similar to pushing the external RESET
    button.
 
 .. function:: reset_cause()
@@ -41,10 +41,16 @@ Power related functions
 
 .. function:: freq()
 
-   Returns a tuple of clock frequencies: ``(sysclk,)``
-   These correspond to:
+    .. only:: not port_wipy
 
-      - sysclk: frequency of the CPU
+        Returns CPU frequency in hertz.
+
+    .. only:: port_wipy
+
+        Returns a tuple of clock frequencies: ``(sysclk,)``
+        These correspond to:
+
+        - sysclk: frequency of the CPU
 
 .. function:: idle()
 
@@ -87,7 +93,7 @@ Miscellaneous functions
 .. function:: unique_id()
 
    Returns a string of 6 bytes (48 bits), which is the unique ID of the MCU.
-   This also corresponds to the ``MAC address`` of the WiPy.
+   This also corresponds to the network ``MAC address``.
 
 .. _machine_constants:
 

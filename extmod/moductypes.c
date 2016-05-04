@@ -121,10 +121,10 @@ STATIC NORETURN void syntax_error(void) {
     nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, "syntax error in uctypes descriptor"));
 }
 
-STATIC mp_obj_t uctypes_struct_make_new(mp_obj_t type_in, mp_uint_t n_args, mp_uint_t n_kw, const mp_obj_t *args) {
+STATIC mp_obj_t uctypes_struct_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     mp_arg_check_num(n_args, n_kw, 2, 3, false);
     mp_obj_uctypes_struct_t *o = m_new_obj(mp_obj_uctypes_struct_t);
-    o->base.type = MP_OBJ_TO_PTR(type_in);
+    o->base.type = type;
     o->addr = (void*)(uintptr_t)mp_obj_get_int(args[0]);
     o->desc = args[1];
     o->flags = LAYOUT_NATIVE;
@@ -230,6 +230,9 @@ STATIC mp_uint_t uctypes_struct_size(mp_obj_t desc_in, int layout_type, mp_uint_
                 mp_uint_t offset = MP_OBJ_SMALL_INT_VALUE(v);
                 mp_uint_t val_type = GET_TYPE(offset, VAL_TYPE_BITS);
                 offset &= VALUE_MASK(VAL_TYPE_BITS);
+                if (val_type >= BFUINT8 && val_type <= BFINT32) {
+                    offset &= (1 << OFFSET_BITS) - 1;
+                }
                 mp_uint_t s = uctypes_struct_scalar_size(val_type);
                 if (s > *max_field_size) {
                     *max_field_size = s;
@@ -278,18 +281,15 @@ STATIC mp_obj_t uctypes_struct_sizeof(mp_obj_t obj_in) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(uctypes_struct_sizeof_obj, uctypes_struct_sizeof);
 
-STATIC inline mp_obj_t get_unaligned(uint val_type, void *p, int big_endian) {
-    mp_int_t val = mp_binary_get_int(GET_SCALAR_SIZE(val_type), val_type & 1, big_endian, p);
-    if (val_type == UINT32) {
-        return mp_obj_new_int_from_uint(val);
-    } else {
-        return mp_obj_new_int(val);
-    }
+STATIC inline mp_obj_t get_unaligned(uint val_type, byte *p, int big_endian) {
+    char struct_type = big_endian ? '>' : '<';
+    static const char type2char[16] = "BbHhIiQq------fd";
+    return mp_binary_get_val(struct_type, type2char[val_type], &p);
 }
 
 STATIC inline void set_unaligned(uint val_type, byte *p, int big_endian, mp_obj_t val) {
     char struct_type = big_endian ? '>' : '<';
-    static const char type2char[8] = "BbHhIiQq";
+    static const char type2char[16] = "BbHhIiQq------fd";
     mp_binary_set_val(struct_type, type2char[val_type], val, &p);
 }
 
@@ -349,6 +349,17 @@ STATIC mp_obj_t get_aligned(uint val_type, void *p, mp_int_t index) {
 }
 
 STATIC void set_aligned(uint val_type, void *p, mp_int_t index, mp_obj_t val) {
+    #if MICROPY_PY_BUILTINS_FLOAT
+    if (val_type == FLOAT32 || val_type == FLOAT64) {
+        mp_float_t v = mp_obj_get_float(val);
+        if (val_type == FLOAT32) {
+            ((float*)p)[index] = v;
+        } else {
+            ((double*)p)[index] = v;
+        }
+        return;
+    }
+    #endif
     mp_int_t v = mp_obj_get_int(val);
     switch (val_type) {
         case UINT8:
@@ -392,7 +403,7 @@ STATIC mp_obj_t uctypes_struct_attr_op(mp_obj_t self_in, qstr attr, mp_obj_t set
         offset &= VALUE_MASK(VAL_TYPE_BITS);
 //printf("scalar type=%d offset=%x\n", val_type, offset);
 
-        if (val_type <= INT64) {
+        if (val_type <= INT64 || val_type == FLOAT32 || val_type == FLOAT64) {
 //            printf("size=%d\n", GET_SCALAR_SIZE(val_type));
             if (self->flags == LAYOUT_NATIVE) {
                 if (set_val == MP_OBJ_NULL) {
@@ -512,8 +523,8 @@ STATIC mp_obj_t uctypes_struct_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_ob
     if (value == MP_OBJ_NULL) {
         // delete
         return MP_OBJ_NULL; // op not supported
-    } else if (value == MP_OBJ_SENTINEL) {
-        // load
+    } else {
+        // load / store
         if (!MP_OBJ_IS_TYPE(self->desc, &mp_type_tuple)) {
             nlr_raise(mp_obj_new_exception_msg(&mp_type_TypeError, "struct: cannot index"));
         }
@@ -533,9 +544,24 @@ STATIC mp_obj_t uctypes_struct_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_ob
             }
 
             if (t->len == 2) {
-                byte *p = self->addr + GET_SCALAR_SIZE(val_type) * index;
-                return get_unaligned(val_type, p, self->flags);
-            } else {
+                // array of scalars
+                if (self->flags == LAYOUT_NATIVE) {
+                    if (value == MP_OBJ_SENTINEL) {
+                        return get_aligned(val_type, self->addr, index);
+                    } else {
+                        set_aligned(val_type, self->addr, index, value);
+                        return value; // just !MP_OBJ_NULL
+                    }
+                } else {
+                    byte *p = self->addr + GET_SCALAR_SIZE(val_type) * index;
+                    if (value == MP_OBJ_SENTINEL) {
+                        return get_unaligned(val_type, p, self->flags);
+                    } else {
+                        set_unaligned(val_type, p, self->flags, value);
+                        return value; // just !MP_OBJ_NULL
+                    }
+                }
+            } else if (value == MP_OBJ_SENTINEL) {
                 mp_uint_t dummy = 0;
                 mp_uint_t size = uctypes_struct_size(t->items[2], self->flags, &dummy);
                 mp_obj_uctypes_struct_t *o = m_new_obj(mp_obj_uctypes_struct_t);
@@ -544,7 +570,10 @@ STATIC mp_obj_t uctypes_struct_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_ob
                 o->addr = self->addr + size * index;
                 o->flags = self->flags;
                 return MP_OBJ_FROM_PTR(o);
+            } else {
+                return MP_OBJ_NULL; // op not supported
             }
+
         } else if (agg_type == PTR) {
             byte *p = *(void**)self->addr;
             if (MP_OBJ_IS_SMALL_INT(t->items[1])) {
@@ -564,9 +593,6 @@ STATIC mp_obj_t uctypes_struct_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_ob
 
         assert(0);
         return MP_OBJ_NULL;
-    } else {
-        // store
-        return MP_OBJ_NULL; // op not supported
     }
 }
 
@@ -670,6 +696,11 @@ STATIC const mp_rom_map_elem_t mp_module_uctypes_globals_table[] = {
 
     { MP_ROM_QSTR(MP_QSTR_BF_POS), MP_ROM_INT(17) },
     { MP_ROM_QSTR(MP_QSTR_BF_LEN), MP_ROM_INT(22) },
+
+    #if MICROPY_PY_BUILTINS_FLOAT
+    { MP_ROM_QSTR(MP_QSTR_FLOAT32), MP_ROM_INT(TYPE2SMALLINT(FLOAT32, 4)) },
+    { MP_ROM_QSTR(MP_QSTR_FLOAT64), MP_ROM_INT(TYPE2SMALLINT(FLOAT64, 4)) },
+    #endif
 
     { MP_ROM_QSTR(MP_QSTR_PTR), MP_ROM_INT(TYPE2SMALLINT(PTR, AGG_TYPE_BITS)) },
     { MP_ROM_QSTR(MP_QSTR_ARRAY), MP_ROM_INT(TYPE2SMALLINT(ARRAY, AGG_TYPE_BITS)) },

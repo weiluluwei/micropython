@@ -27,6 +27,7 @@
 #include "py/mpconfig.h"
 #if MICROPY_FLOAT_IMPL != MICROPY_FLOAT_IMPL_NONE
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include "py/formatfloat.h"
@@ -56,6 +57,7 @@
 #define FPCONST(x) x##F
 #define FPROUND_TO_ONE 0.9999995F
 #define FPDECEXP 32
+#define FPMIN_BUF_SIZE 6 // +9e+99
 
 #define FLT_SIGN_MASK   0x80000000
 #define FLT_EXP_MASK    0x7F800000
@@ -79,6 +81,7 @@ static inline int fp_isless1(float x) { union floatbits fb = {x}; return fb.u < 
 #define FPCONST(x) x
 #define FPROUND_TO_ONE 0.999999999995
 #define FPDECEXP 256
+#define FPMIN_BUF_SIZE 7 // +9e+199
 #include <math.h>
 #define fp_signbit(x) signbit(x)
 #define fp_isspecial(x) 1
@@ -105,11 +108,11 @@ static const FPTYPE g_neg_pow[] = {
 int mp_format_float(FPTYPE f, char *buf, size_t buf_size, char fmt, int prec, char sign) {
 
     char *s = buf;
-    int buf_remaining = buf_size - 1;
 
-    if (buf_size < 7) {
-        // Smallest exp notion is -9e+99 which is 6 chars plus terminating
-        // null.
+    if (buf_size <= FPMIN_BUF_SIZE) {
+        // FPMIN_BUF_SIZE is the minimum size needed to store any FP number.
+        // If the buffer does not have enough room for this (plus null terminator)
+        // then don't try to format the float.
 
         if (buf_size >= 2) {
             *s++ = '?';
@@ -127,7 +130,10 @@ int mp_format_float(FPTYPE f, char *buf, size_t buf_size, char fmt, int prec, ch
             *s++ = sign;
         }
     }
-    buf_remaining -= (s - buf); // Adjust for sign
+
+    // buf_remaining contains bytes available for digits and exponent.
+    // It is buf_size minus room for the sign and null byte.
+    int buf_remaining = buf_size - 1 - (s - buf);
 
     if (fp_isspecial(f)) {
         char uc = fmt & 0x20;
@@ -164,10 +170,20 @@ int mp_format_float(FPTYPE f, char *buf, size_t buf_size, char fmt, int prec, ch
 
     if (fp_iszero(f)) {
         e = 0;
-        if (fmt == 'e') {
-            e_sign = '+';
-        } else if (fmt == 'f') {
+        if (fmt == 'f') {
+            // Truncate precision to prevent buffer overflow
+            if (prec + 2 > buf_remaining) {
+                prec = buf_remaining - 2;
+            }
             num_digits = prec + 1;
+        } else {
+            // Truncate precision to prevent buffer overflow
+            if (prec + 6 > buf_remaining) {
+                prec = buf_remaining - 6;
+            }
+            if (fmt == 'e') {
+                e_sign = '+';
+            }
         }
     } else if (fp_isless1(f)) {
         // We need to figure out what an integer digit will be used
@@ -192,7 +208,7 @@ int mp_format_float(FPTYPE f, char *buf, size_t buf_size, char fmt, int prec, ch
             if (e == 0) {
                 e_sign_char = '+';
             }
-        } else {
+        } else if (fp_isless1(f)) {
             e++; 
             f *= FPCONST(10.0);
         }
@@ -205,13 +221,15 @@ int mp_format_float(FPTYPE f, char *buf, size_t buf_size, char fmt, int prec, ch
             dec = -1;
             *s++ = first_dig;
 
-            if (prec + e + 1 > buf_remaining) {
-                prec = buf_remaining - e - 1;
-            }
-
             if (org_fmt == 'g') {
                 prec += (e - 1);
             }
+
+            // truncate precision to prevent buffer overflow
+            if (prec + 2 > buf_remaining) {
+                prec = buf_remaining - 2;
+            }
+
             num_digits = prec;
             if (num_digits) {
                 *s++ = '.'; 
@@ -226,8 +244,8 @@ int mp_format_float(FPTYPE f, char *buf, size_t buf_size, char fmt, int prec, ch
             e_sign = e_sign_char;
             dec = 0;
 
-            if (prec > (buf_remaining - 6)) {
-                prec = buf_remaining - 6;
+            if (prec > (buf_remaining - FPMIN_BUF_SIZE)) {
+                prec = buf_remaining - FPMIN_BUF_SIZE;
                 if (fmt == 'g') {
                     prec++;
                 }
@@ -240,6 +258,12 @@ int mp_format_float(FPTYPE f, char *buf, size_t buf_size, char fmt, int prec, ch
                 e += e1;
                 f *= *neg_pow;
             }
+        }
+
+        // It can be that f was right on the edge of an entry in pos_pow needs to be reduced
+        if (f >= FPCONST(10.0)) {
+            e += 1;
+            f *= FPCONST(0.1);
         }
 
         // If the user specified fixed format (fmt == 'f') and e makes the 
@@ -258,8 +282,14 @@ int mp_format_float(FPTYPE f, char *buf, size_t buf_size, char fmt, int prec, ch
                 }
             }
         }
-        if (fmt == 'e' && prec > (buf_remaining - 6)) {
-            prec = buf_remaining - 6;
+        if (fmt == 'e' && prec > (buf_remaining - FPMIN_BUF_SIZE)) {
+            prec = buf_remaining - FPMIN_BUF_SIZE;
+        }
+        if (fmt == 'g'){
+            // Truncate precision to prevent buffer overflow
+            if (prec + (FPMIN_BUF_SIZE - 1) > buf_remaining) {
+                prec = buf_remaining - (FPMIN_BUF_SIZE - 1);
+            }
         }
         // If the user specified 'g' format, and e is < prec, then we'll switch
         // to the fixed format.
@@ -364,6 +394,9 @@ int mp_format_float(FPTYPE f, char *buf, size_t buf_size, char fmt, int prec, ch
         }
     }
 
+    // verify that we did not overrun the input buffer so far
+    assert((size_t)(s + 1 - buf) <= buf_size);
+
     if (org_fmt == 'g' && prec > 0) {
         // Remove trailing zeros and a trailing decimal point
         while (s[-1] == '0') {
@@ -377,10 +410,16 @@ int mp_format_float(FPTYPE f, char *buf, size_t buf_size, char fmt, int prec, ch
     if (e_sign) {
         *s++ = e_char;
         *s++ = e_sign;
-        *s++ = '0' + (e / 10);
+        if (FPMIN_BUF_SIZE == 7 && e >= 100) {
+            *s++ = '0' + (e / 100);
+        }
+        *s++ = '0' + ((e / 10) % 10);
         *s++ = '0' + (e % 10);
     }
     *s = '\0';
+
+    // verify that we did not overrun the input buffer
+    assert((size_t)(s + 1 - buf) <= buf_size);
 
     return s - buf;
 }

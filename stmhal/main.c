@@ -38,6 +38,7 @@
 
 #include "lib/utils/pyexec.h"
 #include "lib/fatfs/ff.h"
+#include "extmod/fsusermount.h"
 
 #include "systick.h"
 #include "pendsv.h"
@@ -65,10 +66,7 @@
 
 void SystemClock_Config(void);
 
-static FATFS fatfs0;
-#if MICROPY_HW_HAS_SDCARD
-static FATFS fatfs1;
-#endif
+fs_user_mount_t fs_user_mount_flash;
 
 void flash_error(int n) {
     for (int i = 0; i < n; i++) {
@@ -170,8 +168,18 @@ static const char fresh_readme_txt[] =
 // we don't make this function static because it needs a lot of stack and we
 // want it to be executed without using stack within main() function
 void init_flash_fs(uint reset_mode) {
+    // init the vfs object
+    fs_user_mount_t *vfs = &fs_user_mount_flash;
+    vfs->str = "/flash";
+    vfs->len = 6;
+    vfs->flags = 0;
+    pyb_flash_init_vfs(vfs);
+
+    // put the flash device in slot 0 (it will be unused at this point)
+    MP_STATE_PORT(fs_user_mount)[0] = vfs;
+
     // try to mount the flash
-    FRESULT res = f_mount(&fatfs0, "/flash", 1);
+    FRESULT res = f_mount(&vfs->fatfs, vfs->str, 1);
 
     if (reset_mode == 3 || res == FR_NO_FILESYSTEM) {
         // no filesystem, or asked to reset it, so create a fresh one
@@ -184,7 +192,9 @@ void init_flash_fs(uint reset_mode) {
         if (res == FR_OK) {
             // success creating fresh LFS
         } else {
-            __fatal_error("could not create LFS");
+            printf("PYB: can't create flash filesystem\n");
+            MP_STATE_PORT(fs_user_mount)[0] = NULL;
+            return;
         }
 
         // set label
@@ -214,7 +224,9 @@ void init_flash_fs(uint reset_mode) {
     } else if (res == FR_OK) {
         // mount sucessful
     } else {
-        __fatal_error("could not access LFS");
+        printf("PYB: can't mount flash\n");
+        MP_STATE_PORT(fs_user_mount)[0] = NULL;
+        return;
     }
 
     // The current directory is used as the boot up directory.
@@ -336,6 +348,7 @@ int main(void) {
 
     // Stack limit should be less than real stack size, so we have a chance
     // to recover from limit hit.  (Limit is measured in bytes.)
+    mp_stack_ctrl_init();
     mp_stack_set_limit((char*)&_ram_end - (char*)&_heap_end - 1024);
 
     /* STM32F4xx HAL library initialization:
@@ -355,52 +368,23 @@ int main(void) {
     __GPIOC_CLK_ENABLE();
     __GPIOD_CLK_ENABLE();
 
-    #if defined(__HAL_RCC_DTCMRAMEN_CLK_ENABLE)
-    // The STM32F746 doesn't really have CCM memory, but it does have DTCM,
-    // which behaves more or less like normal SRAM.
-    __HAL_RCC_DTCMRAMEN_CLK_ENABLE();
-    #else
-    // enable the CCM RAM
-    __CCMDATARAMEN_CLK_ENABLE();
+    #if defined(MCU_SERIES_F4) ||  defined(MCU_SERIES_F7)
+        #if defined(__HAL_RCC_DTCMRAMEN_CLK_ENABLE)
+        // The STM32F746 doesn't really have CCM memory, but it does have DTCM,
+        // which behaves more or less like normal SRAM.
+        __HAL_RCC_DTCMRAMEN_CLK_ENABLE();
+        #else
+        // enable the CCM RAM
+        __CCMDATARAMEN_CLK_ENABLE();
+        #endif
     #endif
 
     #if defined(MICROPY_BOARD_EARLY_INIT)
     MICROPY_BOARD_EARLY_INIT();
     #endif
 
-    //TODO - Move the following to a board_init.c file for the NETDUINO
-#if 0
-#if defined(NETDUINO_PLUS_2)
-    {
-        GPIO_InitTypeDef GPIO_InitStructure;
-        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_25MHz;
-        GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-        GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-        GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-
-#if MICROPY_HW_HAS_SDCARD
-        // Turn on the power enable for the sdcard (PB1)
-        GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
-        GPIO_Init(GPIOB, &GPIO_InitStructure);
-        GPIO_WriteBit(GPIOB, GPIO_Pin_1, Bit_SET);
-#endif
-
-        // Turn on the power for the 5V on the expansion header (PB2)
-        GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
-        GPIO_Init(GPIOB, &GPIO_InitStructure);
-        GPIO_WriteBit(GPIOB, GPIO_Pin_2, Bit_SET);
-    }
-#endif
-#endif
-
     // basic sub-system init
     pendsv_init();
-    #if defined(MICROPY_HW_USE_ALT_IRQ_FOR_CDC)
-    HAL_NVIC_SetPriority(PVD_IRQn, 6, 0); // same priority as USB
-    HAL_NVIC_EnableIRQ(PVD_IRQn);
-    #else
-    timer_tim3_init();
-    #endif
     led_init();
 #if MICROPY_HW_HAS_SWITCH
     switch_init0();
@@ -458,6 +442,9 @@ soft_reset:
     mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_flash_slash_lib));
     mp_obj_list_init(mp_sys_argv, 0);
 
+    // zero out the pointers to the mounted devices
+    memset(MP_STATE_PORT(fs_user_mount), 0, sizeof(MP_STATE_PORT(fs_user_mount)));
+
     // Initialise low-level sub-systems.  Here we need to very basic things like
     // zeroing out memory and resetting any of the sub-systems.  Following this
     // we can run Python scripts (eg boot.py), but anything that is configurable
@@ -503,9 +490,24 @@ soft_reset:
 #if MICROPY_HW_HAS_SDCARD
     // if an SD card is present then mount it on /sd/
     if (sdcard_is_present()) {
-        FRESULT res = f_mount(&fatfs1, "/sd", 1);
+        // create vfs object
+        fs_user_mount_t *vfs = m_new_obj_maybe(fs_user_mount_t);
+        if (vfs == NULL) {
+            goto no_mem_for_sd;
+        }
+        vfs->str = "/sd";
+        vfs->len = 3;
+        vfs->flags = FSUSER_FREE_OBJ;
+        sdcard_init_vfs(vfs);
+
+        // put the sd device in slot 1 (it will be unused at this point)
+        MP_STATE_PORT(fs_user_mount)[1] = vfs;
+
+        FRESULT res = f_mount(&vfs->fatfs, vfs->str, 1);
         if (res != FR_OK) {
-            printf("[SD] could not mount SD card\n");
+            printf("PYB: can't mount SD card\n");
+            MP_STATE_PORT(fs_user_mount)[1] = NULL;
+            m_del_obj(fs_user_mount_t, vfs);
         } else {
             // TODO these should go before the /flash entries in the path
             mp_obj_list_append(mp_sys_path, MP_OBJ_NEW_QSTR(MP_QSTR__slash_sd));
@@ -527,6 +529,7 @@ soft_reset:
                 f_chdrive("/sd");
             }
         }
+        no_mem_for_sd:;
     }
 #endif
 

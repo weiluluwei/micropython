@@ -234,7 +234,7 @@
 // Whether generated code can persist independently of the VM/runtime instance
 // This is enabled automatically when needed by other features
 #ifndef MICROPY_PERSISTENT_CODE
-#define MICROPY_PERSISTENT_CODE (MICROPY_PERSISTENT_CODE_LOAD || MICROPY_PERSISTENT_CODE_SAVE)
+#define MICROPY_PERSISTENT_CODE (MICROPY_PERSISTENT_CODE_LOAD || MICROPY_PERSISTENT_CODE_SAVE || MICROPY_MODULE_FROZEN_MPY)
 #endif
 
 // Whether to emit x64 native code
@@ -277,6 +277,25 @@
 
 /*****************************************************************************/
 /* Compiler configuration                                                    */
+
+// Whether to include the compiler
+#ifndef MICROPY_ENABLE_COMPILER
+#define MICROPY_ENABLE_COMPILER (1)
+#endif
+
+// Whether the compiler is dynamically configurable (ie at runtime)
+#ifndef MICROPY_DYNAMIC_COMPILER
+#define MICROPY_DYNAMIC_COMPILER (0)
+#endif
+
+// Configure dynamic compiler macros
+#if MICROPY_DYNAMIC_COMPILER
+#define MICROPY_OPT_CACHE_MAP_LOOKUP_IN_BYTECODE_DYNAMIC (mp_dynamic_compiler.opt_cache_map_lookup_in_bytecode)
+#define MICROPY_PY_BUILTINS_STR_UNICODE_DYNAMIC (mp_dynamic_compiler.py_builtins_str_unicode)
+#else
+#define MICROPY_OPT_CACHE_MAP_LOOKUP_IN_BYTECODE_DYNAMIC MICROPY_OPT_CACHE_MAP_LOOKUP_IN_BYTECODE
+#define MICROPY_PY_BUILTINS_STR_UNICODE_DYNAMIC MICROPY_PY_BUILTINS_STR_UNICODE
+#endif
 
 // Whether to enable constant folding; eg 1+2 rewritten as 3
 #ifndef MICROPY_COMP_CONST_FOLDING
@@ -337,8 +356,30 @@
 #define MICROPY_OPT_CACHE_MAP_LOOKUP_IN_BYTECODE (0)
 #endif
 
+// Whether to use fast versions of bitwise operations (and, or, xor) when the
+// arguments are both positive.  Increases Thumb2 code size by about 250 bytes.
+#ifndef MICROPY_OPT_MPZ_BITWISE
+#define MICROPY_OPT_MPZ_BITWISE (0)
+#endif
+
 /*****************************************************************************/
 /* Python internal features                                                  */
+
+// Hook for the VM at the start of the opcode loop (can contain variable
+// definitions usable by the other hook functions)
+#ifndef MICROPY_VM_HOOK_INIT
+#define MICROPY_VM_HOOK_INIT
+#endif
+
+// Hook for the VM during the opcode loop (but only after jump opcodes)
+#ifndef MICROPY_VM_HOOK_LOOP
+#define MICROPY_VM_HOOK_LOOP
+#endif
+
+// Hook for the VM just before return opcode is finished being interpreted
+#ifndef MICROPY_VM_HOOK_RETURN
+#define MICROPY_VM_HOOK_RETURN
+#endif
 
 // Whether to include the garbage collector
 #ifndef MICROPY_ENABLE_GC
@@ -364,6 +405,12 @@
 #   ifndef MICROPY_EMERGENCY_EXCEPTION_BUF_SIZE
 #   define MICROPY_EMERGENCY_EXCEPTION_BUF_SIZE (0)   // 0 - implies dynamic allocation
 #   endif
+#endif
+
+// Prefer to raise KeyboardInterrupt asynchronously (from signal or interrupt
+// handler) - if supported by a particular port.
+#ifndef MICROPY_ASYNC_KBD_INTR
+#define MICROPY_ASYNC_KBD_INTR (0)
 #endif
 
 // Whether to include REPL helper function
@@ -479,9 +526,19 @@ typedef double mp_float_t;
 #define MICROPY_MODULE_WEAK_LINKS (0)
 #endif
 
-// Whether frozen modules are supported
+// Whether frozen modules are supported in the form of strings
+#ifndef MICROPY_MODULE_FROZEN_STR
+#define MICROPY_MODULE_FROZEN_STR (0)
+#endif
+
+// Whether frozen modules are supported in the form of .mpy files
+#ifndef MICROPY_MODULE_FROZEN_MPY
+#define MICROPY_MODULE_FROZEN_MPY (0)
+#endif
+
+// Convenience macro for whether frozen modules are supported
 #ifndef MICROPY_MODULE_FROZEN
-#define MICROPY_MODULE_FROZEN (0)
+#define MICROPY_MODULE_FROZEN (MICROPY_MODULE_FROZEN_STR || MICROPY_MODULE_FROZEN_MPY)
 #endif
 
 // Whether you can override builtins in the builtins module
@@ -515,6 +572,11 @@ typedef double mp_float_t;
 // This costs some code size and makes all load attrs and store attrs slow
 #ifndef MICROPY_PY_DESCRIPTORS
 #define MICROPY_PY_DESCRIPTORS (0)
+#endif
+
+// Support for async/await/async for/async with
+#ifndef MICROPY_PY_ASYNC_AWAIT
+#define MICROPY_PY_ASYNC_AWAIT (1)
 #endif
 
 // Whether str object is proper unicode
@@ -588,6 +650,12 @@ typedef double mp_float_t;
 // Whether to support enumerate function(type)
 #ifndef MICROPY_PY_BUILTINS_ENUMERATE
 #define MICROPY_PY_BUILTINS_ENUMERATE (1)
+#endif
+
+// Whether to support eval and exec functions
+// By default they are supported if the compiler is enabled
+#ifndef MICROPY_PY_BUILTINS_EVAL_EXEC
+#define MICROPY_PY_BUILTINS_EVAL_EXEC (MICROPY_ENABLE_COMPILER)
 #endif
 
 // Whether to support the Python 2 execfile function
@@ -694,6 +762,11 @@ typedef double mp_float_t;
 #define MICROPY_PY_IO_BYTESIO (1)
 #endif
 
+// Whether to provide "io.BufferedWriter" class
+#ifndef MICROPY_PY_IO_BUFFEREDWRITER
+#define MICROPY_PY_IO_BUFFEREDWRITER (0)
+#endif
+
 // Whether to provide "struct" module
 #ifndef MICROPY_PY_STRUCT
 #define MICROPY_PY_STRUCT (1)
@@ -766,12 +839,33 @@ typedef double mp_float_t;
 #define MICROPY_PY_UBINASCII (0)
 #endif
 
+#ifndef MICROPY_PY_URANDOM
+#define MICROPY_PY_URANDOM (0)
+#endif
+
+// Whether to include: randrange, randint, choice, random, uniform
+#ifndef MICROPY_PY_URANDOM_EXTRA_FUNCS
+#define MICROPY_PY_URANDOM_EXTRA_FUNCS (0)
+#endif
+
 #ifndef MICROPY_PY_MACHINE
 #define MICROPY_PY_MACHINE (0)
 #endif
 
+#ifndef MICROPY_PY_MACHINE_I2C
+#define MICROPY_PY_MACHINE_I2C (0)
+#endif
+
 #ifndef MICROPY_PY_USSL
 #define MICROPY_PY_USSL (0)
+#endif
+
+#ifndef MICROPY_PY_WEBSOCKET
+#define MICROPY_PY_WEBSOCKET (0)
+#endif
+
+#ifndef MICROPY_PY_FRAMEBUF
+#define MICROPY_PY_FRAMEBUF (0)
 #endif
 
 /*****************************************************************************/
@@ -898,9 +992,8 @@ typedef double mp_float_t;
 #define UINT_FMT "%lu"
 #define INT_FMT "%ld"
 #elif defined(_WIN64)
-#include <inttypes.h>
-#define UINT_FMT "%"PRIu64
-#define INT_FMT "%"PRId64
+#define UINT_FMT "%llu"
+#define INT_FMT "%lld"
 #else
 // Archs where mp_int_t == int
 #define UINT_FMT "%u"

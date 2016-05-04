@@ -179,6 +179,7 @@ outer_dispatch_loop:
             const byte *ip = code_state->ip;
             mp_obj_t *sp = code_state->sp;
             mp_obj_t obj_shared;
+            MICROPY_VM_HOOK_INIT
 
             // If we have exception to inject, now that we finish setting up
             // execution context, raise it. This works as if RAISE_VARARGS
@@ -674,7 +675,7 @@ unwind_jump:;
                             exc_sp--; // pop exception handler
                             goto dispatch_loop; // run the exception handler
                         }
-                        exc_sp--;
+                        POP_EXC_BLOCK();
                     }
                     ip = (const byte*)MP_OBJ_TO_PTR(POP()); // pop destination ip for jump
                     if (unum != 0) {
@@ -973,7 +974,7 @@ unwind_jump:;
 
                         mp_uint_t n_args = unum & 0xff;
                         mp_uint_t n_kw = (unum >> 8) & 0xff;
-                        int adjust = (sp[1] == NULL) ? 0 : 1;
+                        int adjust = (sp[1] == MP_OBJ_NULL) ? 0 : 1;
 
                         mp_code_state *new_state = mp_obj_fun_bc_prepare_codestate(*sp, n_args + adjust, n_kw, sp + 2 - adjust);
                         if (new_state) {
@@ -1032,6 +1033,14 @@ unwind_jump:;
 
                 ENTRY(MP_BC_RETURN_VALUE):
                     MARK_EXC_IP_SELECTIVE();
+                    // These next 3 lines pop a try-finally exception handler, if one
+                    // is there on the exception stack.  Without this the finally block
+                    // is executed a second time when the return is executed, because
+                    // the try-finally exception handler is still on the stack.
+                    // TODO Possibly find a better way to handle this case.
+                    if (currently_in_except_block) {
+                        POP_EXC_BLOCK();
+                    }
 unwind_return:
                     while (exc_sp >= exc_stack) {
                         if (MP_TAGPTR_TAG1(exc_sp->val_sp)) {
@@ -1061,6 +1070,7 @@ unwind_return:
                     nlr_pop();
                     code_state->sp = sp;
                     assert(exc_sp == exc_stack - 1);
+                    MICROPY_VM_HOOK_RETURN
                     #if MICROPY_STACKLESS
                     if (code_state->prev != NULL) {
                         mp_obj_t res = *sp;
@@ -1244,6 +1254,7 @@ yield:
 #endif
 
 pending_exception_check:
+                MICROPY_VM_HOOK_LOOP
                 if (MP_STATE_VM(mp_pending_exception) != MP_OBJ_NULL) {
                     MARK_EXC_IP_SELECTIVE();
                     mp_obj_t obj = MP_STATE_VM(mp_pending_exception);
@@ -1303,9 +1314,9 @@ unwind_loop:
                 qstr block_name = mp_decode_uint(&ip);
                 qstr source_file = mp_decode_uint(&ip);
                 #endif
-                mp_uint_t bc = code_state->ip - code_state->code_info - code_info_size;
-                mp_uint_t source_line = 1;
-                mp_uint_t c;
+                size_t bc = code_state->ip - code_state->code_info - code_info_size;
+                size_t source_line = 1;
+                size_t c;
                 while ((c = *ip)) {
                     mp_uint_t b, l;
                     if ((c & 0x80) == 0) {

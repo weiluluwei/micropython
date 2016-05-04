@@ -113,12 +113,25 @@ void mp_obj_int_to_bytes_impl(mp_obj_t self_in, bool big_endian, mp_uint_t len, 
     mpz_as_bytes(&self->mpz, big_endian, len, buf);
 }
 
-bool mp_obj_int_is_positive(mp_obj_t self_in) {
+int mp_obj_int_sign(mp_obj_t self_in) {
     if (MP_OBJ_IS_SMALL_INT(self_in)) {
-        return MP_OBJ_SMALL_INT_VALUE(self_in) >= 0;
+        mp_int_t val = MP_OBJ_SMALL_INT_VALUE(self_in);
+        if (val < 0) {
+            return -1;
+        } else if (val > 0) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
     mp_obj_int_t *self = MP_OBJ_TO_PTR(self_in);
-    return !self->mpz.neg;
+    if (self->mpz.len == 0) {
+        return 0;
+    } else if (self->mpz.neg == 0) {
+        return 1;
+    } else {
+        return -1;
+    }
 }
 
 // This must handle int and bool types, and must raise a
@@ -344,9 +357,9 @@ mp_obj_t mp_obj_new_int_from_ull(unsigned long long val) {
 }
 
 mp_obj_t mp_obj_new_int_from_uint(mp_uint_t value) {
-    // SMALL_INT accepts only signed numbers, of one bit less size
-    // than word size, which totals 2 bits less for unsigned numbers.
-    if ((value & (WORD_MSBIT_HIGH | (WORD_MSBIT_HIGH >> 1))) == 0) {
+    // SMALL_INT accepts only signed numbers, so make sure the input
+    // value fits completely in the small-int positive range.
+    if ((value & ~MP_SMALL_INT_POSITIVE_MASK) == 0) {
         return MP_OBJ_NEW_SMALL_INT(value);
     }
     return mp_obj_new_int_from_ull(value);
