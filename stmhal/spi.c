@@ -571,6 +571,68 @@ STATIC mp_obj_t pyb_spi_send(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(pyb_spi_send_obj, 1, pyb_spi_send);
 
+/// \method send_8(data, cnt, timeout=5000)
+/// Send data on the bus:
+///
+///   - `data` is the data to send (integer based on the value the transfer will be 8, 16 or 32 bits).
+///   - `cnt`  is number of times the data has to be send.
+///   - `timeout` is the timeout in milliseconds to wait for the send.
+///
+/// Return value: `None`.
+STATIC mp_obj_t pyb_spi_send_ux(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    // TODO assumes transmission size is 16-bits wide
+
+    static const mp_arg_t allowed_args[] = {
+        { MP_QSTR_data,    MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_cnt,    MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_timeout, MP_ARG_KW_ONLY | MP_ARG_INT, {.u_int = 5000} },
+    };
+    typedef enum {TRANSFER_SIZE_NA, TRANSFER_SIZE_8, TRANSFER_SZIE_16, TRANSFER_SIZE_32} transfer_size_t;
+    transfer_size_t transfer_size = TRANSFER_SIZE_NA;
+    // parse args
+    pyb_spi_obj_t *self = pos_args[0];
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    // get the data
+    uint32_t data[4] = {args[0].u_int, args[0].u_int>>8, args[0].u_int>>16, args[0].u_int>>24};
+    uint32_t cnt = args[1].u_int;;
+
+    if (data[2]>0)
+    {
+        if (data[2])
+        transfer_size = TRANSFER_SIZE_32;
+    } else if (data
+
+    // send the data
+    // Note: there seems to be a problem sending 1 byte using DMA the first
+    // time directly after the SPI/DMA is initialised.  The cause of this is
+    // unknown but we sidestep the issue by using polling for 1 byte transfer.
+    HAL_StatusTypeDef status;
+    if (cnt == 1 || query_irq() == IRQ_STATE_DISABLED) {
+        status = HAL_SPI_Transmit(self->spi, (uint8_t*)&data, cnt, args[2].u_int);
+    } else {
+        DMA_HandleTypeDef tx_dma;
+        dma_init(&tx_dma, self->tx_dma_descr, self->spi);
+        tx_dma.Init.MemInc = DMA_PINC_DISABLE;
+        self->spi->hdmatx = &tx_dma;
+        self->spi->hdmarx = NULL;
+        status = HAL_SPI_Transmit_DMA(self->spi, (uint8_t*)&data, cnt);
+        if (status == HAL_OK) {
+            status = spi_wait_dma_finished(self->spi, args[1].u_int);
+        }
+        dma_deinit(self->tx_dma_descr);
+    }
+    __HAL_SPI_DISABLE(self->spi);
+    if (status != HAL_OK) {
+        mp_hal_raise(status);
+    }
+
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(pyb_spi_send_ux_obj, 1, pyb_spi_send_ux);
+
+
 /// \method recv(recv, *, timeout=5000)
 ///
 /// Receive data on the bus:
