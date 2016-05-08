@@ -727,9 +727,16 @@ STATIC mp_obj_t pyb_spi_send_recv(mp_uint_t n_args, const mp_obj_t *pos_args, mp
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_KW(pyb_spi_send_recv_obj, 1, pyb_spi_send_recv);
 
-/// \method dir()
+/// \method dir(dir=None)
 ///
 /// Set\Get direction configuration
+///
+///   - `dir` must be either
+///           DIRECTION_TWO_LINES for normal MOSI/MISO mode or
+///           DIRECTION_ONE_LINE for bidirectional MOSI line in Master mode or
+///           bidiretional MISO line in slave mode.
+///
+/// Return value: current direction.
 STATIC mp_obj_t pyb_spi_dir(mp_uint_t n_args, const mp_obj_t *args) {
 
     pyb_spi_obj_t *self = args[0];
@@ -768,7 +775,7 @@ STATIC const mp_map_elem_t pyb_spi_locals_dict_table[] = {
     /// \constant MSB - set the first bit to MSB
     /// \constant LSB - set the first bit to LSB
     /// \constant DIRECTION_2LINES - Normal 4 wire interface with MOSI/MISO
-    /// \constant DIRECTION_1LINE - set use MOSI (Master mode) or MISO (Slave mode) as bidirectional pin.
+    /// \constant DIRECTION_1LINE - Use MOSI (Master mode) or MISO (Slave mode) as bidirectional pin.
     { MP_OBJ_NEW_QSTR(MP_QSTR_MASTER), MP_OBJ_NEW_SMALL_INT(SPI_MODE_MASTER) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_SLAVE),  MP_OBJ_NEW_SMALL_INT(SPI_MODE_SLAVE) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_MSB),    MP_OBJ_NEW_SMALL_INT(SPI_FIRSTBIT_MSB) },
@@ -776,9 +783,7 @@ STATIC const mp_map_elem_t pyb_spi_locals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_DIRECTION_TWO_LINES), MP_OBJ_NEW_SMALL_INT(SPI_DIRECTION_2LINES) },
     { MP_OBJ_NEW_QSTR(MP_QSTR_DIRECTION_ONE_LINE), MP_OBJ_NEW_SMALL_INT(SPI_DIRECTION_1LINE) },
     /* TODO
-    { MP_OBJ_NEW_QSTR(MP_QSTR_DIRECTION_2LINES             ((uint32_t)0x00000000)
     { MP_OBJ_NEW_QSTR(MP_QSTR_DIRECTION_2LINES_RXONLY      SPI_CR1_RXONLY
-    { MP_OBJ_NEW_QSTR(MP_QSTR_DIRECTION_1LINE              SPI_CR1_BIDIMODE
     { MP_OBJ_NEW_QSTR(MP_QSTR_NSS_SOFT                    SPI_CR1_SSM
     { MP_OBJ_NEW_QSTR(MP_QSTR_NSS_HARD_INPUT              ((uint32_t)0x00000000)
     { MP_OBJ_NEW_QSTR(MP_QSTR_NSS_HARD_OUTPUT             ((uint32_t)0x00040000)
