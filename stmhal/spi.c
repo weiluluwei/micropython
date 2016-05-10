@@ -61,20 +61,6 @@
 ///     spi.send_recv(b'1234', buf)          # send 4 bytes and receive 4 into buf
 ///     spi.send_recv(buf, buf)              # send/recv 4 bytes from/to buf
 
-// Possible DMA configurations for SPI busses:
-// SPI1_TX: DMA2_Stream3.CHANNEL_3 or DMA2_Stream5.CHANNEL_3
-// SPI1_RX: DMA2_Stream0.CHANNEL_3 or DMA2_Stream2.CHANNEL_3
-// SPI2_TX: DMA1_Stream4.CHANNEL_0
-// SPI2_RX: DMA1_Stream3.CHANNEL_0
-// SPI3_TX: DMA1_Stream5.CHANNEL_0 or DMA1_Stream7.CHANNEL_0
-// SPI3_RX: DMA1_Stream0.CHANNEL_0 or DMA1_Stream2.CHANNEL_0
-// SPI4_TX: DMA2_Stream4.CHANNEL_5 or DMA2_Stream1.CHANNEL_4
-// SPI4_RX: DMA2_Stream3.CHANNEL_5 or DMA2_Stream0.CHANNEL_4
-// SPI5_TX: DMA2_Stream4.CHANNEL_2 or DMA2_Stream6.CHANNEL_7
-// SPI5_RX: DMA2_Stream3.CHANNEL_2 or DMA2_Stream5.CHANNEL_7
-// SPI6_TX: DMA2_Stream5.CHANNEL_1
-// SPI6_RX: DMA2_Stream6.CHANNEL_1
-
 typedef struct _pyb_spi_obj_t {
     mp_obj_base_t base;
     SPI_HandleTypeDef *spi;
@@ -165,73 +151,72 @@ void spi_init0(void) {
 // TODO allow to take a list of pins to use
 void spi_init(SPI_HandleTypeDef *spi, bool enable_nss_pin) {
     // init the GPIO lines
-    enum { SPI_NSS=0, SPI_SCK, SPI_MISO, SPI_MOSI, SPI_WIRE_CNT};
     GPIO_InitTypeDef GPIO_InitStructure;
     GPIO_InitStructure.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStructure.Speed = GPIO_SPEED_FAST;
     GPIO_InitStructure.Pull = spi->Init.CLKPolarity == SPI_POLARITY_LOW ? GPIO_PULLDOWN : GPIO_PULLUP;
 
     const pyb_spi_obj_t *self;
-    const pin_obj_t *pins[SPI_WIRE_CNT];
+    const pin_obj_t *pins[4];
 
     if (0) {
     #if defined(MICROPY_HW_SPI1_SCK)
     } else if (spi->Instance == SPI1) {
         self = &pyb_spi_obj[0];
-        pins[SPI_NSS] = &MICROPY_HW_SPI1_NSS;
-        pins[SPI_SCK] = &MICROPY_HW_SPI1_SCK;
-        pins[SPI_MISO] = &MICROPY_HW_SPI1_MISO;
-        pins[SPI_MOSI] = &MICROPY_HW_SPI1_MOSI;
+        pins[0] = &MICROPY_HW_SPI1_NSS;
+        pins[1] = &MICROPY_HW_SPI1_SCK;
+        pins[2] = &MICROPY_HW_SPI1_MISO;
+        pins[3] = &MICROPY_HW_SPI1_MOSI;
         // enable the SPI clock
         __SPI1_CLK_ENABLE();
     #endif
     #if defined(MICROPY_HW_SPI2_SCK)
     } else if (spi->Instance == SPI2) {
         self = &pyb_spi_obj[1];
-        pins[SPI_NSS] = &MICROPY_HW_SPI2_NSS;
-        pins[SPI_SCK] = &MICROPY_HW_SPI2_SCK;
-        pins[SPI_MISO] = &MICROPY_HW_SPI2_MISO;
-        pins[SPI_MOSI] = &MICROPY_HW_SPI2_MOSI;
+        pins[0] = &MICROPY_HW_SPI2_NSS;
+        pins[1] = &MICROPY_HW_SPI2_SCK;
+        pins[2] = &MICROPY_HW_SPI2_MISO;
+        pins[3] = &MICROPY_HW_SPI2_MOSI;
         // enable the SPI clock
         __SPI2_CLK_ENABLE();
     #endif
     #if defined(MICROPY_HW_SPI3_SCK)
     } else if (spi->Instance == SPI3) {
         self = &pyb_spi_obj[2];
-        pins[SPI_NSS] = &MICROPY_HW_SPI3_NSS;
-        pins[SPI_SCK] = &MICROPY_HW_SPI3_SCK;
-        pins[SPI_MISO] = &MICROPY_HW_SPI3_MISO;
-        pins[SPI_MOSI] = &MICROPY_HW_SPI3_MOSI;
+        pins[0] = &MICROPY_HW_SPI3_NSS;
+        pins[1] = &MICROPY_HW_SPI3_SCK;
+        pins[2] = &MICROPY_HW_SPI3_MISO;
+        pins[3] = &MICROPY_HW_SPI3_MOSI;
         // enable the SPI clock
         __SPI3_CLK_ENABLE();
     #endif
     #if defined(MICROPY_HW_SPI4_SCK)
     } else if (spi->Instance == SPI4) {
         self = &pyb_spi_obj[3];
-        pins[SPI_NSS] = &MICROPY_HW_SPI4_NSS;
-        pins[SPI_SCK] = &MICROPY_HW_SPI4_SCK;
-        pins[SPI_MISO] = &MICROPY_HW_SPI4_MISO;
-        pins[SPI_MOSI] = &MICROPY_HW_SPI4_MOSI;
+        pins[0] = &MICROPY_HW_SPI4_NSS;
+        pins[1] = &MICROPY_HW_SPI4_SCK;
+        pins[2] = &MICROPY_HW_SPI4_MISO;
+        pins[3] = &MICROPY_HW_SPI4_MOSI;
         // enable the SPI clock
         __SPI4_CLK_ENABLE();
     #endif
     #if defined(MICROPY_HW_SPI5_SCK)
     } else if (spi->Instance == SPI5) {
         self = &pyb_spi_obj[4];
-        pins[SPI_NSS] = &MICROPY_HW_SPI5_NSS;
-        pins[SPI_SCK] = &MICROPY_HW_SPI5_SCK;
-        pins[SPI_MISO] = &MICROPY_HW_SPI5_MISO;
-        pins[SPI_MOSI] = &MICROPY_HW_SPI5_MOSI;
+        pins[0] = &MICROPY_HW_SPI5_NSS;
+        pins[1] = &MICROPY_HW_SPI5_SCK;
+        pins[2] = &MICROPY_HW_SPI5_MISO;
+        pins[3] = &MICROPY_HW_SPI5_MOSI;
         // enable the SPI clock
         __SPI5_CLK_ENABLE();
     #endif
     #if defined(MICROPY_HW_SPI6_SCK)
     } else if (spi->Instance == SPI6) {
         self = &pyb_spi_obj[5];
-        pins[SPI_NSS] = &MICROPY_HW_SPI6_NSS;
-        pins[SPI_SCK] = &MICROPY_HW_SPI6_SCK;
-        pins[SPI_MISO] = &MICROPY_HW_SPI6_MISO;
-        pins[SPI_MOSI] = &MICROPY_HW_SPI6_MOSI;
+        pins[0] = &MICROPY_HW_SPI6_NSS;
+        pins[1] = &MICROPY_HW_SPI6_SCK;
+        pins[2] = &MICROPY_HW_SPI6_MISO;
+        pins[3] = &MICROPY_HW_SPI6_MOSI;
         // enable the SPI clock
         __SPI6_CLK_ENABLE();
     #endif
@@ -240,7 +225,7 @@ void spi_init(SPI_HandleTypeDef *spi, bool enable_nss_pin) {
         return;
     }
 
-    for (uint i = (enable_nss_pin ? 0 : 1); i < SPI_WIRE_CNT; i++) {
+    for (uint i = (enable_nss_pin ? 0 : 1); i < 4; i++) {
         mp_hal_gpio_set_af(pins[i], &GPIO_InitStructure, AF_FN_SPI, (self - &pyb_spi_obj[0]) + 1);
     }
 
@@ -562,7 +547,12 @@ STATIC mp_obj_t pyb_spi_send(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
         }
         dma_deinit(self->tx_dma_descr);
     }
+    #if defined(MCU_SERIES_L4)
+    // See STM TECH018409 on my.st.com
+    // >> SPI is not disabled after a one wire transmit on L4. <<
     __HAL_SPI_DISABLE(self->spi);
+    #endif
+
     if (status != HAL_OK) {
         mp_hal_raise(status);
     }
@@ -613,7 +603,6 @@ STATIC mp_obj_t pyb_spi_recv(mp_uint_t n_args, const mp_obj_t *pos_args, mp_map_
         }
         dma_init(&rx_dma, self->rx_dma_descr, self->spi);
         self->spi->hdmarx = &rx_dma;
-
 
         status = HAL_SPI_Receive_DMA(self->spi, (uint8_t*)vstr.buf, vstr.len);
         if (status == HAL_OK) {
@@ -734,9 +723,9 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(pyb_spi_send_recv_obj, 1, pyb_spi_send_recv);
 ///   - `dir` must be either
 ///           DIRECTION_TWO_LINES for normal MOSI/MISO mode or
 ///           DIRECTION_ONE_LINE for bidirectional MOSI line in Master mode or
-///           bidiretional MISO line in slave mode.
+///           bidirectional MISO line in slave mode.
 ///
-/// Return value: current direction.
+/// Return value: current direction if dir in function call is None.
 STATIC mp_obj_t pyb_spi_dir(mp_uint_t n_args, const mp_obj_t *args) {
 
     pyb_spi_obj_t *self = args[0];
@@ -758,7 +747,6 @@ STATIC mp_obj_t pyb_spi_dir(mp_uint_t n_args, const mp_obj_t *args) {
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(pyb_spi_dir_obj, 1, 2, pyb_spi_dir);
-
 
 STATIC const mp_map_elem_t pyb_spi_locals_dict_table[] = {
     // instance methods
