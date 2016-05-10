@@ -748,6 +748,38 @@ STATIC mp_obj_t pyb_spi_dir(mp_uint_t n_args, const mp_obj_t *args) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(pyb_spi_dir_obj, 1, 2, pyb_spi_dir);
 
+/// \method data_size(size=None)
+///
+/// Set\Get data size configuration
+///
+///   - `size` must be either
+///           8 for 8 bit data transfers or
+///           16 for 16 bit data transfers.
+///
+/// Return value: current data trasnfer size if size in function call is None.
+STATIC mp_obj_t pyb_spi_data_size(mp_uint_t n_args, const mp_obj_t *args) {
+
+    pyb_spi_obj_t *self = args[0];
+    if (n_args == 1) {
+        // Get current data size configuration
+        uint32_t value = self->spi->Init.DataSize==SPI_DATASIZE_16BIT?16:8;
+        return MP_OBJ_NEW_SMALL_INT(value);
+    } else {
+        uint32_t new_value = mp_obj_get_int(args[1]);
+
+        if ( (new_value != 8) &&
+             (new_value != 16) ) {
+            nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "Invalid data size %d", new_value));
+        }
+
+        self->spi->Init.DataSize = (new_value == 16) ? SPI_DATASIZE_16BIT : SPI_DATASIZE_8BIT;
+        HAL_SPI_Init(self->spi); /* To write data size to control register */
+    }
+
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(pyb_spi_data_size_obj, 1, 2, pyb_spi_data_size);
+
 STATIC const mp_map_elem_t pyb_spi_locals_dict_table[] = {
     // instance methods
     { MP_OBJ_NEW_QSTR(MP_QSTR_init), (mp_obj_t)&pyb_spi_init_obj },
@@ -756,6 +788,7 @@ STATIC const mp_map_elem_t pyb_spi_locals_dict_table[] = {
     { MP_OBJ_NEW_QSTR(MP_QSTR_recv), (mp_obj_t)&pyb_spi_recv_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_send_recv), (mp_obj_t)&pyb_spi_send_recv_obj },
     { MP_OBJ_NEW_QSTR(MP_QSTR_dir), (mp_obj_t)&pyb_spi_dir_obj },
+    { MP_OBJ_NEW_QSTR(MP_QSTR_data_size), (mp_obj_t)&pyb_spi_data_size_obj },
 
     // class constants
     /// \constant MASTER - for initialising the bus to master mode
