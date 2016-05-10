@@ -49,7 +49,7 @@ Functions
    The following example shows how to connect to a given url::
 
       s = socket.socket()
-      s.connect(socket.getaddrinfo('www.micropython.org', 80)[0][4])
+      s.connect(socket.getaddrinfo('www.micropython.org', 80)[0][-1])
 
 .. only:: port_wipy
 
@@ -171,9 +171,10 @@ Methods
        The socket must be in blocking mode; it can have a timeout, but the file object’s internal buffer
        may end up in a inconsistent state if a timeout occurs.
 
-       .. note::
+       .. admonition:: Difference to CPython
+          :class: attention
 
-          **CPython difference:** closing the file object returned by makefile() WILL close the 
+          Closing the file object returned by makefile() WILL close the
           original socket as well.
 
     .. method:: socket.read(size)
