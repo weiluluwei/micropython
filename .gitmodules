@@ -8,3 +8,9 @@
 [submodule "lib/lwip"]
 	path = lib/lwip
 	url = http://git.savannah.gnu.org/r/lwip.git
+[submodule "spiffs"]
+	path = spiffs
+	url = https://github.com/pellepl/spiffs.git
+[submodule "lib/spiffs"]
+	path = lib/spiffs
+	url = https://github.com/pellepl/spiffs.git
