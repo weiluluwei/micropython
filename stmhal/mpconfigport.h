@@ -94,7 +94,11 @@
 #define MICROPY_PY_MACHINE          (1)
 #define MICROPY_PY_MACHINE_I2C      (1)
 #define MICROPY_PY_FRAMEBUF         (1)
+#if defined(MICROPY_USE_SPIFFS)
 #define MICROPY_PY_SPIFFS           (1)
+#else
+#define MICROPY_PY_SPIFFS           (0)
+#endif
 
 #define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF   (1)
 #define MICROPY_EMERGENCY_EXCEPTION_BUF_SIZE  (0)

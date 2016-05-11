@@ -46,7 +46,9 @@ INC += -I$(USBDEV_DIR)/core/inc -I$(USBDEV_DIR)/class/inc
 INC += -I../lib/mp-readline
 INC += -I../lib/netutils
 INC += -I../lib/timeutils
-
+ifeq ($(MICROPY_USE_SPIFFS),1)
+INC += -I../lib/spiffs/src
+endif
 CFLAGS_CORTEX_M = -mthumb -mabi=aapcs-linux -mfpu=fpv4-sp-d16 -mfloat-abi=hard -fsingle-precision-constant -Wdouble-promotion
 CFLAGS_MCU_f4 = $(CFLAGS_CORTEX_M) -mtune=cortex-m4 -mcpu=cortex-m4 -DMCU_SERIES_F4
 CFLAGS_MCU_f7 = $(CFLAGS_CORTEX_M) -mtune=cortex-m7 -mcpu=cortex-m7 -DMCU_SERIES_F7
@@ -212,6 +214,16 @@ SRC_USBDEV = $(addprefix $(USBDEV_DIR)/,\
 	class/src/usbd_msc_scsi.c \
 	class/src/usbd_msc_data.c \
 	)
+
+ifeq ($(MICROPY_USE_SPIFFS),1)
+SRC_LIB += $(addprefix lib/,\
+	spiffs/src/spiffs_cache.c \
+	spiffs/src/spiffs_check.c \
+	spiffs/src/spiffs_gc.c \
+	spiffs/src/spiffs_hydrogen.c \
+	spiffs/src/spiffs_nucleus.c \
+	)
+endif
 
 ifeq ($(MICROPY_PY_WIZNET5K),1)
 WIZNET5K_DIR=drivers/wiznet5k
