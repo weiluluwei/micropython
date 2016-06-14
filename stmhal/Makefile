@@ -258,8 +258,8 @@ endif
 
 # Software modules
 ifeq ($(MICROPY_SW_ENABLE_UGUI),1)
-SRC_LIB += $(addprefix lib/,\
-	ugui/ugui.c \
+SRC_LIB += $(addprefix lib/ugui/,\
+	ugui.c \
 	)
 endif
 
