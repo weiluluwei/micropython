@@ -62,6 +62,7 @@
 #include "portmodules.h"
 #include "modmachine.h"
 #include "extmod/fsusermount.h"
+#include "modledmatrix.h"
 
 /// \function millis()
 /// Returns the number of milliseconds since the board was last reset.
@@ -222,6 +223,10 @@ STATIC const mp_map_elem_t pyb_module_globals_table[] = {
 
 #if MICROPY_HW_HAS_LCD
     { MP_OBJ_NEW_QSTR(MP_QSTR_LCD), (mp_obj_t)&pyb_lcd_type },
+#endif
+
+#if MICROPY_PY_LEDMATRIX
+    { MP_OBJ_NEW_QSTR(MP_QSTR_ledmatrix), (mp_obj_t)&mp_module_ledmatrix },
 #endif
 };
 

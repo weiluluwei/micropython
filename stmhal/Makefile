@@ -166,6 +166,7 @@ SRC_C = \
 	servo.c \
 	dac.c \
 	adc.c \
+	modledmatrix.c \
 	$(wildcard boards/$(BOARD)/*.c)
 
 SRC_O = \
