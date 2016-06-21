@@ -39,6 +39,9 @@
 
 #define FRAMERATE 30
 
+#define SET_PIN_VALUE(x, value) HAL_GPIO_WritePin((x)->gpio, 1<<((x)->pin), (value))
+#define SET_PIN_HIGH(x) SET_PIN_VALUE(x, 1)
+#define SET_PIN_LOW(x) SET_PIN_VALUE(x, 0)
 
 // Frame buffer organized in a efficient way for output to
 // the r0/r1, g0/g1 and b0/b1 pins. Depth is the count of bits per color.
@@ -48,14 +51,18 @@ typedef struct _mp_obj_ledmatrix_t {
     uint16_t width, height, depth;
     uint16_t bwidth;
     uint16_t bit_per_weight;
+    uint16_t line_sel_cnt;
     const pin_obj_t *pin_line_sel[4];
+    uint16_t col_line_cnt;
     const pin_obj_t *pin_col[6]; /* r0, r1, g0, g1, b0, b1 */
     const pin_obj_t *pin_clk;
     const pin_obj_t *pin_le;
     const pin_obj_t *pin_oe;
+    uint16_t next_linenr;
+    uint16_t next_l2w;
 } mp_obj_ledmatrix_t;
 
-static uint8_t BUFFER[1136];
+static uint8_t BUFFER[2048];
 
 STATIC void ledmatrix_set_pixel(mp_obj_ledmatrix_t * self, uint16_t x, uint16_t y, uint8_t col[3]) {
     bool lower = y<16;
@@ -65,7 +72,7 @@ STATIC void ledmatrix_set_pixel(mp_obj_ledmatrix_t * self, uint16_t x, uint16_t 
     }
     for (uint8_t ln2w=0;ln2w<self->depth; ln2w++) {
         uint32_t addr = ln2w*self->bit_per_weight + (y & 0x0F)*self->bwidth+x_col;
-        if (x&0x03)
+        if ( (x&0x03) != 0x03)
         {
             uint8_t val = self->buf[addr];
             if (lower) {
@@ -82,6 +89,9 @@ STATIC void ledmatrix_set_pixel(mp_obj_ledmatrix_t * self, uint16_t x, uint16_t 
             self->buf[addr] = val;
         } else {
             uint8_t mask = lower?0x40: 0x80;
+            for (uint8_t i=0;i<3;i++) {
+                self->buf[addr+i] &= ~mask;
+            }
             self->buf[addr]   |= col[0] & (1<<ln2w) ? mask : 0x00;
             self->buf[addr+1] |= col[1] & (1<<ln2w) ? mask : 0x00;
             self->buf[addr+2] |= col[1] & (1<<ln2w) ? mask : 0x00;
@@ -100,7 +110,7 @@ STATIC void ledmatrix_get_pixel(mp_obj_ledmatrix_t * self, uint16_t x, uint16_t 
     col[2] = 0;
     for (uint8_t ln2w=0;ln2w<self->depth; ln2w++) {
         uint32_t addr = ln2w*self->bit_per_weight + (y & 0x0F)*self->bwidth+x_col;
-        if (x&0x03)
+        if ((x&0x03) != 0x03)
         {
             uint8_t val = self->buf[addr];
             if (lower) {
@@ -121,8 +131,57 @@ STATIC void ledmatrix_get_pixel(mp_obj_ledmatrix_t * self, uint16_t x, uint16_t 
     }
 }
 
+STATIC void mp_ob_2_u8(mp_obj_t tuple, uint8_t *array, uint8_t cnt) {
+    mp_uint_t len;
+    mp_obj_t *elem;
+    mp_obj_get_array(tuple, &len, &elem);
+    if (len == cnt)
+    {
+        for (uint8_t i=0;i<cnt;i++)
+        {
+            array[i] = mp_obj_get_int(elem[i]);
+        }
+    }
+}
+
+STATIC void ledmatrix_select_line(mp_obj_ledmatrix_t * self, uint16_t line_nr) {
+    for (uint8_t i = 0; i<self->line_sel_cnt; i++)
+    {
+        uint8_t value = (line_nr>>i) & 0x01;
+        SET_PIN_VALUE(self->pin_line_sel[i], value);
+    }
+}
+
+STATIC void ledmatrix_set_next_line(mp_obj_ledmatrix_t * self) {
+    uint16_t offset = self->next_l2w*self->bit_per_weight+(self->next_linenr & 0x0F)*self->bwidth;
+    uint8_t val_11 = 0;
+    uint8_t idx = 0;
+    for (uint8_t x=0; x< self->width; x++) {
+        uint8_t s_idx = (x & 0x03);
+        uint8_t ser_val = 0;
+        if (s_idx == 3) {
+            ser_val = val_11;
+            val_11 =0;
+        } else {
+            ser_val = self->buf[offset+idx];
+            val_11 |= (ser_val>>(6-2*s_idx));
+            idx += 1;
+        }
+        for (uint8_t pin_nr=0; pin_nr < self->col_line_cnt; pin_nr++) {
+            uint8_t mask = 1<<pin_nr;
+            SET_PIN_VALUE(self->pin_col[pin_nr], ser_val&mask?1:0);
+        }
+        SET_PIN_HIGH(self->pin_clk);
+        SET_PIN_LOW(self->pin_clk);
+    }
+}
+
+
 STATIC mp_obj_t ledmatrix_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
-    mp_arg_check_num(n_args, n_kw, 16, 16, false);
+    mp_uint_t len;
+    mp_obj_t *elem;
+
+    mp_arg_check_num(n_args, n_kw, 8, 8, false);
 
     mp_obj_ledmatrix_t *o = m_new_obj(mp_obj_ledmatrix_t);
     o->base.type = type;
@@ -133,27 +192,41 @@ STATIC mp_obj_t ledmatrix_make_new(const mp_obj_type_t *type, size_t n_args, siz
     o->bwidth = (o->width>>2)*3;
     o->bit_per_weight = o->bwidth*o->height>>1;
     o->buf = BUFFER;
-
-    for (uint8_t i=0;i<4;i++) {
-        o->pin_line_sel[i] = pin_find(args[3+i]);
+    memset(o->buf, 0, o->bit_per_weight*o->depth);
+    mp_obj_get_array(args[3], &len, &elem);
+    if (len != 4) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "Line address does not contain 4 elements"));
     }
-    for (uint8_t i=0;i<6;i++) {
-        o->pin_col[i] = pin_find(args[7+i]);
+    o->line_sel_cnt = len;
+    for (uint8_t i=0;i<o->line_sel_cnt;i++) {
+        o->pin_line_sel[i] = pin_find(elem[i]);
     }
-    o->pin_clk = pin_find(args[13]);
-    o->pin_le = pin_find(args[14]);
-    o->pin_oe = pin_find(args[15]);
+    /* Get colors */
+    mp_obj_get_array(args[4], &len, &elem);
+    if (len != 6) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "Colors does not contain 6 elements"));
+    }
+    o->col_line_cnt = len;
+    for (uint8_t i=0;i<o->col_line_cnt;i++) {
+        o->pin_col[i] = pin_find(elem[i]);
+    }
+    o->pin_clk = pin_find(args[5]);
+    o->pin_le = pin_find(args[6]);
+    o->pin_oe = pin_find(args[7]);
+    o->next_linenr = 0;
+    o->next_l2w = 0;
 
     return MP_OBJ_FROM_PTR(o);
 }
 
-STATIC mp_obj_t ledmatrix_fill(size_t n_args, const mp_obj_t *args) {
-    mp_obj_ledmatrix_t *self = MP_OBJ_TO_PTR(args[0]);
+STATIC mp_obj_t ledmatrix_fill(mp_obj_t self_in, mp_obj_t tuple) {
+    mp_obj_ledmatrix_t *self = self_in;
     mp_int_t col_mask = (1<<self->depth)-1;
     uint8_t color[3];
-    color[0] = mp_obj_get_int(args[1]) & col_mask;
-    color[1] = mp_obj_get_int(args[2]) & col_mask;
-    color[2] = mp_obj_get_int(args[3]) & col_mask;
+    mp_ob_2_u8(tuple, color, 3);
+    color[0] &= col_mask;
+    color[1] &= col_mask;
+    color[2] &= col_mask;
     for (uint16_t x=0;x< self->width; x++) {
         for (uint16_t y=0;y< self->height; y++) {
             ledmatrix_set_pixel(self, x, y, color);
@@ -161,7 +234,7 @@ STATIC mp_obj_t ledmatrix_fill(size_t n_args, const mp_obj_t *args) {
     }
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(ledmatrix_fill_obj, 4, 4, ledmatrix_fill);
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(ledmatrix_fill_obj, ledmatrix_fill);
 
 STATIC mp_obj_t ledmatrix_pixel(size_t n_args, const mp_obj_t *args) {
     mp_obj_ledmatrix_t *self = MP_OBJ_TO_PTR(args[0]);
@@ -193,9 +266,29 @@ STATIC mp_obj_t ledmatrix_pixel(size_t n_args, const mp_obj_t *args) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(ledmatrix_pixel_obj, 3, 4, ledmatrix_pixel);
 
+/// \method update()
+/// Output next line to the display.
+STATIC mp_obj_t ledmatrix_update(mp_obj_t self_in) {
+    mp_obj_ledmatrix_t *self = self_in;
+    SET_PIN_HIGH(self->pin_oe);
+    SET_PIN_HIGH(self->pin_le);
+    ledmatrix_select_line(self, self->next_linenr);
+    SET_PIN_LOW(self->pin_oe);
+    SET_PIN_LOW(self->pin_le);
+    self->next_linenr += 1;
+    if (self->next_linenr == (1<< self->line_sel_cnt)) {
+        self->next_linenr = 0;
+        self->next_l2w = (self->next_l2w+1)%self->depth;
+    }
+    ledmatrix_set_next_line(self);
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(ledmatrix_update_obj, ledmatrix_update);
+
 STATIC const mp_rom_map_elem_t ledmatrix_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_fill), MP_ROM_PTR(&ledmatrix_fill_obj) },
     { MP_ROM_QSTR(MP_QSTR_pixel), MP_ROM_PTR(&ledmatrix_pixel_obj) },
+    { MP_ROM_QSTR(MP_QSTR_update), MP_ROM_PTR(&ledmatrix_update_obj) },
 };
 STATIC MP_DEFINE_CONST_DICT(ledmatrix_locals_dict, ledmatrix_locals_dict_table);
 
