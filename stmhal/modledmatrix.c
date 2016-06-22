@@ -41,6 +41,7 @@
 #if defined(MICROPY_PY_LEDMATRIX) && (MICROPY_PY_LEDMATRIX == 1)
 
 #define FRAMERATE 30
+#define GPIO_PORT_COUNT 10
 
 #define SET_PIN_VALUE(x, value) HAL_GPIO_WritePin((x)->gpio, (x)->pin_mask, (value))
 #define SET_PIN_HIGH(x) SET_PIN_VALUE(x, 1)
@@ -176,9 +177,13 @@ STATIC void ledmatrix_select_line(mp_obj_ledmatrix_t * self, uint16_t line_nr) {
 }
 
 STATIC void ledmatrix_set_next_line(mp_obj_ledmatrix_t * self) {
+    uint32_t port[2][GPIO_PORT_COUNT]={{0},{0}};
+    pin_gpio_t * gpio[GPIO_PORT_COUNT]={0};
     uint16_t offset = self->next_ln2w*self->bit_per_weight+(self->next_linenr & 0x0F)*self->bwidth;
     uint8_t val_11 = 0;
     uint8_t idx = 0;
+    uint8_t min_port=GPIO_PORT_COUNT;
+    uint8_t max_port=0;
     uint8_t* ptr =  &self->buf[offset-1];
     for (uint8_t x=0; x< self->width; ++x) {
         uint8_t s_idx = (x & 0x03);
@@ -191,10 +196,29 @@ STATIC void ledmatrix_set_next_line(mp_obj_ledmatrix_t * self) {
             val_11 |= (ser_val>>(6-2*s_idx));
             idx += 1;
         }
-        for (uint8_t pin_nr=0; pin_nr < self->col_line_cnt; ++pin_nr) {
-            uint8_t mask = 1<<pin_nr;
+#if 0
+        for (uint8_t pin_nr=0, mask=1; pin_nr < self->col_line_cnt; ++pin_nr, mask<<=1) {
             SET_PIN_VALUE(self->pin_col[pin_nr], ser_val&mask?1:0);
         }
+#else
+        /* Cache GPIO access as direct access slows down the code
+         * This cache increases the cycle count from 24596 to 56979 */
+        for (uint8_t pin_nr=0, mask=1; pin_nr < self->col_line_cnt; ++pin_nr, mask<<=1) {
+            port[0][self->pin_col[pin_nr]->port] |= (ser_val&mask)?0:self->pin_col[pin_nr]->pin_mask;
+            port[1][self->pin_col[pin_nr]->port] |= (ser_val&mask)?self->pin_col[pin_nr]->pin_mask:0;
+            gpio[self->pin_col[pin_nr]->port] = self->pin_col[pin_nr]->gpio;
+            min_port = MIN(min_port, self->pin_col[pin_nr]->port);
+            max_port = MAX(max_port, self->pin_col[pin_nr]->port);
+        }
+        for (uint8_t port_nr=min_port; port_nr<=max_port; ++port_nr) {
+            if (port[0][port_nr]) {
+                gpio[port_nr]->BSRRH = port[0][port_nr];
+            }
+            if (port[1][port_nr]) {
+                gpio[port_nr]->BSRRL = port[1][port_nr];
+            }
+        }
+#endif
         SET_PIN_HIGH(self->pin_clk);
         SET_PIN_LOW(self->pin_clk);
     }
