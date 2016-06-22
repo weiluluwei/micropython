@@ -36,6 +36,7 @@
 
 #include "measure_cycles.c"
 
+
 #if defined(MICROPY_PY_LEDMATRIX) && (MICROPY_PY_LEDMATRIX == 1)
 
 #define FRAMERATE 30
@@ -176,6 +177,7 @@ STATIC void ledmatrix_set_next_line(mp_obj_ledmatrix_t * self) {
     uint16_t offset = self->next_ln2w*self->bit_per_weight+(self->next_linenr & 0x0F)*self->bwidth;
     uint8_t val_11 = 0;
     uint8_t idx = 0;
+    uint8_t ptr;
     for (uint8_t x=0; x< self->width; x++) {
         uint8_t s_idx = (x & 0x03);
         uint8_t ser_val = 0;
@@ -297,22 +299,22 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(ledmatrix_pixel_obj, 3, 4, ledmatrix_
 STATIC void ledmatrix_update_raw(mp_obj_t self_in)
 {
     mp_obj_ledmatrix_t *self = self_in;
-    SET_PIN_HIGH(self->pin_oe);
-    SET_PIN_HIGH(self->pin_le);
-    ledmatrix_select_line(self, self->next_linenr);
-    SET_PIN_LOW(self->pin_le);
-    SET_PIN_LOW(self->pin_oe);
-    self->next_linenr += 1;
-    if (self->next_linenr == (1<< self->line_sel_cnt)) {
-        self->next_linenr = 0;
-        ++self->weight_cnt;
-        if (self->weight_cnt == (1<<self->next_ln2w))
-        {
+    ++self->weight_cnt;
+    if (self->weight_cnt == (1<<self->next_ln2w))
+    {
+        self->weight_cnt = 0;
+        SET_PIN_HIGH(self->pin_oe);
+        SET_PIN_HIGH(self->pin_le);
+        ledmatrix_select_line(self, self->next_linenr);
+        SET_PIN_LOW(self->pin_le);
+        SET_PIN_LOW(self->pin_oe);
+        self->next_linenr += 1;
+        if (self->next_linenr == (1<< self->line_sel_cnt)) {
+            self->next_linenr = 0;
             self->next_ln2w = (self->next_ln2w+1)%self->depth;
-            self->weight_cnt = 0;
         }
+        ledmatrix_set_next_line(self);
     }
-    ledmatrix_set_next_line(self);
 
 }
 
