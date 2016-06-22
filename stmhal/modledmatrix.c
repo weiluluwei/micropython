@@ -32,8 +32,9 @@
 #include "py/obj.h"
 #include "py/runtime.h"
 #include "pin.h"
+#include "timer.h"
 
-//#define MICROPY_PY_LEDMATRIX 1
+#include "measure_cycles.c"
 
 #if defined(MICROPY_PY_LEDMATRIX) && (MICROPY_PY_LEDMATRIX == 1)
 
@@ -42,6 +43,7 @@
 #define SET_PIN_VALUE(x, value) HAL_GPIO_WritePin((x)->gpio, 1<<((x)->pin), (value))
 #define SET_PIN_HIGH(x) SET_PIN_VALUE(x, 1)
 #define SET_PIN_LOW(x) SET_PIN_VALUE(x, 0)
+#define CONFIG_PIN_OUTPUT(x)
 
 // Frame buffer organized in a efficient way for output to
 // the r0/r1, g0/g1 and b0/b1 pins. Depth is the count of bits per color.
@@ -59,10 +61,28 @@ typedef struct _mp_obj_ledmatrix_t {
     const pin_obj_t *pin_le;
     const pin_obj_t *pin_oe;
     uint16_t next_linenr;
-    uint16_t next_l2w;
+    uint16_t next_ln2w;
+    uint16_t weight_cnt;   /* Counter to control the duration of the LED illumination in a certain ln2w */
+    pyb_timer_obj_t *timer;
+    bool show;
 } mp_obj_ledmatrix_t;
 
 static uint8_t BUFFER[2048];
+
+STATIC void ledmatrix_config_pin(const pin_obj_t *pin_obj, uint32_t mode, uint32_t pull)
+{
+    /* THIS IS A DIRTY HACK !!!!!!!*/
+    pin_obj_t my_pin = *pin_obj;
+    // pin.init(mode=AF_PP, af=idx)
+    const mp_obj_t args2[6] = {
+        (mp_obj_t)&pin_init_obj,
+        &my_pin,
+        MP_OBJ_NEW_QSTR(MP_QSTR_mode),  MP_OBJ_NEW_SMALL_INT(mode),
+        MP_OBJ_NEW_QSTR(MP_QSTR_pull),  MP_OBJ_NEW_SMALL_INT(pull),
+    };
+    mp_call_method_n_kw(0, 2, args2);
+}
+
 
 STATIC void ledmatrix_set_pixel(mp_obj_ledmatrix_t * self, uint16_t x, uint16_t y, uint8_t col[3]) {
     bool lower = y<16;
@@ -153,7 +173,7 @@ STATIC void ledmatrix_select_line(mp_obj_ledmatrix_t * self, uint16_t line_nr) {
 }
 
 STATIC void ledmatrix_set_next_line(mp_obj_ledmatrix_t * self) {
-    uint16_t offset = self->next_l2w*self->bit_per_weight+(self->next_linenr & 0x0F)*self->bwidth;
+    uint16_t offset = self->next_ln2w*self->bit_per_weight+(self->next_linenr & 0x0F)*self->bwidth;
     uint8_t val_11 = 0;
     uint8_t idx = 0;
     for (uint8_t x=0; x< self->width; x++) {
@@ -200,6 +220,7 @@ STATIC mp_obj_t ledmatrix_make_new(const mp_obj_type_t *type, size_t n_args, siz
     o->line_sel_cnt = len;
     for (uint8_t i=0;i<o->line_sel_cnt;i++) {
         o->pin_line_sel[i] = pin_find(elem[i]);
+        ledmatrix_config_pin(o->pin_line_sel[i], GPIO_MODE_OUTPUT_PP, GPIO_NOPULL);
     }
     /* Get colors */
     mp_obj_get_array(args[4], &len, &elem);
@@ -209,12 +230,19 @@ STATIC mp_obj_t ledmatrix_make_new(const mp_obj_type_t *type, size_t n_args, siz
     o->col_line_cnt = len;
     for (uint8_t i=0;i<o->col_line_cnt;i++) {
         o->pin_col[i] = pin_find(elem[i]);
+        ledmatrix_config_pin(o->pin_col[i], GPIO_MODE_OUTPUT_PP, GPIO_NOPULL);
     }
     o->pin_clk = pin_find(args[5]);
+    ledmatrix_config_pin(o->pin_clk, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL);
     o->pin_le = pin_find(args[6]);
+    ledmatrix_config_pin(o->pin_le, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL);
     o->pin_oe = pin_find(args[7]);
+    ledmatrix_config_pin(o->pin_oe, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL);
     o->next_linenr = 0;
-    o->next_l2w = 0;
+    o->next_ln2w = 0;
+    o->weight_cnt = 0;
+    o->timer = NULL;
+    o->show = false;
 
     return MP_OBJ_FROM_PTR(o);
 }
@@ -266,42 +294,109 @@ STATIC mp_obj_t ledmatrix_pixel(size_t n_args, const mp_obj_t *args) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(ledmatrix_pixel_obj, 3, 4, ledmatrix_pixel);
 
-/// \method update()
-/// Output next line to the display.
-STATIC mp_obj_t ledmatrix_update(mp_obj_t self_in) {
+STATIC void ledmatrix_update_raw(mp_obj_t self_in)
+{
     mp_obj_ledmatrix_t *self = self_in;
     SET_PIN_HIGH(self->pin_oe);
     SET_PIN_HIGH(self->pin_le);
     ledmatrix_select_line(self, self->next_linenr);
-    SET_PIN_LOW(self->pin_oe);
     SET_PIN_LOW(self->pin_le);
+    SET_PIN_LOW(self->pin_oe);
     self->next_linenr += 1;
     if (self->next_linenr == (1<< self->line_sel_cnt)) {
         self->next_linenr = 0;
-        self->next_l2w = (self->next_l2w+1)%self->depth;
+        ++self->weight_cnt;
+        if (self->weight_cnt == (1<<self->next_ln2w))
+        {
+            self->next_ln2w = (self->next_ln2w+1)%self->depth;
+            self->weight_cnt = 0;
+        }
     }
     ledmatrix_set_next_line(self);
-    return mp_const_none;
+
+}
+
+/// \method update()
+/// Output next line to the display.
+STATIC mp_obj_t ledmatrix_update(mp_obj_t self_in) {
+    reset_timer();
+    start_timer();
+    ledmatrix_update_raw(self_in);
+    stop_timer();
+    return MP_OBJ_NEW_SMALL_INT(getCycles());
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(ledmatrix_update_obj, ledmatrix_update);
+
+
+/// \method show()
+/// Start continous interrupt driven update of the display.
+STATIC mp_obj_t ledmatrix_show(mp_obj_t self_in) {
+    mp_obj_ledmatrix_t *self = self_in;
+    if (self->timer == NULL) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "Need timer for showing stuff."));
+    } else {
+        if (self->show == false) {
+            uint32_t updFreq = (1<<self->line_sel_cnt)*((1<<self->depth)-1)*FRAMERATE;
+
+            updFreq = MIN(500, updFreq);
+
+            printf("Start running display @ %d Hz line update frequency.\n", ((int)updFreq));
+            /*const mp_obj_t args1[4] = {
+                (mp_obj_t)&pyb_timer_init_obj,
+                self->timer,
+                MP_OBJ_NEW_QSTR(MP_QSTR_freq),  MP_OBJ_NEW_SMALL_INT(updFreq),
+            };
+            mp_call_method_n_kw(0, 1, args1);*/
+            self->show = true;
+            timer_register_raw_cb(self->timer, ledmatrix_update_raw, self_in);
+        } else {
+            printf("Shuting down IRQ driven update.\n");
+            timer_register_raw_cb(self->timer, NULL, NULL);
+            self->show = false;
+        }
+    }
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(ledmatrix_show_obj, ledmatrix_show);
+
+STATIC mp_obj_t ledmatrix_timer(size_t n_args, const mp_obj_t *args) {
+    mp_obj_ledmatrix_t *self = MP_OBJ_TO_PTR(args[0]);
+    if (n_args == 2) {
+        if (MP_OBJ_IS_TYPE(args[1], &pyb_timer_type)) {
+            self->timer = MP_OBJ_TO_PTR(args[1]);
+        } else {
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "must be a timer type object."));
+        }
+    } else {
+        if (self->timer) {
+            return self->timer;
+        } else {
+            return mp_const_none;
+        }
+    }
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(ledmatrix_timer_obj, 1, 2, ledmatrix_timer);
 
 STATIC const mp_rom_map_elem_t ledmatrix_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_fill), MP_ROM_PTR(&ledmatrix_fill_obj) },
     { MP_ROM_QSTR(MP_QSTR_pixel), MP_ROM_PTR(&ledmatrix_pixel_obj) },
     { MP_ROM_QSTR(MP_QSTR_update), MP_ROM_PTR(&ledmatrix_update_obj) },
+    { MP_ROM_QSTR(MP_QSTR_show), MP_ROM_PTR(&ledmatrix_show_obj) },
+    { MP_ROM_QSTR(MP_QSTR_timer), MP_ROM_PTR(&ledmatrix_timer_obj) },
 };
 STATIC MP_DEFINE_CONST_DICT(ledmatrix_locals_dict, ledmatrix_locals_dict_table);
 
 STATIC const mp_obj_type_t mp_type_ledmatrix = {
     { &mp_type_type },
-    .name = MP_QSTR_LedMatrix,
+    .name = MP_QSTR_ledmatrix,
     .make_new = ledmatrix_make_new,
     .locals_dict = (mp_obj_t)&ledmatrix_locals_dict,
 };
 
 STATIC const mp_rom_map_elem_t ledmatrix_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_ledmatrix) },
-    { MP_ROM_QSTR(MP_QSTR_LedMatrix), MP_ROM_PTR(&mp_type_ledmatrix) },
+    { MP_ROM_QSTR(MP_QSTR_ledmatrix), MP_ROM_PTR(&mp_type_ledmatrix) },
 };
 
 STATIC MP_DEFINE_CONST_DICT(ledmatrix_module_globals, ledmatrix_module_globals_table);

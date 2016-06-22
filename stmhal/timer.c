@@ -131,6 +131,8 @@ typedef struct _pyb_timer_obj_t {
     uint8_t tim_id;
     uint8_t is_32bit;
     mp_obj_t callback;
+    void (*raw_cb)(mp_obj_t obj);
+    mp_obj_base_t * raw_cb_para;
     TIM_HandleTypeDef tim;
     IRQn_Type irqn;
     pyb_timer_channel_obj_t *channel;
@@ -245,6 +247,30 @@ uint32_t timer_get_source_freq(uint32_t tim_id) {
     }
     return source;
 }
+
+//
+// Register a raw callback function on a certain timer
+//
+void timer_register_raw_cb(mp_obj_t self_in, void (*fn)(mp_obj_t obj), void* raw_cb_para) {
+    pyb_timer_obj_t *self = self_in;
+    if (fn == NULL) {
+        // stop interrupt (but not timer)
+        __HAL_TIM_DISABLE_IT(&self->tim, TIM_IT_UPDATE);
+        self->raw_cb = NULL;
+        self->raw_cb_para = NULL;
+    } else  {
+        __HAL_TIM_DISABLE_IT(&self->tim, TIM_IT_UPDATE);
+        self->raw_cb = fn;
+        self->raw_cb_para = raw_cb_para;
+        // start timer, so that it interrupts on overflow, but clear any
+        // pending interrupts which may have been set by initializing it.
+        __HAL_TIM_CLEAR_FLAG(&self->tim, TIM_IT_UPDATE);
+        HAL_TIM_Base_Start_IT(&self->tim); // This will re-enable the IRQ
+        HAL_NVIC_EnableIRQ(self->irqn);
+    }
+    return;
+}
+
 
 /******************************************************************************/
 /* Micro Python bindings                                                      */
@@ -637,6 +663,9 @@ STATIC mp_obj_t pyb_timer_make_new(const mp_obj_type_t *type, mp_uint_t n_args, 
     pyb_timer_obj_t *tim = m_new_obj(pyb_timer_obj_t);
     memset(tim, 0, sizeof(*tim));
 
+    tim->raw_cb = NULL;
+    tim->raw_cb_para = NULL;
+
     tim->base.type = &pyb_timer_type;
     tim->callback = mp_const_none;
     tim->channel = NULL;
@@ -716,7 +745,7 @@ STATIC mp_obj_t pyb_timer_make_new(const mp_obj_type_t *type, mp_uint_t n_args, 
 STATIC mp_obj_t pyb_timer_init(mp_uint_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
     return pyb_timer_init_helper(args[0], n_args - 1, args + 1, kw_args);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(pyb_timer_init_obj, 1, pyb_timer_init);
+MP_DEFINE_CONST_FUN_OBJ_KW(pyb_timer_init_obj, 1, pyb_timer_init);
 
 // timer.deinit()
 STATIC mp_obj_t pyb_timer_deinit(mp_obj_t self_in) {
@@ -1375,6 +1404,7 @@ void timer_irq_handler(uint tim_id) {
     if (tim_id - 1 < PYB_TIMER_OBJ_ALL_NUM) {
         // get the timer object
         pyb_timer_obj_t *tim = MP_STATE_PORT(pyb_timer_obj_all)[tim_id - 1];
+        uint32_t handled = TIMER_IRQ_MASK(0);;
 
         if (tim == NULL) {
             // Timer object has not been set, so we can't do anything.
@@ -1382,17 +1412,20 @@ void timer_irq_handler(uint tim_id) {
             // 1 & 10 which use the same IRQ.
             return;
         }
+        if (tim->raw_cb) {
+            tim->raw_cb(tim->raw_cb_para);
+        } else {
+            // Check for timer (versus timer channel) interrupt.
+            timer_handle_irq_channel(tim, 0, tim->callback);
+            handled = TIMER_IRQ_MASK(0);
 
-        // Check for timer (versus timer channel) interrupt.
-        timer_handle_irq_channel(tim, 0, tim->callback);
-        uint32_t handled = TIMER_IRQ_MASK(0);
-
-        // Check to see if a timer channel interrupt was pending
-        pyb_timer_channel_obj_t *chan = tim->channel;
-        while (chan != NULL) {
-            timer_handle_irq_channel(tim, chan->channel, chan->callback);
-            handled |= TIMER_IRQ_MASK(chan->channel);
-            chan = chan->next;
+            // Check to see if a timer channel interrupt was pending
+            pyb_timer_channel_obj_t *chan = tim->channel;
+            while (chan != NULL) {
+                timer_handle_irq_channel(tim, chan->channel, chan->callback);
+                handled |= TIMER_IRQ_MASK(chan->channel);
+                chan = chan->next;
+            }
         }
 
         // Finally, clear any remaining interrupt sources. Otherwise we'll

@@ -26,6 +26,8 @@
 
 extern TIM_HandleTypeDef TIM5_Handle;
 
+typedef struct _pyb_timer_obj_t pyb_timer_obj_t;
+
 extern const mp_obj_type_t pyb_timer_type;
 
 void timer_init0(void);
@@ -34,5 +36,8 @@ TIM_HandleTypeDef *timer_tim6_init(uint freq);
 void timer_deinit(void);
 uint32_t timer_get_source_freq(uint32_t tim_id);
 void timer_irq_handler(uint tim_id);
+
+MP_DECLARE_CONST_FUN_OBJ(pyb_timer_init_obj);
+void timer_register_raw_cb(mp_obj_t timer, void (*fn)(mp_obj_t obj), void* raw_cb_para);
 
 TIM_HandleTypeDef *pyb_timer_get_handle(mp_obj_t timer);
