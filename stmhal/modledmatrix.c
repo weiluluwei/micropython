@@ -36,12 +36,13 @@
 
 #include "measure_cycles.c"
 
+//#define MICROPY_PY_LEDMATRIX 1
 
 #if defined(MICROPY_PY_LEDMATRIX) && (MICROPY_PY_LEDMATRIX == 1)
 
 #define FRAMERATE 30
 
-#define SET_PIN_VALUE(x, value) HAL_GPIO_WritePin((x)->gpio, 1<<((x)->pin), (value))
+#define SET_PIN_VALUE(x, value) HAL_GPIO_WritePin((x)->gpio, (x)->pin_mask, (value))
 #define SET_PIN_HIGH(x) SET_PIN_VALUE(x, 1)
 #define SET_PIN_LOW(x) SET_PIN_VALUE(x, 0)
 #define CONFIG_PIN_OUTPUT(x)
@@ -166,7 +167,8 @@ STATIC void mp_ob_2_u8(mp_obj_t tuple, uint8_t *array, uint8_t cnt) {
 }
 
 STATIC void ledmatrix_select_line(mp_obj_ledmatrix_t * self, uint16_t line_nr) {
-    for (uint8_t i = 0; i<self->line_sel_cnt; i++)
+
+    for (uint8_t i = 0; i<self->line_sel_cnt; ++i)
     {
         uint8_t value = (line_nr>>i) & 0x01;
         SET_PIN_VALUE(self->pin_line_sel[i], value);
@@ -177,19 +179,19 @@ STATIC void ledmatrix_set_next_line(mp_obj_ledmatrix_t * self) {
     uint16_t offset = self->next_ln2w*self->bit_per_weight+(self->next_linenr & 0x0F)*self->bwidth;
     uint8_t val_11 = 0;
     uint8_t idx = 0;
-    uint8_t ptr;
-    for (uint8_t x=0; x< self->width; x++) {
+    uint8_t* ptr =  &self->buf[offset-1];
+    for (uint8_t x=0; x< self->width; ++x) {
         uint8_t s_idx = (x & 0x03);
         uint8_t ser_val = 0;
         if (s_idx == 3) {
             ser_val = val_11;
             val_11 =0;
         } else {
-            ser_val = self->buf[offset+idx];
+            ser_val = *(++ptr);
             val_11 |= (ser_val>>(6-2*s_idx));
             idx += 1;
         }
-        for (uint8_t pin_nr=0; pin_nr < self->col_line_cnt; pin_nr++) {
+        for (uint8_t pin_nr=0; pin_nr < self->col_line_cnt; ++pin_nr) {
             uint8_t mask = 1<<pin_nr;
             SET_PIN_VALUE(self->pin_col[pin_nr], ser_val&mask?1:0);
         }
