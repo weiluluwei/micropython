@@ -28,6 +28,7 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include STM32_HAL_H
 #include "py/nlr.h"
 #include "py/obj.h"
 #include "py/runtime.h"
@@ -79,21 +80,6 @@ typedef struct _mp_obj_ledmatrix_t {
 } mp_obj_ledmatrix_t;
 
 static uint8_t BUFFER[2048];
-
-STATIC void ledmatrix_config_pin(const pin_obj_t *pin_obj, uint32_t mode, uint32_t pull)
-{
-    /* THIS IS A DIRTY HACK !!!!!!!*/
-    pin_obj_t my_pin = *pin_obj;
-    // pin.init(mode=AF_PP, af=idx)
-    const mp_obj_t args2[6] = {
-        (mp_obj_t)&pin_init_obj,
-        &my_pin,
-        MP_OBJ_NEW_QSTR(MP_QSTR_mode),  MP_OBJ_NEW_SMALL_INT(mode),
-        MP_OBJ_NEW_QSTR(MP_QSTR_pull),  MP_OBJ_NEW_SMALL_INT(pull),
-    };
-    mp_call_method_n_kw(0, 2, args2);
-}
-
 
 STATIC void ledmatrix_set_pixel(mp_obj_ledmatrix_t * self, uint16_t x, uint16_t y, uint8_t col[3]) {
     bool lower = y<16;
@@ -231,7 +217,9 @@ STATIC mp_obj_t ledmatrix_make_new(const mp_obj_type_t *type, size_t n_args, siz
     o->line_sel_cnt = len;
     for (uint8_t i=0;i<o->line_sel_cnt;i++) {
         o->pin_line_sel[i] = pin_find(elem[i]);
-        ledmatrix_config_pin(o->pin_line_sel[i], GPIO_MODE_OUTPUT_PP, GPIO_NOPULL);
+        if (pin_get_mode(o->pin_line_sel[i]) != GPIO_MODE_OUTPUT_PP) {
+            nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "Select line must be output"));
+        }
     }
     /* Get colors */
     mp_obj_get_array(args[4], &len, &elem);
@@ -241,14 +229,22 @@ STATIC mp_obj_t ledmatrix_make_new(const mp_obj_type_t *type, size_t n_args, siz
     o->col_line_cnt = len;
     for (uint8_t i=0;i<o->col_line_cnt;i++) {
         o->pin_col[i] = pin_find(elem[i]);
-        ledmatrix_config_pin(o->pin_col[i], GPIO_MODE_OUTPUT_PP, GPIO_NOPULL);
+        if (pin_get_mode(o->pin_col[i]) != GPIO_MODE_OUTPUT_PP) {
+            nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "Color lines must be output"));
+        }
     }
     o->pin_clk = pin_find(args[5]);
-    ledmatrix_config_pin(o->pin_clk, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL);
+    if (pin_get_mode(o->pin_clk) != GPIO_MODE_OUTPUT_PP) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "clk must be output"));
+    }
     o->pin_le = pin_find(args[6]);
-    ledmatrix_config_pin(o->pin_le, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL);
+    if (pin_get_mode(o->pin_le) != GPIO_MODE_OUTPUT_PP) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "le must be output"));
+    }
     o->pin_oe = pin_find(args[7]);
-    ledmatrix_config_pin(o->pin_oe, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL);
+    if (pin_get_mode(o->pin_oe) != GPIO_MODE_OUTPUT_PP) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "oe must be output"));
+    }
     o->next_linenr = 0;
     o->next_ln2w = 0;
     o->weight_cnt = 0;
