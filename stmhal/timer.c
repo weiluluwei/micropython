@@ -1374,27 +1374,32 @@ STATIC void timer_handle_irq_channel(pyb_timer_obj_t *tim, uint8_t channel, mp_o
             // clear the interrupt
             __HAL_TIM_CLEAR_IT(&tim->tim, irq_mask);
 
-            // execute callback if it's set
-            if (callback != mp_const_none) {
-                // When executing code within a handler we must lock the GC to prevent
-                // any memory allocations.  We must also catch any exceptions.
-                gc_lock();
-                nlr_buf_t nlr;
-                if (nlr_push(&nlr) == 0) {
-                    mp_call_function_1(callback, tim);
-                    nlr_pop();
-                } else {
-                    // Uncaught exception; disable the callback so it doesn't run again.
-                    tim->callback = mp_const_none;
-                    __HAL_TIM_DISABLE_IT(&tim->tim, irq_mask);
-                    if (channel == 0) {
-                        printf("uncaught exception in Timer(%u) interrupt handler\n", tim->tim_id);
+            if (tim->raw_cb)
+            {
+                tim->raw_cb(tim->raw_cb_para);
+            } else {
+                // execute callback if it's set
+                if (callback != mp_const_none) {
+                    // When executing code within a handler we must lock the GC to prevent
+                    // any memory allocations.  We must also catch any exceptions.
+                    gc_lock();
+                    nlr_buf_t nlr;
+                    if (nlr_push(&nlr) == 0) {
+                        mp_call_function_1(callback, tim);
+                        nlr_pop();
                     } else {
-                        printf("uncaught exception in Timer(%u) channel %u interrupt handler\n", tim->tim_id, channel);
+                        // Uncaught exception; disable the callback so it doesn't run again.
+                        tim->callback = mp_const_none;
+                        __HAL_TIM_DISABLE_IT(&tim->tim, irq_mask);
+                        if (channel == 0) {
+                            printf("uncaught exception in Timer(%u) interrupt handler\n", tim->tim_id);
+                        } else {
+                            printf("uncaught exception in Timer(%u) channel %u interrupt handler\n", tim->tim_id, channel);
+                        }
+                        mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
                     }
-                    mp_obj_print_exception(&mp_plat_print, (mp_obj_t)nlr.ret_val);
+                    gc_unlock();
                 }
-                gc_unlock();
             }
         }
     }
@@ -1412,20 +1417,17 @@ void timer_irq_handler(uint tim_id) {
             // 1 & 10 which use the same IRQ.
             return;
         }
-        if (tim->raw_cb) {
-            tim->raw_cb(tim->raw_cb_para);
-        } else {
-            // Check for timer (versus timer channel) interrupt.
-            timer_handle_irq_channel(tim, 0, tim->callback);
-            handled = TIMER_IRQ_MASK(0);
 
-            // Check to see if a timer channel interrupt was pending
-            pyb_timer_channel_obj_t *chan = tim->channel;
-            while (chan != NULL) {
-                timer_handle_irq_channel(tim, chan->channel, chan->callback);
-                handled |= TIMER_IRQ_MASK(chan->channel);
-                chan = chan->next;
-            }
+        // Check for timer (versus timer channel) interrupt.
+        timer_handle_irq_channel(tim, 0, tim->callback);
+        handled = TIMER_IRQ_MASK(0);
+
+        // Check to see if a timer channel interrupt was pending
+        pyb_timer_channel_obj_t *chan = tim->channel;
+        while (chan != NULL) {
+            timer_handle_irq_channel(tim, chan->channel, chan->callback);
+            handled |= TIMER_IRQ_MASK(chan->channel);
+            chan = chan->next;
         }
 
         // Finally, clear any remaining interrupt sources. Otherwise we'll

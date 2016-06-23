@@ -39,13 +39,21 @@
 //#define MICROPY_PY_LEDMATRIX 1
 
 #if defined(MICROPY_PY_LEDMATRIX) && (MICROPY_PY_LEDMATRIX == 1)
+#include "font_petme128_8x8.h"
 
-#define FRAMERATE 30
+#define FRAMERATE 60
 #define GPIO_PORT_COUNT 10
 
 #define SET_PIN_VALUE(x, value) HAL_GPIO_WritePin((x)->gpio, (x)->pin_mask, (value))
-#define SET_PIN_HIGH(x) SET_PIN_VALUE(x, 1)
-#define SET_PIN_LOW(x) SET_PIN_VALUE(x, 0)
+/**/
+ #define SET_PIN_HIGH(x) SET_PIN_VALUE(x, 1)
+ #define SET_PIN_LOW(x) SET_PIN_VALUE(x, 0)
+ /**/
+/*
+#define SET_PIN_HIGH(x) ((x)->gpio->BSRRL = (x)->pin_mask)
+#define SET_PIN_LOW(x) ((x)->gpio->BSRRH = (x)->pin_mask)
+*/
+
 #define CONFIG_PIN_OUTPUT(x)
 
 // Frame buffer organized in a efficient way for output to
@@ -117,7 +125,7 @@ STATIC void ledmatrix_set_pixel(mp_obj_ledmatrix_t * self, uint16_t x, uint16_t 
             }
             self->buf[addr]   |= col[0] & (1<<ln2w) ? mask : 0x00;
             self->buf[addr+1] |= col[1] & (1<<ln2w) ? mask : 0x00;
-            self->buf[addr+2] |= col[1] & (1<<ln2w) ? mask : 0x00;
+            self->buf[addr+2] |= col[2] & (1<<ln2w) ? mask : 0x00;
         }
     }
 }
@@ -169,21 +177,16 @@ STATIC void mp_ob_2_u8(mp_obj_t tuple, uint8_t *array, uint8_t cnt) {
 
 STATIC void ledmatrix_select_line(mp_obj_ledmatrix_t * self, uint16_t line_nr) {
 
-    for (uint8_t i = 0; i<self->line_sel_cnt; ++i)
+    for (uint8_t i = 0, value = line_nr; i<self->line_sel_cnt; ++i, value >>=1)
     {
-        uint8_t value = (line_nr>>i) & 0x01;
-        SET_PIN_VALUE(self->pin_line_sel[i], value);
+        SET_PIN_VALUE(self->pin_line_sel[i], value&0x01);
     }
 }
 
 STATIC void ledmatrix_set_next_line(mp_obj_ledmatrix_t * self) {
-    uint32_t port[2][GPIO_PORT_COUNT]={{0},{0}};
-    pin_gpio_t * gpio[GPIO_PORT_COUNT]={0};
     uint16_t offset = self->next_ln2w*self->bit_per_weight+(self->next_linenr & 0x0F)*self->bwidth;
     uint8_t val_11 = 0;
     uint8_t idx = 0;
-    uint8_t min_port=GPIO_PORT_COUNT;
-    uint8_t max_port=0;
     uint8_t* ptr =  &self->buf[offset-1];
     for (uint8_t x=0; x< self->width; ++x) {
         uint8_t s_idx = (x & 0x03);
@@ -193,32 +196,12 @@ STATIC void ledmatrix_set_next_line(mp_obj_ledmatrix_t * self) {
             val_11 =0;
         } else {
             ser_val = *(++ptr);
-            val_11 |= (ser_val>>(6-2*s_idx));
+            val_11 |= ((ser_val & 0xC0)>>(6-2*s_idx));
             idx += 1;
         }
-#if 0
-        for (uint8_t pin_nr=0, mask=1; pin_nr < self->col_line_cnt; ++pin_nr, mask<<=1) {
-            SET_PIN_VALUE(self->pin_col[pin_nr], ser_val&mask?1:0);
+        for (uint8_t pin_nr=0, value = ser_val; pin_nr < self->col_line_cnt; ++pin_nr, value>>=1) {
+            SET_PIN_VALUE(self->pin_col[pin_nr], value & 0x01);
         }
-#else
-        /* Cache GPIO access as direct access slows down the code
-         * This cache increases the cycle count from 24596 to 56979 */
-        for (uint8_t pin_nr=0, mask=1; pin_nr < self->col_line_cnt; ++pin_nr, mask<<=1) {
-            port[0][self->pin_col[pin_nr]->port] |= (ser_val&mask)?0:self->pin_col[pin_nr]->pin_mask;
-            port[1][self->pin_col[pin_nr]->port] |= (ser_val&mask)?self->pin_col[pin_nr]->pin_mask:0;
-            gpio[self->pin_col[pin_nr]->port] = self->pin_col[pin_nr]->gpio;
-            min_port = MIN(min_port, self->pin_col[pin_nr]->port);
-            max_port = MAX(max_port, self->pin_col[pin_nr]->port);
-        }
-        for (uint8_t port_nr=min_port; port_nr<=max_port; ++port_nr) {
-            if (port[0][port_nr]) {
-                gpio[port_nr]->BSRRH = port[0][port_nr];
-            }
-            if (port[1][port_nr]) {
-                gpio[port_nr]->BSRRL = port[1][port_nr];
-            }
-        }
-#endif
         SET_PIN_HIGH(self->pin_clk);
         SET_PIN_LOW(self->pin_clk);
     }
@@ -294,29 +277,39 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(ledmatrix_fill_obj, ledmatrix_fill);
 
 STATIC mp_obj_t ledmatrix_pixel(size_t n_args, const mp_obj_t *args) {
     mp_obj_ledmatrix_t *self = MP_OBJ_TO_PTR(args[0]);
-    mp_int_t x = mp_obj_get_int(args[1]);
-    mp_int_t y = mp_obj_get_int(args[2]);
-    if (0 <= x && x < self->width && 0 <= y && y < self->height) {
-        if (n_args == 3) {
-            uint8_t color[3];
-            mp_obj_tuple_t *tuple = mp_obj_new_tuple(3, NULL);
-            ledmatrix_get_pixel(self, x, y, color);
-            for (uint8_t i=0;i<3;i++)
-            {
-                tuple->items[i] = MP_OBJ_NEW_SMALL_INT(color[i]);
-            }
-            return tuple;
-        } else {
-            mp_uint_t len;
-            mp_obj_t *elem;
-            mp_obj_get_array(args[3], &len, &elem);
-            if (len==3)
-            {
-                // set
-                uint8_t color[3] = {mp_obj_get_int(elem[0]), mp_obj_get_int(elem[1]), mp_obj_get_int(elem[2])};
-                ledmatrix_set_pixel(self, x, y, color);
+    mp_uint_t len;
+    mp_obj_t *elem;
+    mp_obj_get_array(args[1], &len, &elem);
+    if (len==2)
+    {
+        mp_int_t x = mp_obj_get_int(elem[0]);
+        mp_int_t y = mp_obj_get_int(elem[1]);
+        if (0 <= x && x < self->width && 0 <= y && y < self->height) {
+            if (n_args == 2) {
+                uint8_t color[3];
+                mp_obj_tuple_t *tuple = mp_obj_new_tuple(3, NULL);
+                ledmatrix_get_pixel(self, x, y, color);
+                for (uint8_t i=0;i<3;i++)
+                {
+                    tuple->items[i] = MP_OBJ_NEW_SMALL_INT(color[i]);
+                }
+                return tuple;
+            } else {
+                mp_uint_t len;
+                mp_obj_t *elem;
+                mp_obj_get_array(args[2], &len, &elem);
+                if (len==3) {
+                    // set
+                    uint8_t color[3] = {mp_obj_get_int(elem[0]), mp_obj_get_int(elem[1]), mp_obj_get_int(elem[2])};
+                    ledmatrix_set_pixel(self, x, y, color);
+                } else {
+                     nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "Expected color as 3-tuple."));
+                }
+
             }
         }
+    } else {
+        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "Expected coordinates as 2-tuple."));
     }
     return mp_const_none;
 }
@@ -365,20 +358,18 @@ STATIC mp_obj_t ledmatrix_show(mp_obj_t self_in) {
     } else {
         if (self->show == false) {
             uint32_t updFreq = (1<<self->line_sel_cnt)*((1<<self->depth)-1)*FRAMERATE;
-
-            updFreq = MIN(500, updFreq);
-
+            updFreq = MIN(10000, updFreq);
             printf("Start running display @ %d Hz line update frequency.\n", ((int)updFreq));
-            /*const mp_obj_t args1[4] = {
+            const mp_obj_t args1[4] = {
                 (mp_obj_t)&pyb_timer_init_obj,
                 self->timer,
                 MP_OBJ_NEW_QSTR(MP_QSTR_freq),  MP_OBJ_NEW_SMALL_INT(updFreq),
             };
-            mp_call_method_n_kw(0, 1, args1);*/
+            mp_call_method_n_kw(0, 1, args1);
             self->show = true;
             timer_register_raw_cb(self->timer, ledmatrix_update_raw, self_in);
         } else {
-            printf("Shuting down IRQ driven update.\n");
+            printf("Shutting down IRQ driven update.\n");
             timer_register_raw_cb(self->timer, NULL, NULL);
             self->show = false;
         }
@@ -406,12 +397,67 @@ STATIC mp_obj_t ledmatrix_timer(size_t n_args, const mp_obj_t *args) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(ledmatrix_timer_obj, 1, 2, ledmatrix_timer);
 
+/// \method text(str, (x, y), colour)
+///
+/// Draw the given text to the position `(x, y)` using the given colour (r, g, b).
+///
+STATIC mp_obj_t ledmatrix_text(mp_uint_t n_args, const mp_obj_t *args) {
+    mp_obj_ledmatrix_t *self = MP_OBJ_TO_PTR(args[0]);
+    // extract arguments
+    mp_uint_t len;
+    mp_obj_t *elem;
+    mp_obj_get_array(args[2], &len, &elem);
+    if (len==2)
+    {
+        mp_int_t x0 = mp_obj_get_int(elem[0]);
+        mp_int_t y0 = mp_obj_get_int(elem[1]);
+        mp_obj_get_array(args[3], &len, &elem);
+
+        if (len == 3) {
+            uint8_t col[3] = {mp_obj_get_int(elem[0]), mp_obj_get_int(elem[1]), mp_obj_get_int(elem[2])};
+            // loop over chars
+            mp_uint_t str_len;
+            const char *data = mp_obj_str_get_data(args[1], &str_len);
+            for (const char *top = data + str_len; data < top; data++) {
+                // get char and make sure its in range of font
+                uint chr = *(byte*)data;
+                if (chr < 32 || chr > 127) {
+                    chr = 127;
+                }
+                // get char data
+                const uint8_t *chr_data = &font_petme128_8x8[(chr - 32) * 8];
+                // loop over char data
+                for (uint j = 0; j < 8; j++, x0++) {
+                    if (0 <= x0 && x0 < self->width) { // clip x
+                        uint vline_data = chr_data[j]; // each byte of char data is a vertical column of 8 pixels, LSB at top
+                        for (int y = y0; vline_data; vline_data >>= 1, y++) { // scan over vertical column
+                            if (vline_data & 1) { // only draw if pixel set
+                                if (0 <= y && y < self->height) { // clip y
+                                    ledmatrix_set_pixel(self, x0, y, col);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "Expected color as 3-tuple."));
+        }
+    } else {
+        nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "Expected coordinates as 2-tuple."));
+    }
+
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(ledmatrix_text_obj, 4, 4, ledmatrix_text);
+
 STATIC const mp_rom_map_elem_t ledmatrix_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_fill), MP_ROM_PTR(&ledmatrix_fill_obj) },
     { MP_ROM_QSTR(MP_QSTR_pixel), MP_ROM_PTR(&ledmatrix_pixel_obj) },
     { MP_ROM_QSTR(MP_QSTR_update), MP_ROM_PTR(&ledmatrix_update_obj) },
     { MP_ROM_QSTR(MP_QSTR_show), MP_ROM_PTR(&ledmatrix_show_obj) },
     { MP_ROM_QSTR(MP_QSTR_timer), MP_ROM_PTR(&ledmatrix_timer_obj) },
+    { MP_ROM_QSTR(MP_QSTR_text), MP_ROM_PTR(&ledmatrix_text_obj) },
 };
 STATIC MP_DEFINE_CONST_DICT(ledmatrix_locals_dict, ledmatrix_locals_dict_table);
 
