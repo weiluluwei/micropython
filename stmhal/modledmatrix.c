@@ -76,7 +76,7 @@ typedef struct _mp_obj_ledmatrix_t {
     uint16_t next_ln2w;
     uint16_t weight_cnt;   /* Counter to control the duration of the LED illumination in a certain ln2w */
     pyb_timer_obj_t *timer;
-    bool show;
+    bool running;
 } mp_obj_ledmatrix_t;
 
 static uint8_t BUFFER[2048];
@@ -245,12 +245,12 @@ STATIC mp_obj_t ledmatrix_make_new(const mp_obj_type_t *type, size_t n_args, siz
     if (pin_get_mode(o->pin_oe) != GPIO_MODE_OUTPUT_PP) {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "oe must be output"));
     }
+    SET_PIN_HIGH(o->pin_oe);
     o->next_linenr = 0;
     o->next_ln2w = 0;
     o->weight_cnt = 0;
     o->timer = NULL;
-    o->show = false;
-
+    o->running = false;
     return MP_OBJ_FROM_PTR(o);
 }
 
@@ -309,7 +309,7 @@ STATIC mp_obj_t ledmatrix_pixel(size_t n_args, const mp_obj_t *args) {
     }
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(ledmatrix_pixel_obj, 3, 4, ledmatrix_pixel);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(ledmatrix_pixel_obj, 2, 3, ledmatrix_pixel);
 
 STATIC void ledmatrix_update_raw(mp_obj_t self_in)
 {
@@ -345,14 +345,14 @@ STATIC mp_obj_t ledmatrix_update(mp_obj_t self_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(ledmatrix_update_obj, ledmatrix_update);
 
 
-/// \method show()
-/// Start continous interrupt driven update of the display.
-STATIC mp_obj_t ledmatrix_show(mp_obj_t self_in) {
+/// \method start()
+/// Start interrupt driven update of the display.
+STATIC mp_obj_t ledmatrix_start(mp_obj_t self_in) {
     mp_obj_ledmatrix_t *self = self_in;
     if (self->timer == NULL) {
         nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "Need timer for showing stuff."));
     } else {
-        if (self->show == false) {
+        if (self->running == false) {
             uint32_t updFreq = (1<<self->line_sel_cnt)*((1<<self->depth)-1)*FRAMERATE;
             updFreq = MIN(10000, updFreq);
             printf("Start running display @ %d Hz line update frequency.\n", ((int)updFreq));
@@ -362,17 +362,30 @@ STATIC mp_obj_t ledmatrix_show(mp_obj_t self_in) {
                 MP_OBJ_NEW_QSTR(MP_QSTR_freq),  MP_OBJ_NEW_SMALL_INT(updFreq),
             };
             mp_call_method_n_kw(0, 1, args1);
-            self->show = true;
+            self->running = true;
             timer_register_raw_cb(self->timer, ledmatrix_update_raw, self_in);
-        } else {
-            printf("Shutting down IRQ driven update.\n");
-            timer_register_raw_cb(self->timer, NULL, NULL);
-            self->show = false;
         }
     }
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(ledmatrix_show_obj, ledmatrix_show);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(ledmatrix_start_obj, ledmatrix_start);
+
+/// \method stop()
+/// Stop interrupt driven update of the display.
+STATIC mp_obj_t ledmatrix_stop(mp_obj_t self_in) {
+    mp_obj_ledmatrix_t *self = self_in;
+    if (self->timer == NULL) {
+        nlr_raise(mp_obj_new_exception_msg_varg(&mp_type_ValueError, "Need timer for showing stuff."));
+    } else {
+        if (self->running == true) {
+            printf("Shutting down IRQ driven update.\n");
+            timer_register_raw_cb(self->timer, NULL, NULL);
+            self->running = false;
+        }
+    }
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(ledmatrix_stop_obj, ledmatrix_stop);
 
 STATIC mp_obj_t ledmatrix_timer(size_t n_args, const mp_obj_t *args) {
     mp_obj_ledmatrix_t *self = MP_OBJ_TO_PTR(args[0]);
@@ -451,7 +464,8 @@ STATIC const mp_rom_map_elem_t ledmatrix_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_fill), MP_ROM_PTR(&ledmatrix_fill_obj) },
     { MP_ROM_QSTR(MP_QSTR_pixel), MP_ROM_PTR(&ledmatrix_pixel_obj) },
     { MP_ROM_QSTR(MP_QSTR_update), MP_ROM_PTR(&ledmatrix_update_obj) },
-    { MP_ROM_QSTR(MP_QSTR_show), MP_ROM_PTR(&ledmatrix_show_obj) },
+    { MP_ROM_QSTR(MP_QSTR_start), MP_ROM_PTR(&ledmatrix_start_obj) },
+    { MP_ROM_QSTR(MP_QSTR_stop), MP_ROM_PTR(&ledmatrix_stop_obj) },
     { MP_ROM_QSTR(MP_QSTR_timer), MP_ROM_PTR(&ledmatrix_timer_obj) },
     { MP_ROM_QSTR(MP_QSTR_text), MP_ROM_PTR(&ledmatrix_text_obj) },
 };
